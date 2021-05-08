@@ -28,14 +28,14 @@ class Radarr:
 
         keywords = query.split()
 
-        # TODO: cut down movies to only movies matching the query
         matching = []
 
         for movie in movies:
             good = True
 
             for keyword in keywords:
-                if keyword.lower() not in movie['title'].lower() and keyword.lower() not in str(movie['year']):
+                if (keyword.lower() not in movie['title'].lower()
+                        and keyword.lower() not in str(movie['year'])):
                     good = False
                     break
 
@@ -49,7 +49,7 @@ class Radarr:
             return False
 
         self._radarr.add_movie(dbId=tmdbId, qualityProfileId=self._good_profile_id)
-        
+
         return True
 
     def del_movie(self, tmdbId: int) -> None:

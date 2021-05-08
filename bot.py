@@ -13,7 +13,6 @@ from config import *
 
 
 logger = logging.getLogger()
-
 logger.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s:%(filename)s:%(levelname)s | %(message)s')
@@ -60,12 +59,10 @@ async def on_ready():
 async def _addmovie(ctx, *args):
     if 'plex' not in [role.name for role in ctx.message.author.roles]:
         await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
-
         return
 
     if len(args) == 0:
         await reply(ctx, 'usage: !addmovie KEYWORDS...')
-
         return
 
     logger.info(f'got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}')
@@ -76,7 +73,6 @@ async def _addmovie(ctx, *args):
 
     if len(possible) == 0:
         await reply(ctx, f'could not find the movie with the query: {query}', error=True)
-
         return
 
     movie_list = [f'{i+1}. {movie_text(movie)}' for i, movie in enumerate(possible)]
@@ -93,26 +89,22 @@ async def _addmovie(ctx, *args):
         resp = await bot.wait_for('message', check=check, timeout=30)
     except Exception:
         await reply(ctx, 'timed out, add movie cancelled', error=True)
-
         return
 
     if resp.content.strip().lower() == 'c':
         await reply(resp, 'add movie cancelled')
-
         return
 
     idx = int(resp.content.strip()) - 1
 
     if idx < 0 or idx >= len(possible):
         await reply(resp, f'invalid index ({idx + 1}), add movie cancelled', error=True)
-
         return
 
     movie = possible[idx]
 
     if not radarr.add_movie(movie["tmdbId"]):
         await reply(resp, f'{movie_text(movie)} is already on the plex (idiot)')
-
         return
 
     # TODO: database
@@ -128,12 +120,10 @@ async def _addmovie(ctx, *args):
 async def _delmovie(ctx, *args):
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
         await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
-
         return
 
     if len(args) == 0:
         await reply(ctx, 'usage: !delmovie KEYWORDS...')
-
         return
 
     logger.info(f'got !delmovie command from user {ctx.message.author.name}: {ctx.message.content}')
@@ -144,7 +134,6 @@ async def _delmovie(ctx, *args):
 
     if len(possible) == 0:
         await reply(ctx, f'could not find the movie with the query: {query}', error=True)
-
         return
 
     movie_list = [f'{i+1}. {movie_text(movie)}' for i, movie in enumerate(possible)]
@@ -161,19 +150,16 @@ async def _delmovie(ctx, *args):
         resp = await bot.wait_for('message', check=check, timeout=30)
     except Exception:
         await reply(ctx, 'timed out, del movie cancelled', error=True)
-
         return
 
     if resp.content.strip().lower() == 'c':
         await reply(resp, 'del movie cancelled')
-
         return
 
     idx = int(resp.content.strip()) - 1
 
     if idx < 0 or idx >= len(possible):
         await reply(resp, f'invalid index ({idx + 1}), del movie cancelled', error=True)
-
         return
 
     movie = possible[idx]
