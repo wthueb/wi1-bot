@@ -223,7 +223,7 @@ async def _downloads(ctx, *args):
                 name += f' ({match.group("year")})'
 
             movie_msg = (f'{name}: {torrent.progress:.1f}% done '
-                         f'({downloaded/1024/1024/1024:.2f}/{torrent.size_when_done/1024/1024/1024:.2f} GB), '
+                         f'({downloaded/1024/1024/1024:.2f}/{torrent.size_when_done/1024/1024/1024:.2f} GB)\n'
                          f'remaining availability: {torrent.desired_available/torrent.left_until_done*100:.1f}%, '
                          f'eta: {torrent.format_eta()}\n')
 
