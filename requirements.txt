@@ -5,10 +5,13 @@ autopep8==1.5.7
 certifi==2020.12.5
 chardet==4.0.0
 discord.py==1.7.2
+flake8==3.9.1
 idna==2.10
+mccabe==0.6.1
 multidict==5.1.0
 pyarr==1.0.2
 pycodestyle==2.7.0
+pyflakes==2.3.1
 python-pushover==0.4
 requests==2.25.1
 toml==0.10.2
