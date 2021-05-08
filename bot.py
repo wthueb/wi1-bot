@@ -193,7 +193,7 @@ async def _delmovie(ctx, *args):
 @bot.command(name='downloads', help='see the status of movie downloads')
 async def _downloads(ctx, *args):
     c = TransmissionClient(host='localhost', port=9091,
-                           username='tranmissions', password='password')
+                           username='transmission', password='password')
 
     logger.debug('connected to transmission rpc')
 
