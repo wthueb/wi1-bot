@@ -42,6 +42,12 @@ def movie_text(movie):
 
 
 async def reply(ctx, message, title=None, error=False):
+    if title is None:
+        title = ''
+
+    if message is None:
+        message = ''
+
     embed = discord.Embed(title=title, description=message,
                           color=discord.Color.red() if error else discord.Color.blue())
 
