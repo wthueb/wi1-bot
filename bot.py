@@ -63,7 +63,7 @@ async def on_ready():
 
 @bot.command(name='addmovie', help='add a movie to the plex')
 async def _addmovie(ctx, *args):
-    if ctx.channel.id is not 815407313656873021:
+    if ctx.channel.id != 815407313656873021:
         return
 
     if len(args) == 0:
@@ -123,7 +123,7 @@ async def _addmovie(ctx, *args):
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
 async def _delmovie(ctx, *args):
-    if ctx.channel.id is not 815407313656873021:
+    if ctx.channel.id != 815407313656873021:
         return
 
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
@@ -186,6 +186,9 @@ async def _delmovie(ctx, *args):
 @commands.cooldown(1, 10)  # one time every 10 seconds
 @bot.command(name='downloads', help='see the status of movie downloads')
 async def _downloads(ctx, *args):
+    if ctx.channel.id != 815407313656873021:
+        return
+
     c = TransmissionClient(host='localhost', port=9091,
                            username='transmission', password='password')
 
