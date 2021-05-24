@@ -4,6 +4,7 @@ import re
 
 import discord
 from discord.ext import commands
+from discord.utils import get
 from transmission_rpc import Client as TransmissionClient
 from pushover import Client as PushoverClient
 
@@ -30,7 +31,7 @@ radarr = Radarr(RADARR_URL, RADARR_API_KEY)
 
 pushover = PushoverClient(PUSHOVER_USER_KEY, api_token=PUSHOVER_API_KEY)
 
-bot = commands.Bot(intents=discord.Intents.all(), command_prefix='!')
+bot = commands.Bot(intents=discord.Intents.all(), command_prefix=['!', '.'])
 
 
 def send_push(msg, priority=0):
@@ -59,6 +60,14 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching,
         name="david cronenberg's 1996 pièce de résistance, crash"))
+
+
+@bot.event
+async def on_member_join(member):
+    if member.id in [832837568730103839, 306987840238125056]:
+        role = get(member.guild.roles, name='5v5')
+
+        await member.add_roles(role)
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
