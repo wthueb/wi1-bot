@@ -238,5 +238,23 @@ async def _downloads(ctx, *args):
 
     await reply(ctx, '\n'.join(msg), title='download progress')
 
+
+@commands.cooldown(1, 60)
+@bot.command(name='searchmissing', help='search for missing movies that have been added')
+async def _searchmissing(ctx, *args):
+    if ctx.channel.id != PLEX_CHANNEL_ID:
+        return
+
+    if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
+        await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
+        return
+
+    # TODO: get status? maybe progress bar?
+
+    radarr.search_missing()
+
+    await reply(ctx, 'searching for missing movies...')
+
+
 if __name__ == '__main__':
     bot.run(DISCORD_TOKEN)

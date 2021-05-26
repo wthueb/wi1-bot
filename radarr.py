@@ -64,3 +64,6 @@ class Radarr:
             rmtree(path)
         except FileNotFoundError:
             pass
+
+    def search_missing(self) -> None:
+        return self._radarr.post_command(name='MissingMoviesSearch')
