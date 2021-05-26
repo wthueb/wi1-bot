@@ -15,3 +15,6 @@ TODO:
     - if !linkimdb, then can see other user's ratings
 - movie leaderboard
     - tautulli get_history api?
+- add !searchmissing
+    - RadarrAPIv3.post_command, 'name': 'MissingMoviesSearch'
+    - https://radarr.video/docs/api/#/Command/post-command
