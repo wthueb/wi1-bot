@@ -23,7 +23,7 @@ class Radarr:
 
         return possible_movies
 
-    def lookup_library(self, query) -> list:
+    def lookup_library(self, query: str) -> list:
         movies = self._radarr.get_movie()
 
         keywords = query.split()

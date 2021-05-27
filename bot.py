@@ -34,25 +34,22 @@ pushover = PushoverClient(PUSHOVER_USER_KEY, api_token=PUSHOVER_API_KEY)
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=['!', '.'])
 
 
-def send_push(msg, priority=0):
+def send_push(msg: str, priority=0):
     pushover.send_message(msg, priority=priority, device=PUSHOVER_DEVICES)
 
 
-def movie_text(movie):
+def movie_text(movie: dict):
     return f'[{movie["title"]} ({movie["year"]})](https://www.themoviedb.org/movie/{movie["tmdbId"]})'
 
 
-async def reply(ctx, message, title=None, error=False):
+async def reply(replyto: commands.Context, msg: str, title: str = None, error: bool = False):
     if title is None:
         title = ''
 
-    if message is None:
-        message = ''
-
-    embed = discord.Embed(title=title, description=message,
+    embed = discord.Embed(title=title, description=msg,
                           color=discord.Color.red() if error else discord.Color.blue())
 
-    await ctx.reply(embed=embed)
+    await replyto.reply(embed=embed)
 
 
 @bot.event
@@ -63,7 +60,7 @@ async def on_ready():
 
 
 @bot.event
-async def on_member_join(member):
+async def on_member_join(member: discord.Member):
     if member.id in [USER_IDS['shep'], USER_IDS['ethan']]:
         role = get(member.guild.roles, name='5v5')
 
@@ -71,7 +68,7 @@ async def on_member_join(member):
 
 
 @bot.event
-async def on_member_update(before, after):
+async def on_member_update(before: discord.Member, after: discord.Member):
     if len(before.roles) < len(after.roles):
         if before.id == USER_IDS['ben']:
             for role in after.roles:
@@ -80,7 +77,7 @@ async def on_member_update(before, after):
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
-async def _addmovie(ctx, *args):
+async def _addmovie(ctx: commands.Context, *args):
     if ctx.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -150,7 +147,7 @@ async def _addmovie(ctx, *args):
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
-async def _delmovie(ctx, *args):
+async def _delmovie(ctx: commands.Context, *args):
     if ctx.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -224,7 +221,7 @@ async def _delmovie(ctx, *args):
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
 @bot.command(name='downloads', help='see the status of movie downloads')
-async def _downloads(ctx, *args):
+async def _downloads(ctx: commands.Context, *args):
     if ctx.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -277,7 +274,7 @@ async def _downloads(ctx, *args):
 
 @commands.cooldown(1, 60)
 @bot.command(name='searchmissing', help='search for missing movies that have been added')
-async def _searchmissing(ctx, *args):
+async def _searchmissing(ctx: commands.Context, *args):
     if ctx.channel.id != PLEX_CHANNEL_ID:
         return
 
