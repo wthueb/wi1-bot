@@ -21,7 +21,8 @@ logger.setLevel(logging.INFO)
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.WARNING)
 
-formatter = logging.Formatter('%(asctime)s:%(filename)s:%(levelname)s | %(message)s')
+formatter = logging.Formatter(
+    '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
 
 file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024*1024*10, backupCount=10)
 file_handler.setFormatter(formatter)
