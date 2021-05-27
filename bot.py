@@ -15,19 +15,25 @@ from radarr import Radarr
 from config import *
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.WARNING)
 
 formatter = logging.Formatter('%(asctime)s:%(filename)s:%(levelname)s | %(message)s')
 
 file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024*1024*10, backupCount=10)
 file_handler.setFormatter(formatter)
 
+logger.addHandler(file_handler)
+
+# log everything to stdout
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 
-logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
+root_logger.addHandler(stream_handler)
 
 radarr = Radarr(RADARR_URL, RADARR_API_KEY)
 
