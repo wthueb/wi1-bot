@@ -235,6 +235,9 @@ async def _downloads(ctx, *args):
     msg = []
 
     def get_progress(t):
+        if t.left_until_done == 0:
+            return 1e6
+
         return (t.size_when_done - t.left_until_done) / t.size_when_done
 
     for torrent in sorted(torrents, key=get_progress, reverse=True):
