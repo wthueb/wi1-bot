@@ -229,7 +229,7 @@ async def _delmovie(ctx: commands.Context, *args):
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
 @bot.command(name='downloads', help='see the status of movie downloads')
-async def _downloads(ctx: commands.Context, *args):
+async def _downloads(ctx: commands.Context):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -282,7 +282,7 @@ async def _downloads(ctx: commands.Context, *args):
 
 @commands.cooldown(1, 60)
 @bot.command(name='searchmissing', help='search for missing movies that have been added')
-async def _searchmissing(ctx: commands.Context, *args):
+async def _searchmissing(ctx: commands.Context):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
