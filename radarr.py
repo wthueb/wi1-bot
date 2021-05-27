@@ -41,7 +41,20 @@ class Radarr:
 
         keywords = query.split()
 
-        return [Movie(m) for m in movies for k in keywords if k.lower() in m.full_title.lower()]
+        matching = []
+
+        for m in movies:
+            match = True
+
+            for keyword in keywords:
+                if keyword.lower() not in Movie(m).full_title.lower():
+                    match = False
+                    break
+
+            if match:
+                matching.append(Movie(m))
+
+        return matching
 
     def add_movie(self, movie: Movie) -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
