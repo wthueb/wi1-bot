@@ -1,3 +1,5 @@
+# TODO: add Movie class, maybe split into files somehow
+
 import logging
 from logging.handlers import RotatingFileHandler
 import re
@@ -61,7 +63,7 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member: discord.Member):
-    if member.id in [USER_IDS['shep'], USER_IDS['ethan']]:
+    if member._user.id in [USER_IDS['shep'], USER_IDS['ethan']]:
         role = get(member.guild.roles, name='5v5')
 
         await member.add_roles(role)
@@ -70,7 +72,7 @@ async def on_member_join(member: discord.Member):
 @bot.event
 async def on_member_update(before: discord.Member, after: discord.Member):
     if len(before.roles) < len(after.roles):
-        if before.id == USER_IDS['ben']:
+        if before._user.id == USER_IDS['ben']:
             for role in after.roles:
                 if role.name in ['plex', 'plex-admin']:
                     await after.remove_roles(role)
@@ -78,7 +80,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 
 @bot.command(name='addmovie', help='add a movie to the plex')
 async def _addmovie(ctx: commands.Context, *args):
-    if ctx.channel.id != PLEX_CHANNEL_ID:
+    if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
     if len(args) == 0:
@@ -148,7 +150,7 @@ async def _addmovie(ctx: commands.Context, *args):
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
 async def _delmovie(ctx: commands.Context, *args):
-    if ctx.channel.id != PLEX_CHANNEL_ID:
+    if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
@@ -222,7 +224,7 @@ async def _delmovie(ctx: commands.Context, *args):
 @commands.cooldown(1, 10)  # one time every 10 seconds
 @bot.command(name='downloads', help='see the status of movie downloads')
 async def _downloads(ctx: commands.Context, *args):
-    if ctx.channel.id != PLEX_CHANNEL_ID:
+    if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
     c = TransmissionClient(host='localhost', port=9091,
@@ -275,7 +277,7 @@ async def _downloads(ctx: commands.Context, *args):
 @commands.cooldown(1, 60)
 @bot.command(name='searchmissing', help='search for missing movies that have been added')
 async def _searchmissing(ctx: commands.Context, *args):
-    if ctx.channel.id != PLEX_CHANNEL_ID:
+    if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
