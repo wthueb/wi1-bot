@@ -229,7 +229,8 @@ async def downloads(ctx: commands.Context):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    c = TransmissionClient(host='localhost', port=9091, username='transmission', password='password')
+    c = TransmissionClient(host='localhost', port=9091,
+                           username='transmission', password='password')
 
     logger.debug('connected to transmission rpc')
 

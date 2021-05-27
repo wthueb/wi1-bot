@@ -28,7 +28,7 @@ class Radarr:
             self._logger.error('cannot find id of "good" profile, exiting')
 
             raise Exception('cannot find id of "good" profile, exiting')
-        
+
         self._logger.debug(f'"good" profile id: {self._good_profile_id}')
 
     def lookup_movie(self, query: str) -> list:
@@ -41,24 +41,7 @@ class Radarr:
 
         keywords = query.split()
 
-        #  matching = []
-
-        #  for m in movies:
-            #  movie = Movie(m)
-
-            #  good = True
-
-            #  for keyword in keywords:
-                #  if keyword.lower() not in movie.full_title.lower():
-                    #  good = False
-                    #  break
-
-            #  if good:
-                #  matching.append(movie)
-
-        matching = [Movie(m) for m in movies for k in keywords if k.lower() in m.full_title.lower()]
-
-        return matching
+        return [Movie(m) for m in movies for k in keywords if k.lower() in m.full_title.lower()]
 
     def add_movie(self, movie: Movie) -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
