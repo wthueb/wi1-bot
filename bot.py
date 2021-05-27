@@ -91,7 +91,7 @@ async def _addmovie(ctx, *args):
 
     movie_list = [f'{i+1}. {movie_text(movie)}' for i, movie in enumerate(possible)]
 
-    await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to add, or type c to cancel')
+    await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to add (or multiple separated by commas), or type c to cancel')
 
     def check(resp):
         if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
@@ -103,7 +103,6 @@ async def _addmovie(ctx, *args):
             return True
 
         return False
-
 
     resp = None
 
@@ -135,7 +134,8 @@ async def _addmovie(ctx, *args):
 
         logger.info(f'{ctx.message.author.name} has added the movie {movie_text(movie)} to the plex')
 
-        send_push(f'{ctx.message.author.name} has added the movie {movie["title"]} ({movie["year"]})')
+        send_push(
+            f'{ctx.message.author.name} has added the movie {movie["title"]} ({movie["year"]})')
 
         await reply(resp, f'added movie {movie_text(movie)} to the plex')
 
@@ -165,7 +165,7 @@ async def _delmovie(ctx, *args):
 
     movie_list = [f'{i+1}. {movie_text(movie)}' for i, movie in enumerate(possible)]
 
-    await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to delete, or type c to cancel')
+    await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to delete (or multiple separated by columns), or type c to cancel')
 
     def check(resp):
         if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
@@ -204,9 +204,11 @@ async def _delmovie(ctx, *args):
 
         # TODO: database
 
-        logger.info(f'{ctx.message.author.name} has deleted the movie {movie_text(movie)} from the plex')
+        logger.info(
+            f'{ctx.message.author.name} has deleted the movie {movie_text(movie)} from the plex')
 
-        send_push(f'{ctx.message.author.name} has deleted the movie {movie["title"]} ({movie["year"]})')
+        send_push(
+            f'{ctx.message.author.name} has deleted the movie {movie["title"]} ({movie["year"]})')
 
         await reply(resp, f'deleted movie {movie_text(movie)} from the plex')
 
