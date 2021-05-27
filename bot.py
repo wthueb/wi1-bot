@@ -94,8 +94,16 @@ async def _addmovie(ctx, *args):
     await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to add, or type c to cancel')
 
     def check(resp):
-        return (resp.author == ctx.message.author and resp.channel == ctx.message.channel and
-                (resp.content.strip().isdigit() or resp.content.strip().lower() == 'c'))
+        if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
+            return False
+
+        regex = re.compile(r'^c|\d+(,\d+)*$')
+
+        if re.match(regex, resp.content.strip()):
+            return True
+
+        return False
+
 
     resp = None
 
@@ -109,25 +117,27 @@ async def _addmovie(ctx, *args):
         await reply(resp, 'add movie cancelled')
         return
 
-    idx = int(resp.content.strip()) - 1
+    idxs = [int(i) - 1 for i in resp.content.strip().split(',')]
 
-    if idx < 0 or idx >= len(possible):
-        await reply(resp, f'invalid index ({idx + 1}), add movie cancelled', error=True)
-        return
+    for idx in idxs:
+        if idx < 0 or idx >= len(possible):
+            await reply(resp, f'invalid index ({idx + 1}), add movie cancelled', error=True)
+            return
 
-    movie = possible[idx]
+    for idx in idxs:
+        movie = possible[idx]
 
-    if not radarr.add_movie(movie["tmdbId"]):
-        await reply(resp, f'{movie_text(movie)} is already on the plex (idiot)')
-        return
+        if not radarr.add_movie(movie["tmdbId"]):
+            await reply(resp, f'{movie_text(movie)} is already on the plex (idiot)')
+            continue
 
-    # TODO: database
+        # TODO: database
 
-    logger.info(f'{ctx.message.author.name} has added the movie {movie_text(movie)} to the plex')
+        logger.info(f'{ctx.message.author.name} has added the movie {movie_text(movie)} to the plex')
 
-    send_push(f'{ctx.message.author.name} has added the movie {movie["title"]} ({movie["year"]})')
+        send_push(f'{ctx.message.author.name} has added the movie {movie["title"]} ({movie["year"]})')
 
-    await reply(resp, f'added movie {movie_text(movie)} to the plex')
+        await reply(resp, f'added movie {movie_text(movie)} to the plex')
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
@@ -158,8 +168,15 @@ async def _delmovie(ctx, *args):
     await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to delete, or type c to cancel')
 
     def check(resp):
-        return (resp.author == ctx.message.author and resp.channel == ctx.message.channel and
-                (resp.content.strip().isdigit() or resp.content.strip().lower() == 'c'))
+        if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
+            return False
+
+        regex = re.compile(r'^c|\d+(,\d+)*$')
+
+        if re.match(regex, resp.content.strip()):
+            return True
+
+        return False
 
     resp = None
 
@@ -173,23 +190,25 @@ async def _delmovie(ctx, *args):
         await reply(resp, 'del movie cancelled')
         return
 
-    idx = int(resp.content.strip()) - 1
+    idxs = [int(i) - 1 for i in resp.content.strip().split(',')]
 
-    if idx < 0 or idx >= len(possible):
-        await reply(resp, f'invalid index ({idx + 1}), del movie cancelled', error=True)
-        return
+    for idx in idxs:
+        if idx < 0 or idx >= len(possible):
+            await reply(resp, f'invalid index ({idx + 1}), del movie cancelled', error=True)
+            return
 
-    movie = possible[idx]
+    for idx in idxs:
+        movie = possible[idx]
 
-    radarr.del_movie(movie['tmdbId'])
+        radarr.del_movie(movie['tmdbId'])
 
-    # TODO: database
+        # TODO: database
 
-    logger.info(f'{ctx.message.author.name} has deleted the movie {movie_text(movie)} from the plex')
+        logger.info(f'{ctx.message.author.name} has deleted the movie {movie_text(movie)} from the plex')
 
-    send_push(f'{ctx.message.author.name} has deleted the movie {movie["title"]} ({movie["year"]})')
+        send_push(f'{ctx.message.author.name} has deleted the movie {movie["title"]} ({movie["year"]})')
 
-    await reply(resp, f'deleted movie {movie_text(movie)} from the plex')
+        await reply(resp, f'deleted movie {movie_text(movie)} from the plex')
 
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
