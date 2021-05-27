@@ -97,7 +97,7 @@ async def _addmovie(ctx, *args):
         if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
             return False
 
-        regex = re.compile(r'^c|\d+(,\d+)*$')
+        regex = re.compile(r'^(c|(\d+,?)+)$')
 
         if re.match(regex, resp.content.strip()):
             return True
@@ -116,7 +116,7 @@ async def _addmovie(ctx, *args):
         await reply(resp, 'add movie cancelled')
         return
 
-    idxs = [int(i) - 1 for i in resp.content.strip().split(',')]
+    idxs = [int(i) - 1 for i in resp.content.strip().split(',') if i.isdigit()]
 
     for idx in idxs:
         if idx < 0 or idx >= len(possible):
@@ -171,7 +171,7 @@ async def _delmovie(ctx, *args):
         if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
             return False
 
-        regex = re.compile(r'^c|\d+(,\d+)*$')
+        regex = re.compile(r'^(c|(\d+,?)+)$')
 
         if re.match(regex, resp.content.strip()):
             return True
@@ -190,7 +190,7 @@ async def _delmovie(ctx, *args):
         await reply(resp, 'del movie cancelled')
         return
 
-    idxs = [int(i) - 1 for i in resp.content.strip().split(',')]
+    idxs = [int(i) - 1 for i in resp.content.strip().split(',') if i.isdigit()]
 
     for idx in idxs:
         if idx < 0 or idx >= len(possible):
