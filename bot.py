@@ -1,5 +1,3 @@
-# TODO: add Movie class, maybe split into files somehow
-
 import logging
 from logging.handlers import RotatingFileHandler
 import re
@@ -24,12 +22,13 @@ root_logger.setLevel(logging.WARNING)
 formatter = logging.Formatter(
     '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
 
+# log to file, but everything to stdout
+
 file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024*1024*10, backupCount=10)
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
-# log everything to stdout
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 
@@ -90,7 +89,7 @@ async def addmovie(ctx: commands.Context, *args):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    if len(args) == 0:
+    if not args:
         await reply(ctx, 'usage: !addmovie KEYWORDS...')
         return
 
@@ -100,15 +99,15 @@ async def addmovie(ctx: commands.Context, *args):
 
     possible = radarr.lookup_movie(query)
 
-    if len(possible) == 0:
+    if not possible:
         await reply(ctx, f'could not find the movie with the query: {query}', error=True)
         return
 
-    movie_list = [f'{i+1}. {movie_text(movie)}' for i, movie in enumerate(possible)]
+    movie_list = [f'{i+1}. {movie}' for i, movie in enumerate(possible)]
 
     await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to add (or multiple separated by commas), or type c to cancel')
 
-    def check(resp):
+    def check(resp: discord.Message):
         if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
             return False
 
@@ -141,18 +140,18 @@ async def addmovie(ctx: commands.Context, *args):
     for idx in idxs:
         movie = possible[idx]
 
-        if not radarr.add_movie(movie["tmdbId"]):
-            await reply(resp, f'{movie_text(movie)} is already on the plex (idiot)')
+        if not radarr.add_movie(movie):
+            await reply(resp, f'{movie} is already on the plex (idiot)')
             continue
 
-        # TODO: database
+        # TODO: add radarr tag of user who added it?
 
-        logger.info(f'{ctx.message.author.name} has added the movie {movie_text(movie)} to the plex')
+        logger.info(f'{ctx.message.author.name} has added the movie {movie.full_title} to the plex')
 
         send_push(
-            f'{ctx.message.author.name} has added the movie {movie["title"]} ({movie["year"]})')
+            f'{ctx.message.author.name} has added the movie {movie.full_title}')
 
-        await reply(resp, f'added movie {movie_text(movie)} to the plex')
+        await reply(resp, f'added movie {movie} to the plex')
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
@@ -164,7 +163,7 @@ async def delmovie(ctx: commands.Context, *args):
         await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
         return
 
-    if len(args) == 0:
+    if not args:
         await reply(ctx, 'usage: !delmovie KEYWORDS...')
         return
 
@@ -174,15 +173,15 @@ async def delmovie(ctx: commands.Context, *args):
 
     possible = radarr.lookup_library(query)
 
-    if len(possible) == 0:
+    if not possible:
         await reply(ctx, f'could not find the movie with the query: {query}', error=True)
         return
 
-    movie_list = [f'{i+1}. {movie_text(movie)}' for i, movie in enumerate(possible)]
+    movie_list = [f'{i+1}. {movie}' for i, movie in enumerate(possible)]
 
-    await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to delete (or multiple separated by columns), or type c to cancel')
+    await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to delete (or multiple separated by commas), or type c to cancel')
 
-    def check(resp):
+    def check(resp: discord.Message):
         if resp.author != ctx.message.author or resp.channel != ctx.message.channel:
             return False
 
@@ -215,17 +214,13 @@ async def delmovie(ctx: commands.Context, *args):
     for idx in idxs:
         movie = possible[idx]
 
-        radarr.del_movie(movie['tmdbId'])
+        radarr.del_movie(movie)
 
-        # TODO: database
+        logger.info(f'{ctx.message.author.name} has deleted the movie {movie.full_title} from the plex')
 
-        logger.info(
-            f'{ctx.message.author.name} has deleted the movie {movie_text(movie)} from the plex')
+        send_push(f'{ctx.message.author.name} has deleted the movie {movie.full_title}')
 
-        send_push(
-            f'{ctx.message.author.name} has deleted the movie {movie["title"]} ({movie["year"]})')
-
-        await reply(resp, f'deleted movie {movie_text(movie)} from the plex')
+        await reply(resp, f'deleted movie {movie} from the plex')
 
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
@@ -234,8 +229,7 @@ async def downloads(ctx: commands.Context):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    c = TransmissionClient(host='localhost', port=9091,
-                           username='transmission', password='password')
+    c = TransmissionClient(host='localhost', port=9091, username='transmission', password='password')
 
     logger.debug('connected to transmission rpc')
 
@@ -249,13 +243,7 @@ async def downloads(ctx: commands.Context):
 
     msg = []
 
-    def get_progress(t):
-        if t.left_until_done == 0:
-            return 1e6
-
-        return (t.size_when_done - t.left_until_done) / t.size_when_done
-
-    for torrent in sorted(torrents, key=get_progress, reverse=True):
+    for torrent in sorted(torrents, key=lambda t: t.progress, reverse=True):
         if torrent.status == 'downloading':
             downloaded = torrent.size_when_done - torrent.left_until_done
 

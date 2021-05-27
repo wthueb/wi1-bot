@@ -1,13 +1,22 @@
+import logging
 from shutil import rmtree
 
 from pyarr import RadarrAPIv3
 
+from movie import Movie
+
 
 class Radarr:
     def __init__(self, url: str, api_key: str) -> None:
+        self._logger = logging.getLogger(__name__)
+
+        self._logger.debug('authenticating with radarr')
+
         self._radarr = RadarrAPIv3(url, api_key)
 
         quality_profiles = self._radarr.get_quality_profiles()
+
+        self._logger.debug(f'available quality profiles: {quality_profiles}')
 
         self._good_profile_id = None
 
@@ -16,47 +25,54 @@ class Radarr:
                 self._good_profile_id = prof['id']
 
         if not self._good_profile_id:
-            raise Exception('cannot find id of good profile, exiting')
+            self._logger.error('cannot find id of "good" profile, exiting')
+
+            raise Exception('cannot find id of "good" profile, exiting')
+        
+        self._logger.debug(f'"good" profile id: {self._good_profile_id}')
 
     def lookup_movie(self, query: str) -> list:
         possible_movies = self._radarr.lookup_movie(query)
 
-        return possible_movies
+        return [Movie(m) for m in possible_movies]
 
     def lookup_library(self, query: str) -> list:
         movies = self._radarr.get_movie()
 
         keywords = query.split()
 
-        matching = []
+        #  matching = []
 
-        for movie in movies:
-            good = True
+        #  for m in movies:
+            #  movie = Movie(m)
 
-            for keyword in keywords:
-                if (keyword.lower() not in movie['title'].lower()
-                        and keyword.lower() not in str(movie['year'])):
-                    good = False
-                    break
+            #  good = True
 
-            if good:
-                matching.append(movie)
+            #  for keyword in keywords:
+                #  if keyword.lower() not in movie.full_title.lower():
+                    #  good = False
+                    #  break
+
+            #  if good:
+                #  matching.append(movie)
+
+        matching = [Movie(m) for m in movies for k in keywords if k.lower() in m.full_title.lower()]
 
         return matching
 
-    def add_movie(self, tmdbId: int) -> bool:
-        if self._radarr.get_movie(tmdbId):
+    def add_movie(self, movie: Movie) -> bool:
+        if self._radarr.get_movie(movie.tmdb_id):
             return False
 
-        self._radarr.add_movie(dbId=tmdbId, qualityProfileId=self._good_profile_id)
+        self._radarr.add_movie(dbId=movie.tmdb_id, qualityProfileId=self._good_profile_id)
 
         return True
 
-    def del_movie(self, tmdbId: int) -> None:
-        movie = self._radarr.get_movie(tmdbId)[0]
+    def del_movie(self, movie: Movie) -> None:
+        movie_json = self._radarr.get_movie(movie.tmdb_id)[0]
 
-        radarrId = movie['id']
-        path = movie['folderName']
+        radarrId = movie_json['id']
+        path = movie_json['folderName']
 
         self._radarr.del_movie(radarrId, delFiles=True, addExclusion=False)
 
