@@ -64,10 +64,19 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    if member.id in [832837568730103839, 306987840238125056]:
+    if member.id in [USER_IDS['shep'], USER_IDS['ethan']]:
         role = get(member.guild.roles, name='5v5')
 
         await member.add_roles(role)
+
+
+@bot.event
+async def on_member_update(before, after):
+    if len(before.roles) < len(after.roles):
+        if before.id == USER_IDS['ben']:
+            for role in after.roles:
+                if role.name in ['plex', 'plex-admin']:
+                    await after.remove_roles(role)
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
