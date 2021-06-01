@@ -4,6 +4,8 @@ a discord bot to integrate radarr and transmission, allowing commands like !addm
 
 TODO:
 
+- put sabnzbd downloads in !downloads
+    - https://sabnzbd.org/wiki/advanced/api
 - !linktmdb
 - !rate / !ratings
     - store using tmdb api https://developers.themoviedb.org/3/movies/rate-movie
