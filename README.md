@@ -4,6 +4,9 @@ a discord bot to integrate radarr and transmission, allowing commands like !addm
 
 TODO:
 
+- support radarr webhook for grab/download/upgrade notifications
+    - tag who called !addmovie when movie downloaded
+        - need to keep database of !addmovie command calls...maybe radarr tag of discord client id?
 - put sabnzbd downloads in !downloads
     - https://sabnzbd.org/wiki/advanced/api
 - !linktmdb
