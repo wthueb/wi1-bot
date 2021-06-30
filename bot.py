@@ -299,7 +299,7 @@ async def quota(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    used = radarr.get_quota_amount(ctx.message.author._user.id)
+    used = radarr.get_quota_amount(ctx.message.author._user.id) / 1024**3
 
     maximum = 0
 
@@ -308,9 +308,9 @@ async def quota(ctx):
     except Exception:
         pass
 
-    pct = used / maximum * 100
+    pct = used / maximum * 100 if maximum != 0 else 100
 
-    msg = f'you have added {used/1024**3:.2f}/{maximum:.2f} GB ({pct:.1f}%) of useless crap to the plex'
+    msg = f'you have added {used:.2f}/{maximum:.2f} GB ({pct:.1f}%) of useless crap to the plex'
 
     await reply(ctx, msg)
 
@@ -324,12 +324,12 @@ async def quotas(ctx):
     msg = []
 
     for key, total in QUOTAS.items():
-        used = radarr.get_quota_amount(key)
+        used = radarr.get_quota_amount(key) / 1024**3
         total = QUOTAS[key]
 
-        pct = used / total * 100
+        pct = used / total * 100 if total != 0 else 100
 
-        msg.append(f'{USER_IDS[key]}: {used/1024**3:.2f}/{total:.2f} GB ({pct:.1f}%)')
+        msg.append(f'{USER_IDS[key]}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)')
 
     await reply(ctx, '\n'.join(sorted(msg)), title='quotas of users who have bought space')
 
