@@ -150,8 +150,6 @@ async def addmovie(ctx, *args):
             await reply(resp, f'{movie} is already on the plex (idiot)')
             continue
 
-        # TODO: add radarr tag of user who added it?
-
         logger.info(f'{ctx.message.author.name} has added the movie {movie.full_title} to the plex')
 
         send_push(
@@ -234,6 +232,8 @@ async def delmovie(ctx, *args):
 async def downloads(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
+
+    # TODO: add sabnzbd
 
     c = TransmissionClient(host='localhost', port=9091,
                            username='transmission', password='password')
