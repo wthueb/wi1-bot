@@ -24,7 +24,7 @@ formatter = logging.Formatter(
 
 # log to file, but everything to stdout
 
-file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024*1024*10, backupCount=10)
+file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024**2 * 10, backupCount=10)
 file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
@@ -50,7 +50,7 @@ def movie_text(movie: dict):
     return f'[{movie["title"]} ({movie["year"]})](https://www.themoviedb.org/movie/{movie["tmdbId"]})'
 
 
-async def reply(replyto: commands.Context, msg: str, title: str = None, error: bool = False):
+async def reply(replyto, msg: str, title: str = None, error: bool = False):
     if title is None:
         title = ''
 
@@ -69,23 +69,29 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member: discord.Member):
-    if member._user.id in [USER_IDS['shep'], USER_IDS['ethan']]:
-        role = get(member.guild.roles, name='5v5')
+    try:
+        if USER_IDS[member._user.id] in ['shep', 'ethan']:
+            role = get(member.guild.roles, name='5v5')
 
-        await member.add_roles(role)
+            await member.add_roles(role)
+    except Exception:
+        pass
 
 
 @bot.event
-async def on_member_update(before: discord.Member, after: discord.Member):
-    if len(before.roles) < len(after.roles):
-        if before._user.id == USER_IDS['ben']:
-            for role in after.roles:
-                if role.name in ['plex', 'plex-admin']:
-                    await after.remove_roles(role)
+async def on_message(msg):
+    try:
+        if USER_IDS[msg.author._user.id] == 'ben':
+            await msg.reply('suck a dick')
+            return
+    except Exception:
+        pass
+
+    await bot.process_commands(msg)
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
-async def addmovie(ctx: commands.Context, *args):
+async def addmovie(ctx, *args):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -140,7 +146,7 @@ async def addmovie(ctx: commands.Context, *args):
     for idx in idxs:
         movie = possible[idx]
 
-        if not radarr.add_movie(movie):
+        if not radarr.add_movie(movie, ctx.message.author._user.id):
             await reply(resp, f'{movie} is already on the plex (idiot)')
             continue
 
@@ -155,7 +161,7 @@ async def addmovie(ctx: commands.Context, *args):
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
-async def delmovie(ctx: commands.Context, *args):
+async def delmovie(ctx, *args):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -225,7 +231,7 @@ async def delmovie(ctx: commands.Context, *args):
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
 @bot.command(name='downloads', help='see the status of movie downloads')
-async def downloads(ctx: commands.Context):
+async def downloads(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -261,7 +267,7 @@ async def downloads(ctx: commands.Context):
 
             movie_msg = (
                 f'{name}: {torrent.progress:.1f}% done '
-                f'({downloaded/1024/1024/1024:.2f}/{torrent.size_when_done/1024/1024/1024:.2f} GB)\n'
+                f'({downloaded / 1024**3:.2f}/{torrent.size_when_done / 1024**3:.2f} GB)\n'
                 f'remaining availability: {torrent.desired_available/torrent.left_until_done*100:.1f}%, '
                 f'eta: {torrent.format_eta()}\n')
 
@@ -272,7 +278,7 @@ async def downloads(ctx: commands.Context):
 
 @commands.cooldown(1, 60)
 @bot.command(name='searchmissing', help='search for missing movies that have been added')
-async def searchmissing(ctx: commands.Context):
+async def searchmissing(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
@@ -285,6 +291,43 @@ async def searchmissing(ctx: commands.Context):
     radarr.search_missing()
 
     await reply(ctx, 'searching for missing movies...')
+
+
+@commands.cooldown(1, 60, commands.BucketType.user)
+@bot.command(name='quota', help='see your used space on the plex')
+async def quota(ctx):
+    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+        return
+
+    total = radarr.get_quota_amount(ctx.message.author._user.id)
+
+    maximum = 0
+
+    try:
+        maximum = QUOTAS[ctx.message.author._user.id]
+    except Exception:
+        pass
+
+    msg = f'you have added {total/1024**3:.2f} GB of useless crap to the plex (maximum allowed: {maximum:.2f} GB)'
+
+    await reply(ctx, msg)
+
+
+@commands.cooldown(1, 60)
+@bot.command(name='quotas', help="see everyone's used space on the plex")
+async def quotas(ctx):
+    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+        return
+
+    msg = []
+
+    for key, total in QUOTAS.items():
+        used = radarr.get_quota_amount(key)
+        total = QUOTAS[key]
+
+        msg.append(f'{USER_IDS[key]}: {used/1024**3:.2f}/{total:.2f} GB')
+
+    await reply(ctx, '\n'.join(sorted(msg)), title='quotas of users who have bought space')
 
 
 if __name__ == '__main__':
