@@ -1,6 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import re
+from time import sleep
 
 import discord
 from discord.ext import commands
@@ -146,7 +147,7 @@ async def addmovie(ctx, *args):
     for idx in idxs:
         movie = possible[idx]
 
-        if not radarr.add_movie(movie, ctx.message.author._user.id):
+        if not radarr.add_movie(movie):
             await reply(resp, f'{movie} is already on the plex (idiot)')
             continue
 
@@ -156,6 +157,10 @@ async def addmovie(ctx, *args):
             f'{ctx.message.author.name} has added the movie {movie.full_title}')
 
         await reply(resp, f'added movie {movie} to the plex')
+
+        sleep(5)
+
+        radarr.add_tag(movie, ctx.message.author._user.id)
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')

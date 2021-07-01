@@ -1,6 +1,5 @@
 import logging
 from shutil import rmtree
-from time import sleep
 
 from pyarr import RadarrAPIv3
 
@@ -83,7 +82,7 @@ class Radarr:
 
         return matching
 
-    def add_movie(self, movie: Movie, user_id: int, profile: str = 'good') -> bool:
+    def add_movie(self, movie: Movie, profile: str = 'good') -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
             return False
 
@@ -94,8 +93,9 @@ class Radarr:
 
         self._radarr.add_movie(dbId=movie.tmdb_id, qualityProfileId=quality_profile_id)
 
-        sleep(.5)
+        return True
 
+    def add_tag(self, movie: Movie, user_id: int) -> bool:
         movie_json = self._radarr.get_movie(movie.tmdb_id)[0]
 
         tag_id = self._get_tag_for_user(user_id)
@@ -105,7 +105,7 @@ class Radarr:
 
             self._logger.warning('user does not have a tag')
 
-            return True
+            return False
 
         self._radarr.add_tag(movie_json['id'], tag_id)
 
