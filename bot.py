@@ -335,7 +335,9 @@ async def quotas(ctx):
 
         pct = used / total * 100 if total != 0 else 100
 
-        msg.append(f'{USER_IDS[key]}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)')
+        user = await bot.fetch_user(key)
+
+        msg.append(f'{user.display_name}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)')
 
     await reply(ctx, '\n'.join(sorted(msg)), title='quotas of users who have bought space')
 
