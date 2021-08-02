@@ -349,7 +349,3 @@ if __name__ == '__main__':
     wh.start()
 
     bot.run(DISCORD_TOKEN)
-
-    wh.terminate()
-
-    wh.join()
