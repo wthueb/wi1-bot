@@ -1,5 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
+from multiprocessing import Process
 import re
 from time import sleep
 
@@ -9,6 +10,7 @@ from discord.utils import get
 from transmission_rpc import Client as TransmissionClient
 from pushover import Client as PushoverClient
 
+import arr_webhook
 from radarr import Radarr
 
 from config import *
@@ -340,4 +342,14 @@ async def quotas(ctx):
 
 
 if __name__ == '__main__':
+    wh = Process(target=arr_webhook.run)
+
+    wh.daemon = True
+
+    wh.start()
+
     bot.run(DISCORD_TOKEN)
+
+    wh.terminate()
+
+    wh.join()
