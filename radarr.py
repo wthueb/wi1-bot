@@ -1,13 +1,13 @@
 import logging
 from shutil import rmtree
 
-from pyarr import RadarrAPIv3
+from pyarr import RadarrAPI
 
 from config import RADARR_URL, RADARR_API_KEY
 from movie import Movie
 
 
-class RadarrAPI(RadarrAPIv3):
+class RadarrAPI(RadarrAPI):
     def get_tag(self, id: int = None):
         if id is None:
             path = '/api/v3/tag'

@@ -35,7 +35,6 @@ logger.addHandler(file_handler)
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 
-logger.addHandler(stream_handler)
 root_logger.addHandler(stream_handler)
 
 radarr = Radarr(RADARR_URL, RADARR_API_KEY)
