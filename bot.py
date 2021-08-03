@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Process
 import re
-from time import sleep
+from asyncio import sleep
 
 import discord
 from discord.ext import commands
@@ -131,7 +131,7 @@ async def addmovie(ctx, *args):
 
         await reply(resp, f'added movie {movie} to the plex')
 
-        sleep(5)
+        await sleep(5)
 
         if not radarr.add_tag(movie, ctx.message.author._user.id):
             await ctx.send(f'hey <@!{ADMIN_ID}> get this guy a tag')
