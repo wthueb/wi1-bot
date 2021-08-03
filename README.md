@@ -2,12 +2,11 @@
 
 A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing commands like !addmovie and !downloads.
 
-Supports per-Discord user download quotas.
-
 TODO:
 
 - Automatically transcode movie downloads to user-defined quality
 - Allow user to delete movies that they have added
+- Actually enforce download quotas
 - Add Sonarr support — !addshow
 - !linktmdb
     - !rate / !ratings (https://developers.themoviedb.org/3/movies/rate-movie)
