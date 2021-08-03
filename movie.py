@@ -7,8 +7,8 @@ class Movie:
         self.full_title = f'{self.title} ({self.year})'
         self.url = f'https://themoviedb.org/movie/{self.tmdb_id}'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'[{self.full_title}]({self.url})'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.__dict__)

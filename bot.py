@@ -6,8 +6,6 @@ from time import sleep
 
 import discord
 from discord.ext import commands
-from discord.utils import get
-from transmission_rpc import Client as TransmissionClient
 from pushover import Client as PushoverClient
 
 import arr_webhook
@@ -44,15 +42,11 @@ pushover = PushoverClient(PUSHOVER_USER_KEY, api_token=PUSHOVER_API_KEY)
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=['!', '.'])
 
 
-def send_push(msg: str, priority=0):
+def send_push(msg: str, priority: int = 0) -> None:
     pushover.send_message(msg, priority=priority, device=PUSHOVER_DEVICES)
 
 
-def movie_text(movie: dict):
-    return f'[{movie["title"]} ({movie["year"]})](https://www.themoviedb.org/movie/{movie["tmdbId"]})'
-
-
-async def reply(replyto, msg: str, title: str = None, error: bool = False):
+async def reply(replyto, msg: str, title: str = None, error: bool = False) -> None:
     if title is None:
         title = ''
 
@@ -67,29 +61,6 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching,
         name="david cronenberg's 1996 pièce de résistance, crash"))
-
-
-@bot.event
-async def on_member_join(member: discord.Member):
-    try:
-        if USER_IDS[member._user.id] in ['shep', 'ethan']:
-            role = get(member.guild.roles, name='5v5')
-
-            await member.add_roles(role)
-    except Exception:
-        pass
-
-
-@bot.event
-async def on_message(msg):
-    try:
-        if USER_IDS[msg.author._user.id] == 'ben':
-            await msg.reply('suck a dick')
-            return
-    except Exception:
-        pass
-
-    await bot.process_commands(msg)
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
@@ -161,7 +132,8 @@ async def addmovie(ctx, *args):
 
         sleep(5)
 
-        radarr.add_tag(movie, ctx.message.author._user.id)
+        if not radarr.add_tag(movie, ctx.message.author._user.id):
+            await ctx.send(f'hey <@!{ADMIN_ID}> get this guy a tag')
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
@@ -239,47 +211,12 @@ async def downloads(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    # TODO: add sabnzbd
+    queue = radarr.get_downloads()
 
-    c = TransmissionClient(host='localhost', port=9091,
-                           username='transmission', password='password')
-
-    logger.debug('connected to transmission rpc')
-
-    torrents = c.get_torrents()
-
-    if not torrents:
+    if not queue:
         await reply(ctx, 'there are no pending downloads')
-        return
 
-    name_pattern = re.compile(r'(?P<title>(?:\w+\.)+)(?P<year>[12]\d\d\d)[^p]')
-
-    msg = []
-
-    for torrent in sorted(torrents, key=lambda t: t.progress, reverse=True):
-        if torrent.status == 'downloading':
-            downloaded = torrent.size_when_done - torrent.left_until_done
-
-            if torrent.left_until_done == 0:
-                continue
-
-            name = torrent.name
-
-            match = name_pattern.search(name)
-
-            if match:
-                name = ' '.join(match.group('title').split('.')).strip()
-                name += f' ({match.group("year")})'
-
-            movie_msg = (
-                f'{name}: {torrent.progress:.1f}% done '
-                f'({downloaded / 1024**3:.2f}/{torrent.size_when_done / 1024**3:.2f} GB)\n'
-                f'remaining availability: {torrent.desired_available/torrent.left_until_done*100:.1f}%, '
-                f'eta: {torrent.format_eta()}\n')
-
-            msg.append(movie_msg)
-
-    await reply(ctx, '\n'.join(msg), title='download progress')
+    await reply(ctx, '\n\n'.join(map(str, queue)), title='download progress')
 
 
 @commands.cooldown(1, 60)
@@ -291,8 +228,6 @@ async def searchmissing(ctx):
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
         await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
         return
-
-    # TODO: get status? maybe progress bar?
 
     radarr.search_missing()
 

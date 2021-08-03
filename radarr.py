@@ -7,37 +7,28 @@ from config import RADARR_URL, RADARR_API_KEY
 from movie import Movie
 
 
-class RadarrAPI(RadarrAPI):
-    def get_tag(self, id: int = None):
-        if id is None:
-            path = '/api/v3/tag'
-        else:
-            path = f'/api/v3/tag/{id}'
+class Download:
+    def __init__(self, data: dict) -> None:
+        self.movie = Movie(data['movie'])
+        self.sizeleft = data['sizeleft']
+        self.size = data['size']
+        self.timeleft = data['timeleft']
+        self.status = data['status']
 
-        res = self.request_get(path)
+        self.pct_done = (self.size-self.sizeleft) / self.size * 100
 
-        return res
+    def __str__(self) -> str:
+        return (
+            f'{self.movie}: {self.pct_done:.1f}% done '
+            f'({(self.size-self.sizeleft) / 1024**3:.2f}/{self.size / 1024**3:.2f} GB)\n'
+            f'eta: {self.timeleft}')
 
-    def get_tag_detail(self, id: int = None):
-        if id is None:
-            path = '/api/v3/tag/detail'
-        else:
-            path = f'/api/v3/tag/detail/{id}'
+    def __repr__(self) -> str:
+        return str(self.__dict__)
 
-        res = self.request_get(path)
 
-        return res
-
-    def create_tag(self, label: str):
-        path = '/api/v3/tag'
-
-        tag_json = {'id': 0, 'label': label}
-
-        res = self.request_post(path, data=tag_json)
-
-        return res
-
-    def add_tag(self, movie_id: int, tag_id: int):
+class _RadarrAPI(RadarrAPI):
+    def add_tag(self, movie_id: int, tag_id: int) -> dict:
         path = '/api/v3/movie/editor'
 
         edit_json = {'movieIds': [movie_id], 'tags': [tag_id], 'applyTags': 'add'}
@@ -53,14 +44,14 @@ class Radarr:
 
         self._logger.debug('authenticating with radarr')
 
-        self._radarr = RadarrAPI(url, api_key)
+        self._radarr = _RadarrAPI(url, api_key)
 
-    def lookup_movie(self, query: str) -> list:
+    def lookup_movie(self, query: str) -> list[Movie]:
         possible_movies = self._radarr.lookup_movie(query)
 
         return [Movie(m) for m in possible_movies]
 
-    def lookup_library(self, query: str) -> list:
+    def lookup_library(self, query: str) -> list[Movie]:
         movies = self._radarr.get_movie()
 
         keywords = query.split()
@@ -101,12 +92,12 @@ class Radarr:
     def add_tag(self, movie: Movie, user_id: int) -> bool:
         movie_json = self._radarr.get_movie(movie.tmdb_id)[0]
 
-        tag_id = self._get_tag_for_user(user_id)
-
-        if tag_id is None:
+        try:
+            tag_id = self._get_tag_for_user(user_id)
+        except ValueError:
             # tag_id = self._radarr.create_tag(str(user_id))['id']
 
-            self._logger.warning('user does not have a tag')
+            self._logger.warning(f'{user_id} does not have a tag')
 
             return False
 
@@ -115,7 +106,12 @@ class Radarr:
         return True
 
     def del_movie(self, movie: Movie) -> None:
-        movie_json = self._radarr.get_movie(movie.tmdb_id)[0]
+        potential = self._radarr.get_movie(movie.tmdb_id)
+
+        if not potential:
+            raise ValueError(f'{movie} is not in the library')
+
+        movie_json = potential[0]
 
         db_id = movie_json['id']
         path = movie_json['folderName']
@@ -128,15 +124,15 @@ class Radarr:
             pass
 
     def search_missing(self) -> None:
-        return self._radarr.post_command(name='MissingMoviesSearch')
+        self._radarr.post_command(name='MissingMoviesSearch')
 
     def get_quota_amount(self, user_id: int) -> int:
-        tag_id = self._get_tag_for_user(user_id)
-
-        if tag_id is None:
+        try:
+            tag_id = self._get_tag_for_user(user_id)
+        except ValueError:
             return 0
 
-        tag_details = self._radarr.get_tag_detail(tag_id)
+        tag_details = self._radarr.get_tag_details(tag_id)
 
         tagged_movies = tag_details['movieIds']
 
@@ -148,25 +144,30 @@ class Radarr:
 
         return total
 
-    def _get_quality_profile(self, label: str):
+    def get_downloads(self) -> list[Download]:
+        queue = self._radarr.get_queue_details()
+
+        return [Download(d) for d in queue]
+
+    def _get_quality_profile(self, label: str) -> int:
         profiles = self._radarr.get_quality_profiles()
 
         for profile in profiles:
             if profile['name'].lower() == label.lower():
                 return profile['id']
 
-        return None
+        raise ValueError(f'no quality profile with the name {label}')
 
-    def _get_tag_for_user(self, user_id: int):
+    def _get_tag_for_user(self, user_id: int) -> int:
         tags = self._radarr.get_tag()
 
         for tag in tags:
             if str(user_id) in tag['label']:
                 return tag['id']
 
-        return None
+        raise ValueError(f'no tag with the user id {user_id}')
 
 
 if __name__ == '__main__':
-    radarr_api = RadarrAPI(RADARR_URL, RADARR_API_KEY)
+    radarr_api = _RadarrAPI(RADARR_URL, RADARR_API_KEY)
     radarr = Radarr(RADARR_URL, RADARR_API_KEY)
