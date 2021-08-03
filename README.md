@@ -4,6 +4,7 @@ A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing comm
 
 TODO:
 
+- Proper configuration file (PyYAML?)
 - Automatically transcode movie downloads to user-defined quality
 - Allow user to delete movies that they have added
 - Actually enforce download quotas
