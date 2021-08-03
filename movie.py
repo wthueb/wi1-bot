@@ -9,3 +9,6 @@ class Movie:
 
     def __str__(self):
         return f'[{self.full_title}]({self.url})'
+
+    def __repr__(self):
+        return str(self.__dict__)

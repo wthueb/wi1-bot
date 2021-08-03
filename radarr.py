@@ -91,7 +91,10 @@ class Radarr:
         if quality_profile_id is None:
             raise ValueError(f'{profile} is not a valid quality profile name')
 
-        self._radarr.add_movie(dbId=movie.tmdb_id, qualityProfileId=quality_profile_id)
+        root_folder = self._radarr.get_root_folder()[0]['path']
+
+        self._radarr.add_movie(db_id=movie.tmdb_id,
+                               quality_profile_id=quality_profile_id, root_dir=root_folder)
 
         return True
 
@@ -114,10 +117,10 @@ class Radarr:
     def del_movie(self, movie: Movie) -> None:
         movie_json = self._radarr.get_movie(movie.tmdb_id)[0]
 
-        radarrId = movie_json['id']
+        db_id = movie_json['id']
         path = movie_json['folderName']
 
-        self._radarr.del_movie(radarrId, delFiles=True, addExclusion=False)
+        self._radarr.del_movie(db_id, del_files=True, add_exclusion=False)
 
         try:
             rmtree(path)
