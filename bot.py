@@ -74,15 +74,16 @@ async def addmovie(ctx, *args):
 
     logger.info(f'got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}')
 
-    query = ' '.join(args)
+    async with ctx.typing():
+        query = ' '.join(args)
 
-    possible = radarr.lookup_movie(query)
+        possible = radarr.lookup_movie(query)
 
-    if not possible:
-        await reply(ctx, f'could not find the movie with the query: {query}', error=True)
-        return
+        if not possible:
+            await reply(ctx, f'could not find the movie with the query: {query}', error=True)
+            return
 
-    movie_list = [f'{i+1}. {movie}' for i, movie in enumerate(possible)]
+        movie_list = [f'{i+1}. {movie}' for i, movie in enumerate(possible)]
 
     await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to add (or multiple separated by commas), or type c to cancel')
 
@@ -211,7 +212,8 @@ async def downloads(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    queue = radarr.get_downloads()
+    async with ctx.typing():
+        queue = radarr.get_downloads()
 
     if not queue:
         await reply(ctx, 'there are no pending downloads')
@@ -240,18 +242,19 @@ async def quota(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    used = radarr.get_quota_amount(ctx.message.author._user.id) / 1024**3
+    async with ctx.typing():
+        used = radarr.get_quota_amount(ctx.message.author._user.id) / 1024**3
 
-    maximum = 0
+        maximum = 0
 
-    try:
-        maximum = QUOTAS[ctx.message.author._user.id]
-    except Exception:
-        pass
+        try:
+            maximum = QUOTAS[ctx.message.author._user.id]
+        except Exception:
+            pass
 
-    pct = used / maximum * 100 if maximum != 0 else 100
+        pct = used / maximum * 100 if maximum != 0 else 100
 
-    msg = f'you have added {used:.2f}/{maximum:.2f} GB ({pct:.1f}%) of useless crap to the plex'
+        msg = f'you have added {used:.2f}/{maximum:.2f} GB ({pct:.1f}%) of useless crap to the plex'
 
     await reply(ctx, msg)
 
@@ -262,17 +265,18 @@ async def quotas(ctx):
     if ctx.message.channel.id != PLEX_CHANNEL_ID:
         return
 
-    msg = []
+    async with ctx.typing():
+        msg = []
 
-    for key, total in QUOTAS.items():
-        used = radarr.get_quota_amount(key) / 1024**3
-        total = QUOTAS[key]
+        for user_id, total in QUOTAS.items():
+            used = radarr.get_quota_amount(user_id) / 1024**3
+            total = QUOTAS[user_id]
 
-        pct = used / total * 100 if total != 0 else 100
+            pct = used / total * 100 if total != 0 else 100
 
-        user = await bot.fetch_user(key)
+            user = await bot.fetch_user(user_id)
 
-        msg.append(f'{user.display_name}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)')
+            msg.append(f'{user.display_name}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)')
 
     await reply(ctx, '\n'.join(sorted(msg)), title='quotas of users who have bought space')
 
