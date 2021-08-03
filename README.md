@@ -1,23 +1,21 @@
 # wi1-bot
 
-a discord bot to integrate radarr and transmission, allowing commands like !addmovie and !downloads
+A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing commands like !addmovie and !downloads.
+
+Supports per-Discord user download quotas.
 
 TODO:
 
-- support radarr webhook for grab/download/upgrade notifications
-    - tag who called !addmovie when movie downloaded
-        - need to keep database of !addmovie command calls...maybe radarr tag of discord client id?
-- put sabnzbd downloads in !downloads
-    - https://sabnzbd.org/wiki/advanced/api
+- Automatically transcode movie downloads to user-defined quality
+- Allow user to delete movies that they have added
+- Add Sonarr support — !addshow
 - !linktmdb
-- !rate / !ratings
-    - store using tmdb api https://developers.themoviedb.org/3/movies/rate-movie
+    - !rate / !ratings (https://developers.themoviedb.org/3/movies/rate-movie)
     - !movierec based off of ratings and similar-to-user ratings?
         - https://towardsdatascience.com/the-4-recommendation-engines-that-can-predict-your-movie-tastes-109dc4e10c52
-        - or just use tmdb's api to get recommendations
+        - or just use TMDB's API to get recommendations (if that's possible?)
 - !movieinfo showing user/public ratings and other general info (runtime, cast, director)
-    - use tmdb api
-    - support not having movie on radarr and adding it
-    - tautulli get_history api to show who has already seen the movie
-- movie leaderboard
-    - tautulli get_history api
+    - Use TMDB API to get movie metadata
+    - If movie isn't on Radarr, react to message to add it?
+    - Tautulli API (get_history) to show who has already seen the movie
+- User leaderboard
