@@ -5,10 +5,14 @@ import yaml
 with open('config.yaml', 'rb') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
+
 _client = None
 
-if config['pushover']['user_key'] and config['pushover']['api_key']:
-    _client = Client(config['pushover']['user_key'], api_token=config['pushover']['api_key'])
+try:
+    if config['pushover']['user_key'] and config['pushover']['api_key']:
+        _client = Client(config['pushover']['user_key'], api_token=config['pushover']['api_key'])
+except:
+    pass
 
 
 def send(msg: str, title: str = None, priority: int = 0) -> None:
