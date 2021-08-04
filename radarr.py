@@ -3,8 +3,6 @@ from shutil import rmtree
 
 from pyarr import RadarrAPI
 
-from config import RADARR_URL, RADARR_API_KEY
-
 
 class Movie:
     def __init__(self, movie_json: dict) -> None:
@@ -184,5 +182,10 @@ class Radarr:
 
 
 if __name__ == '__main__':
-    radarr_api = _RadarrAPI(RADARR_URL, RADARR_API_KEY)
-    radarr = Radarr(RADARR_URL, RADARR_API_KEY)
+    import yaml
+
+    with open('config.yaml', 'rb') as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
+
+    radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
+    pyarr = radarr._radarr

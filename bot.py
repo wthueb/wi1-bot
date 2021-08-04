@@ -6,13 +6,15 @@ from asyncio import sleep
 
 import discord
 from discord.ext import commands
-from pushover import Client as PushoverClient
+import yaml
 
 import arr_webhook
 from radarr import Radarr
+import push
 
-from config import *
 
+with open('config.yaml', 'rb') as f:
+    config = yaml.load(f, Loader=yaml.SafeLoader)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,15 +37,9 @@ stream_handler.setFormatter(formatter)
 
 root_logger.addHandler(stream_handler)
 
-radarr = Radarr(RADARR_URL, RADARR_API_KEY)
-
-pushover = PushoverClient(PUSHOVER_USER_KEY, api_token=PUSHOVER_API_KEY)
+radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=['!', '.'])
-
-
-def send_push(msg: str, priority: int = 0) -> None:
-    pushover.send_message(msg, priority=priority, device=PUSHOVER_DEVICES)
 
 
 async def reply(replyto, msg: str, title: str = None, error: bool = False) -> None:
@@ -64,8 +60,8 @@ async def on_ready():
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
-async def addmovie(ctx, *args):
-    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+async def addmovie_cmd(ctx, *args):
+    if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
     if not args:
@@ -126,7 +122,7 @@ async def addmovie(ctx, *args):
 
         logger.info(f'{ctx.message.author.name} has added the movie {movie.full_title} to the plex')
 
-        send_push(
+        push.send(
             f'{ctx.message.author.name} has added the movie {movie.full_title}')
 
         await reply(resp, f'added movie {movie} to the plex')
@@ -134,12 +130,12 @@ async def addmovie(ctx, *args):
         await sleep(5)
 
         if not radarr.add_tag(movie, ctx.message.author._user.id):
-            await ctx.send(f'hey <@!{ADMIN_ID}> get this guy a tag')
+            await ctx.send(f'hey <@!{config["discord"]["admin_id"]}> get this guy a tag')
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
-async def delmovie(ctx, *args):
-    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+async def delmovie_cmd(ctx, *args):
+    if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
@@ -201,15 +197,15 @@ async def delmovie(ctx, *args):
 
         logger.info(f'{ctx.message.author.name} has deleted the movie {movie.full_title} from the plex')
 
-        send_push(f'{ctx.message.author.name} has deleted the movie {movie.full_title}')
+        push.send(f'{ctx.message.author.name} has deleted the movie {movie.full_title}')
 
         await reply(resp, f'deleted movie {movie} from the plex')
 
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
 @bot.command(name='downloads', help='see the status of movie downloads')
-async def downloads(ctx):
-    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+async def downloads_cmd(ctx):
+    if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
     async with ctx.typing():
@@ -223,8 +219,8 @@ async def downloads(ctx):
 
 @commands.cooldown(1, 60)
 @bot.command(name='searchmissing', help='search for missing movies that have been added')
-async def searchmissing(ctx):
-    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+async def searchmissing_cmd(ctx):
+    if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
     if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
@@ -238,8 +234,8 @@ async def searchmissing(ctx):
 
 @commands.cooldown(1, 60, commands.BucketType.user)
 @bot.command(name='quota', help='see your used space on the plex')
-async def quota(ctx):
-    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+async def quota_cmd(ctx):
+    if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
     async with ctx.typing():
@@ -248,7 +244,7 @@ async def quota(ctx):
         maximum = 0
 
         try:
-            maximum = QUOTAS[ctx.message.author._user.id]
+            maximum = config['discord']['quotas'][ctx.message.author._user.id]
         except Exception:
             pass
 
@@ -261,16 +257,20 @@ async def quota(ctx):
 
 @commands.cooldown(1, 60)
 @bot.command(name='quotas', help="see everyone's used space on the plex")
-async def quotas(ctx):
-    if ctx.message.channel.id != PLEX_CHANNEL_ID:
+async def quotas_cmd(ctx):
+    if ctx.message.channel.id != config['discord']['channel_id']:
         return
+
+    quotas = config['discord']['quotas']
+
+    if not quotas:
+        await reply(ctx, 'quotas are not implemented here')
 
     async with ctx.typing():
         msg = []
 
-        for user_id, total in QUOTAS.items():
+        for user_id, total in quotas.items():
             used = radarr.get_quota_amount(user_id) / 1024**3
-            total = QUOTAS[user_id]
 
             pct = used / total * 100 if total != 0 else 100
 
@@ -288,4 +288,4 @@ if __name__ == '__main__':
 
     wh.start()
 
-    bot.run(DISCORD_TOKEN)
+    bot.run(config['discord']['bot_token'])

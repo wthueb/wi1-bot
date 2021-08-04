@@ -1,24 +1,21 @@
 import os
 
 from flask import Flask, request
-from pushover import Client as PushoverClient
 
-from config import PUSHOVER_USER_KEY, PUSHOVER_API_KEY
+import push
 
 
 app = Flask(__name__)
 
-pushover = PushoverClient(PUSHOVER_USER_KEY, api_token=PUSHOVER_API_KEY)
-
 
 def on_grab(req: dict) -> None:
-    pushover.send_message(
+    push.send(
         req['release']['releaseTitle'],
         title=f'file grabbed ({req["downloadClient"]})')
 
 
 def on_download(req: dict) -> None:
-    pushover.send_message(req['movieFile']['sceneName'], title='file downloaded')
+    push.send(req['movieFile']['sceneName'], title='file downloaded')
 
     movie_folder = req['movie']['folderPath']
 
