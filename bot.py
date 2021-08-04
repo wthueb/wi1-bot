@@ -54,9 +54,12 @@ async def reply(replyto, msg: str, title: str = None, error: bool = False) -> No
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Activity(
-        type=discord.ActivityType.watching,
-        name="david cronenberg's 1996 pièce de résistance, crash"))
+    try:
+        await bot.change_presence(activity=discord.Activity(
+            type=discord.ActivityType.watching,
+            name=config['discord']['bot_presence']))
+    except:
+        pass
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
