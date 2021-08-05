@@ -1,8 +1,8 @@
+from asyncio import sleep
 import logging
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Process
 import re
-from asyncio import sleep
 
 import discord
 from discord.ext import commands

@@ -18,7 +18,7 @@ except:
 def send(msg: str, title: str = None, priority: int = 0) -> None:
     if _client:
         if title:
-            _client.send_message(msg, priority=priority, device=config['pushover']['devices'])
-        else:
             _client.send_message(msg, title=title, priority=priority,
                                  device=config['pushover']['devices'])
+        else:
+            _client.send_message(msg, priority=priority, device=config['pushover']['devices'])
