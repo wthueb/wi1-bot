@@ -16,26 +16,22 @@ import push
 with open('config.yaml', 'rb') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-
 formatter = logging.Formatter(
     '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
 
-# log to file, but everything to stdout
-
+stream_handler = logging.StreamHandler()
 file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024**2 * 10, backupCount=10)
+
+stream_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
-logger.addHandler(file_handler)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
 root_logger.addHandler(stream_handler)
+
+logger = logging.getLogger('wi1-bot')
+logger.setLevel(logging.INFO)
+logger.addHandler(file_handler)
 
 radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 
@@ -285,10 +281,12 @@ async def quotas_cmd(ctx):
 
 
 if __name__ == '__main__':
+    logger.info('starting webhook listener')
+
     wh = Process(target=arr_webhook.run)
-
     wh.daemon = True
-
     wh.start()
+
+    logger.info('started webhook listener, starting bot')
 
     bot.run(config['discord']['bot_token'])

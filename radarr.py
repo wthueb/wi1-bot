@@ -59,6 +59,8 @@ class Radarr:
 
         self._radarr = _RadarrAPI(url, api_key)
 
+        self._logger.debug('successfully authenticated with radarr')
+
     def lookup_movie(self, query: str) -> list[Movie]:
         possible_movies = self._radarr.lookup_movie(query)
 
