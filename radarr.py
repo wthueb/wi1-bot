@@ -162,7 +162,7 @@ class Radarr:
     def get_downloads(self) -> list[Download]:
         queue = self._radarr.get_queue_details()
 
-        return [Download(d) for d in queue]
+        return sorted((Download(d) for d in queue), key=lambda d: (d.timeleft, -d.pct_done))
 
     def _get_quality_profile(self, label: str) -> int:
         profiles = self._radarr.get_quality_profiles()
