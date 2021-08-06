@@ -25,7 +25,7 @@ class Download:
         self.movie = Movie(data['movie'])
         self.sizeleft = data['sizeleft']
         self.size = data['size']
-        self.timeleft = data['timeleft']
+        self.timeleft = data['timeleft'] if 'timeleft' in data else 'unknown'
         self.status = data['status']
 
         self.pct_done = (self.size-self.sizeleft) / self.size * 100
