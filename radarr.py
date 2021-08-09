@@ -9,9 +9,11 @@ class Movie:
         self.title = movie_json['title']
         self.year = movie_json['year']
         self.tmdb_id = movie_json['tmdbId']
+        self.imdb_id = movie_json['imdbId']
 
         self.full_title = f'{self.title} ({self.year})'
-        self.url = f'https://themoviedb.org/movie/{self.tmdb_id}'
+        #self.url = f'https://themoviedb.org/movie/{self.tmdb_id}'
+        self.url = f'https://imdb.com/title/{self.imdb_id}'
 
     def __str__(self) -> str:
         return f'[{self.full_title}]({self.url})'
