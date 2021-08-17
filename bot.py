@@ -129,6 +129,8 @@ async def addmovie_cmd(ctx, *args):
         await sleep(5)
 
         if not radarr.add_tag(movie, ctx.message.author._user.id):
+            push.send(f'get {ctx.message.author.name} a tag', title='tag needed', priority=1)
+
             await ctx.send(f'hey <@!{config["discord"]["admin_id"]}> get this guy a tag')
 
 
