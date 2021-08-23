@@ -49,24 +49,13 @@ class Download:
         return str(self.__dict__)
 
 
-class _RadarrAPI(RadarrAPI):
-    def add_tag(self, movie_id: int, tag_id: int) -> dict:
-        path = '/api/v3/movie/editor'
-
-        edit_json = {'movieIds': [movie_id], 'tags': [tag_id], 'applyTags': 'add'}
-
-        res = self.request_put(path, data=edit_json)
-
-        return res
-
-
 class Radarr:
     def __init__(self, url: str, api_key: str) -> None:
         self._logger = logging.getLogger(__name__)
 
         self._logger.debug('authenticating with radarr')
 
-        self._radarr = _RadarrAPI(url, api_key)
+        self._radarr = RadarrAPI(url, api_key)
 
         self._logger.debug('successfully authenticated with radarr')
 
@@ -125,7 +114,7 @@ class Radarr:
 
             return False
 
-        self._radarr.add_tag(movie_json['id'], tag_id)
+        self._add_tag(movie_json['id'], tag_id)
 
         return True
 
@@ -190,6 +179,15 @@ class Radarr:
                 return tag['id']
 
         raise ValueError(f'no tag with the user id {user_id}')
+
+    def _add_tag(self, movie_id: int, tag_id: int) -> dict:
+        path = '/api/v3/movie/editor'
+
+        edit_json = {'movieIds': [movie_id], 'tags': [tag_id], 'applyTags': 'add'}
+
+        res = self._radarr.request_put(path, data=edit_json)
+
+        return res
 
 
 if __name__ == '__main__':
