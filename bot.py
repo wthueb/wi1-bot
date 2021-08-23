@@ -122,7 +122,7 @@ async def addmovie_cmd(ctx, *args):
         logger.info(f'{ctx.message.author.name} has added the movie {movie.full_title} to the plex')
 
         push.send(
-            f'{ctx.message.author.name} has added the movie {movie.full_title}')
+            f'{ctx.message.author.name} has added the movie {movie.full_title}', url=movie.url)
 
         await reply(resp, f'added movie {movie} to the plex')
 
@@ -198,7 +198,7 @@ async def delmovie_cmd(ctx, *args):
 
         logger.info(f'{ctx.message.author.name} has deleted the movie {movie.full_title} from the plex')
 
-        push.send(f'{ctx.message.author.name} has deleted the movie {movie.full_title}')
+        push.send(f'{ctx.message.author.name} has deleted the movie {movie.full_title}', url=movie.url)
 
         await reply(resp, f'deleted movie {movie} from the plex')
 
