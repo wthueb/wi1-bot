@@ -151,13 +151,14 @@ async def delmovie_cmd(ctx, *args):
 
     query = ' '.join(args)
 
-    possible = radarr.lookup_library(query)
+    async with ctx.typing():
+        possible = radarr.lookup_library(query)[:50]
 
-    if not possible:
-        await reply(ctx, f'could not find the movie with the query: {query}', error=True)
-        return
+        if not possible:
+            await reply(ctx, f'could not find the movie with the query: {query}', error=True)
+            return
 
-    movie_list = [f'{i+1}. {movie}' for i, movie in enumerate(possible)]
+        movie_list = [f'{i+1}. {movie}' for i, movie in enumerate(possible)]
 
     await reply(ctx, '\n'.join(movie_list), title='type in the number of the movie to delete (or multiple separated by commas), or type c to cancel')
 
