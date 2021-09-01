@@ -78,6 +78,9 @@ class Radarr:
 
             for keyword in keywords:
                 if keyword.lower() not in movie.full_title.lower():
+                    if keyword.lower() in ['&', 'and'] and ('and' in movie.full_title.lower() or
+                                                             '&' in movie.full_title.lower()):
+                        continue
                     match = False
                     break
 
@@ -160,7 +163,9 @@ class Radarr:
     def get_downloads(self) -> list[Download]:
         queue = self._radarr.get_queue_details()
 
-        return sorted((Download(d) for d in queue), key=lambda d: (d.timeleft, -d.pct_done))
+        downloads = [Download(d) for d in queue if 'movie' in d]
+
+        return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 
     def _get_quality_profile(self, label: str) -> int:
         profiles = self._radarr.get_quality_profiles()
