@@ -205,7 +205,7 @@ async def delmovie_cmd(ctx, *args):
 
 
 @commands.cooldown(1, 10)  # one time every 10 seconds
-@bot.command(name='downloads', help='see the status of movie downloads')
+@bot.command(name='downloads', aliases=['queue', 'q'], help='see the status of movie downloads')
 async def downloads_cmd(ctx):
     if ctx.message.channel.id != config['discord']['channel_id']:
         return
@@ -215,6 +215,7 @@ async def downloads_cmd(ctx):
 
     if not queue:
         await reply(ctx, 'there are no pending downloads')
+        return
 
     await reply(ctx, '\n\n'.join(map(str, queue)), title='download progress')
 
