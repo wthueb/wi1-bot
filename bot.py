@@ -38,14 +38,14 @@ radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=['!', '.'])
 
 
-async def reply(replyto, msg: str, title: str = None, error: bool = False) -> None:
+async def reply(ctx, msg: str, title: str = None, error: bool = False) -> None:
     if title is None:
         title = ''
 
     embed = discord.Embed(title=title, description=msg,
                           color=discord.Color.red() if error else discord.Color.blue())
 
-    await replyto.reply(embed=embed)
+    await ctx.reply(embed=embed)
 
 
 @bot.event
@@ -59,7 +59,7 @@ async def on_ready():
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
-async def addmovie_cmd(ctx, *args):
+async def addmovie_cmd(ctx, *args: str):
     if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
@@ -135,7 +135,7 @@ async def addmovie_cmd(ctx, *args):
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
-async def delmovie_cmd(ctx, *args):
+async def delmovie_cmd(ctx, *args: str):
     if ctx.message.channel.id != config['discord']['channel_id']:
         return
 
