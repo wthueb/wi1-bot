@@ -65,6 +65,11 @@ class Radarr:
         return [Movie(m) for m in possible_movies]
 
     def lookup_library(self, query: str) -> list[Movie]:
+        # TODO:
+        # possible_movies = self._radarr.lookup_movie(query)
+        # for movie in possible_movies:
+        #     if has_dbid(movie):
+
         movies = self._radarr.get_movie()
 
         keywords = query.split()
@@ -132,7 +137,7 @@ class Radarr:
         db_id = movie_json['id']
         path = movie_json['folderName']
 
-        self._radarr.del_movie(db_id, del_files=True, add_exclusion=False)
+        self._radarr.del_movie(db_id, delete_files=True, add_exclusion=False)
 
         try:
             rmtree(path)
