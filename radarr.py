@@ -65,34 +65,12 @@ class Radarr:
         return [Movie(m) for m in possible_movies]
 
     def lookup_library(self, query: str) -> list[Movie]:
-        # TODO:
-        # possible_movies = self._radarr.lookup_movie(query)
-        # for movie in possible_movies:
-        #     if has_dbid(movie):
+        possible_movies = self._radarr.lookup_movie(query)
 
-        movies = self._radarr.get_movie()
+        possible_movies = [Movie(m) for m in possible_movies if 'id' in m]
 
-        keywords = query.split()
+        return possible_movies
 
-        matching = []
-
-        for m in movies:
-            match = True
-
-            movie = Movie(m)
-
-            for keyword in keywords:
-                if keyword.lower() not in movie.full_title.lower():
-                    if keyword.lower() in ['&', 'and'] and ('and' in movie.full_title.lower() or
-                                                             '&' in movie.full_title.lower()):
-                        continue
-                    match = False
-                    break
-
-            if match:
-                matching.append(movie)
-
-        return matching
 
     def add_movie(self, movie: Movie, profile: str = 'good') -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
