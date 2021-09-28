@@ -22,7 +22,7 @@ radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 def on_grab(req: dict) -> None:
     push.send(
         req['release']['releaseTitle'],
-        title=f'file grabbed ({req["downloadClient"]})')
+        title=f"file grabbed ({req['downloadClient']})")
 
 
 def on_download(req: dict) -> None:
@@ -109,7 +109,12 @@ def on_download(req: dict) -> None:
 
         time_remaining = (duration - curtime) / speed
 
-    shutil.move(tmp_path, path)
+    new_path = f"{'.'.join(path.split('.')[:-1])}-TRANSCODED.{path.split('.')[-1]}"
+
+    shutil.move(tmp_path, new_path)
+    os.remove(path)
+
+    radarr._radarr.post_command('RefreshMovie', movieIds=[movie_json['id']])
 
     push.send(req['movieFile']['relativePath'], title='file transcoded')
 
