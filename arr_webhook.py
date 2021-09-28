@@ -111,6 +111,8 @@ def on_download(req: dict) -> None:
 
     shutil.move(tmp_path, path)
 
+    push.send(req['movieFile']['relativePath'], title='file transcoded')
+
 
 @app.route('/', methods=['POST'])
 def index():
