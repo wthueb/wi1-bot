@@ -26,12 +26,14 @@ def on_grab(req: dict) -> None:
 
 
 def on_download(req: dict) -> None:
-    push.send(req['movieFile']['relativePath'], title='file downloaded')
+    relative_path = req['movieFile']['relativePath']
+
+    push.send(relative_path, title='file downloaded')
 
     movie_folder = req['movie']['folderPath']
 
-    path = os.path.join(movie_folder, req['movieFile']['relativePath'])
-    tmp_path = '/tmp/' + path.split('/')[-1]
+    path = os.path.join(movie_folder, relative_path)
+    tmp_path = f'/tmp/{relative_path}'
 
     probe_command = [
         '/usr/bin/ffprobe',
@@ -109,14 +111,16 @@ def on_download(req: dict) -> None:
 
         time_remaining = (duration - curtime) / speed
 
-    new_path = f"{'.'.join(path.split('.')[:-1])}-TRANSCODED.{path.split('.')[-1]}"
+    new_relative_path = f"{'.'.join(relative_path.split('.')[:-1])}-TRANSCODED.{relative_path.split('.')[-1]}"
+
+    new_path = os.path.join(movie_folder, new_relative_path)
 
     shutil.move(tmp_path, new_path)
     os.remove(path)
 
     radarr.refresh_movie(movie_json['id'])
 
-    push.send(req['movieFile']['relativePath'], title='file transcoded')
+    push.send(f'{relative_path} -> {new_relative_path}', title='file transcoded')
 
 
 @app.route('/', methods=['POST'])
