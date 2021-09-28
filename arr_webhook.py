@@ -114,7 +114,7 @@ def on_download(req: dict) -> None:
     shutil.move(tmp_path, new_path)
     os.remove(path)
 
-    radarr._radarr.post_command('RefreshMovie', movieIds=[movie_json['id']])
+    radarr.refresh_movie(movie_json['id'])
 
     push.send(req['movieFile']['relativePath'], title='file transcoded')
 

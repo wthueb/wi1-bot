@@ -158,6 +158,9 @@ class Radarr:
 
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 
+    def refresh_movie(self, movie_id: int) -> None:
+        self._radarr.post_command('RefreshMovie', movieIds=[movie_id])
+
     def _get_quality_profile(self, label: str) -> int:
         profiles = self._radarr.get_quality_profiles()
 
