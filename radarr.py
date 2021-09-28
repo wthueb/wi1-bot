@@ -71,6 +71,14 @@ class Radarr:
 
         return possible_movies
 
+    def get_quality_profile_name(self, profile_id: int):
+        profiles = self._radarr.get_quality_profiles()
+
+        for profile in profiles:
+            if profile['id'] == profile_id:
+                return profile['name']
+
+        raise ValueError(f'no quality profile with the id {profile_id}')
 
     def add_movie(self, movie: Movie, profile: str = 'good') -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
