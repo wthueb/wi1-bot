@@ -54,7 +54,7 @@ async def addmovie_cmd(ctx, *args: str):
         await reply(ctx, 'usage: !addmovie KEYWORDS...')
         return
 
-    logger.info(f'got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}')
+    logger.debug(f'got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}')
 
     async with ctx.typing():
         query = ' '.join(args)
@@ -134,7 +134,7 @@ async def delmovie_cmd(ctx, *args: str):
         await reply(ctx, 'usage: !delmovie KEYWORDS...')
         return
 
-    logger.info(f'got !delmovie command from user {ctx.message.author.name}: {ctx.message.content}')
+    logger.debug(f'got !delmovie command from user {ctx.message.author.name}: {ctx.message.content}')
 
     query = ' '.join(args)
 
