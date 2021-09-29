@@ -50,10 +50,15 @@ if __name__ == '__main__':
             }
         },
 
+        'root': {
+            'level': 'DEBUG',
+            'handlers': ['console']
+        },
+
         'loggers': {
             'wi1-bot': {
-                'handlers': ['console', 'file'],
-                'propagate': False
+                'handlers': ['file'],
+                'propagate': True
             }
         }
     }
