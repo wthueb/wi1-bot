@@ -57,11 +57,8 @@ def on_download(req: dict) -> None:
 
     quality_profile = radarr.get_quality_profile_name(movie_json['qualityProfileId'])
 
-    if quality_profile == 'best':
-        return
-
     if quality_profile not in config['transcoding']:
-        push.send(f'unknown quality profile: {quality_profile}')
+        #  push.send(f'unknown quality profile: {quality_profile}')
         return
 
     bitrate = config['transcoding'][quality_profile]['video_bitrate']
