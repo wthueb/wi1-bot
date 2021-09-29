@@ -63,8 +63,6 @@ if __name__ == '__main__':
         }
     }
 
-    logging.config.dictConfig(logging_config)
-
     logging_queue = multiprocessing.Queue()
 
     webhook_worker = multiprocessing.Process(target=arr_webhook.run, args=(logging_queue,))
@@ -72,6 +70,8 @@ if __name__ == '__main__':
 
     bot_worker = multiprocessing.Process(target=bot.run, args=(logging_queue,))
     bot_worker.start()
+
+    logging.config.dictConfig(logging_config)
 
     logging_thread = threading.Thread(target=logger_thread, args=(logging_queue,))
     logging_thread.start()
