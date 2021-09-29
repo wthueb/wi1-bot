@@ -32,9 +32,12 @@ def on_grab(req: dict) -> None:
 
 
 def on_download(req: dict) -> None:
-    path = req['movieFile']['path']
+    movie_folder = req['movie']['folderPath']
+    basename = req['movieFile']['relativePath']
 
-    push.send(path.split('/')[-1], title='file downloaded')
+    push.send(basename, title='file downloaded')
+
+    path = os.path.join(movie_folder, basename)
 
     movie_json = radarr._radarr.get_movie_by_movie_id(req['movie']['id'])
 
