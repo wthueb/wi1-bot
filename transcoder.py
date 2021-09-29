@@ -12,8 +12,6 @@ import yaml
 import push
 from radarr import Radarr
 
-from time import sleep
-
 with open('config.yaml', 'rb') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
@@ -128,6 +126,8 @@ def run() -> None:
     logger.debug('starting transcoder')
 
     while True:
+        logger.debug('waiting for queue item')
+
         item = transcode_queue.get()
 
         do_transcode(item)  # type: ignore
