@@ -1,14 +1,13 @@
 from asyncio import sleep
 import logging
-from logging.handlers import RotatingFileHandler
-from multiprocessing import Process
+import logging.handlers
+import multiprocessing
 import re
 
 import discord
 from discord.ext import commands
 import yaml
 
-import arr_webhook
 from radarr import Radarr
 import push
 
@@ -16,22 +15,8 @@ import push
 with open('config.yaml', 'rb') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
-formatter = logging.Formatter(
-    '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s')
-
-stream_handler = logging.StreamHandler()
-file_handler = RotatingFileHandler('logs/wi1-bot.log', maxBytes=1024**2 * 10, backupCount=10)
-
-stream_handler.setFormatter(formatter)
-file_handler.setFormatter(formatter)
-
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-root_logger.addHandler(stream_handler)
-
-logger = logging.getLogger('wi1-bot')
-logger.setLevel(logging.INFO)
-logger.addHandler(file_handler)
+logger = logging.getLogger('wi1-bot.bot')
+logger.setLevel(logging.DEBUG)
 
 radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 
@@ -56,6 +41,8 @@ async def on_ready():
             name=config['discord']['bot_presence']))
     except:
         pass
+
+    logger.debug('bot is ready')
 
 
 @bot.command(name='addmovie', help='add a movie to the plex')
@@ -131,7 +118,7 @@ async def addmovie_cmd(ctx, *args: str):
         if not radarr.add_tag(movie, ctx.message.author._user.id):
             push.send(f'get {ctx.message.author.name} a tag', title='tag needed', priority=1)
 
-            await ctx.send(f'hey <@!{config["discord"]["admin_id"]}> get this guy a tag')
+            await ctx.send(f"hey <@!{config['discord']['admin_id']}> get this guy a tag")
 
 
 @bot.command(name='delmovie', help='delete a movie from the plex')
@@ -284,13 +271,15 @@ async def quotas_cmd(ctx):
     await reply(ctx, '\n'.join(sorted(msg)), title='quotas of users who have bought space')
 
 
+def run(logging_queue: multiprocessing.Queue) -> None:
+    queue_handler = logging.handlers.QueueHandler(logging_queue)
+
+    logger.addHandler(queue_handler)
+
+    logger.debug('starting bot')
+
+    bot.run(config['discord']['bot_token'])
+
+
 if __name__ == '__main__':
-    logger.info('starting webhook listener')
-
-    wh = Process(target=arr_webhook.run)
-    wh.daemon = True
-    wh.start()
-
-    logger.info('started webhook listener, starting bot')
-
     bot.run(config['discord']['bot_token'])
