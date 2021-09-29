@@ -60,16 +60,13 @@ def on_download(req: dict) -> None:
     if quality_profile == 'best':
         return
 
-    bitrate = None
-    audio_codec = None
-
-    if quality_profile == 'good':
-        bitrate = 2_000_000
-        audio_codec = 'aac'
-
-    if not bitrate or not audio_codec:
+    if quality_profile not in config['transcoding']:
         push.send(f'unknown quality profile: {quality_profile}')
         return
+
+    bitrate = config['transcoding']['video_bitrate']
+    audio_codec = config['transcoding']['audio_codec']
+    audio_channels = config['transcoding']['audio_channels']
 
     # TODO: calculate compression amount ((video bitrate + audio bitrate) * duration / current size)
     # if compression amount not > config value, don't transcode
@@ -89,7 +86,8 @@ def on_download(req: dict) -> None:
         '-b:v', str(bitrate),
         '-maxrate', str(bitrate*2),
         '-bufsize', str(bitrate*2),
-        '-c:a', 'aac',
+        '-c:a', audio_codec,
+        '-ac', str(audio_channels),
         '-c:s', 'copy',
         tmp_path
     ]
