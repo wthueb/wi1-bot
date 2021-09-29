@@ -129,7 +129,7 @@ def index():
     if request.json is None or 'eventType' not in request.json:
         return '', 400
 
-    logger.debug(f'got request: {request}')
+    logger.debug(f'got request: {request.json}')
 
     if request.json['eventType'] == 'Grab':
         on_grab(request.json)

@@ -11,9 +11,12 @@ import bot
 def logger_thread(q):
     while True:
         record = q.get()
+
         if record is None:
             break
+
         logger = logging.getLogger(record.name)
+
         logger.handle(record)
 
 
@@ -47,15 +50,10 @@ if __name__ == '__main__':
             }
         },
 
-        'root': {
-            'level': 'DEBUG',
-            'handlers': ['console']
-        },
-
         'loggers': {
             'wi1-bot': {
-                'handlers': ['file'],
-                'propagate': True
+                'handlers': ['console', 'file'],
+                'propagate': False
             }
         }
     }
