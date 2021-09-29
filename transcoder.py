@@ -54,7 +54,11 @@ def do_transcode(item: TranscodeItem):
 
     probe_result = subprocess.run(probe_command, capture_output=True)
 
-    duration = timedelta(seconds=float(probe_result.stdout.decode('utf-8').strip()))
+    try:
+        duration = timedelta(seconds=float(probe_result.stdout.decode('utf-8').strip()))
+    except ValueError:
+        logger.warning(f'file does not exist: {item.path}, skipping transcoding')
+        return
 
     # TODO: calculate compression amount ((video bitrate + audio bitrate) * duration / current size)
     # if compression amount not > config value, don't transcode
@@ -135,7 +139,7 @@ def run() -> None:
         try:
             do_transcode(item)  # type: ignore
         except Exception as e:
-            logger.warning(f'got exception when trying to transcode: {str(e)}')
+            logger.warning('got exception when trying to transcode', exc_info=True)
 
         transcode_queue.task_done()
 
