@@ -1,17 +1,15 @@
-from datetime import timedelta
 import logging
 import logging.handlers
 import multiprocessing
-import os
-import re
-import shutil
-import subprocess
+import os.path
+import threading
 
 from flask import Flask, request
 import yaml
 
 from radarr import Radarr
 import push
+import transcoder
 
 
 with open('config.yaml', 'rb') as f:
@@ -19,10 +17,10 @@ with open('config.yaml', 'rb') as f:
 
 app = Flask(__name__)
 
-radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
-
 logger = logging.getLogger('wi1-bot.arr_webhook')
 logger.setLevel(logging.DEBUG)
+
+radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 
 
 def on_grab(req: dict) -> None:
@@ -39,89 +37,22 @@ def on_download(req: dict) -> None:
     movie_folder = req['movie']['folderPath']
 
     path = os.path.join(movie_folder, relative_path)
-    tmp_path = f'/tmp/{relative_path}'
-
-    probe_command = [
-        '/usr/bin/ffprobe',
-        '-hide_banner',
-        '-show_entries', 'format=duration',
-        '-of', 'default=noprint_wrappers=1:nokey=1',
-        path
-    ]
-
-    probe_result = subprocess.run(probe_command, capture_output=True)
-
-    duration = timedelta(seconds=float(probe_result.stdout.decode('utf-8').strip()))
 
     movie_json = radarr._radarr.get_movie_by_movie_id(req['movie']['id'])
 
     quality_profile = radarr.get_quality_profile_name(movie_json['qualityProfileId'])
 
     if quality_profile not in config['transcoding']:
-        #  push.send(f'unknown quality profile: {quality_profile}')
         return
 
-    bitrate = config['transcoding'][quality_profile]['video_bitrate']
-    audio_codec = config['transcoding'][quality_profile]['audio_codec']
-    audio_channels = config['transcoding'][quality_profile]['audio_channels']
+    quality = transcoder.TranscodeQuality(
+        video_bitrate=config['transcoding'][quality_profile]['video_bitrate'],
+        audio_codec=config['transcoding'][quality_profile]['audio_codec'],
+        audio_channels=config['transcoding'][quality_profile]['audio_channels'])
 
-    # TODO: calculate compression amount ((video bitrate + audio bitrate) * duration / current size)
-    # if compression amount not > config value, don't transcode
-    # if compression amount > 1, don't transcode
+    transcode_item = transcoder.TranscodeItem(movie_json['id'], path, quality)
 
-    command = [
-        '/usr/bin/ffmpeg',
-        '-hide_banner',
-        '-y',
-        '-hwaccel', 'nvdec',
-        '-hwaccel_output_format', 'cuda',
-        '-i', path,
-        '-max_muxing_queue_size', '1024',
-        '-c:v',  'hevc_nvenc',
-        '-preset', 'fast',
-        '-profile:v', 'main',
-        '-b:v', str(bitrate),
-        '-maxrate', str(bitrate*2),
-        '-bufsize', str(bitrate*2),
-        '-c:a', audio_codec,
-        '-ac', str(audio_channels),
-        '-c:s', 'copy',
-        tmp_path
-    ]
-
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, universal_newlines=True)
-
-    pattern = re.compile(
-        r'.*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x')
-
-    for line in proc.stdout:  # type: ignore
-        match = pattern.search(line)
-
-        if not match:
-            continue
-
-        curtime = timedelta(
-            hours=int(match.group('hours')),
-            minutes=int(match.group('minutes')),
-            seconds=float(match.group('seconds')))
-
-        percent_done = curtime / duration
-
-        speed = float(match.group('speed'))
-
-        time_remaining = (duration - curtime) / speed
-
-    new_relative_path = f"{'.'.join(relative_path.split('.')[:-1])}-TRANSCODED.{relative_path.split('.')[-1]}"
-
-    new_path = os.path.join(movie_folder, new_relative_path)
-
-    shutil.move(tmp_path, new_path)
-    os.remove(path)
-
-    radarr.refresh_movie(movie_json['id'])
-
-    push.send(f'{relative_path} -> {new_relative_path}', title='file transcoded')
+    transcoder.transcode_queue.put(transcode_item)
 
 
 @app.route('/', methods=['POST'])
@@ -143,6 +74,10 @@ def run(logging_queue: multiprocessing.Queue) -> None:
     queue_handler = logging.handlers.QueueHandler(logging_queue)
 
     logger.addHandler(queue_handler)
+
+    transcoder_thread = threading.Thread(target=transcoder.run)
+    transcoder_thread.daemon = True
+    transcoder_thread.start()
 
     logger.debug('starting webhook listener')
 
