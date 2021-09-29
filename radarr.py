@@ -1,4 +1,3 @@
-import logging
 from shutil import rmtree
 
 from pyarr import RadarrAPI
@@ -51,13 +50,7 @@ class Download:
 
 class Radarr:
     def __init__(self, url: str, api_key: str) -> None:
-        self._logger = logging.getLogger(__name__)
-
-        self._logger.debug('authenticating with radarr')
-
         self._radarr = RadarrAPI(url, api_key)
-
-        self._logger.debug('successfully authenticated with radarr')
 
     def lookup_movie(self, query: str) -> list[Movie]:
         possible_movies = self._radarr.lookup_movie(query)
@@ -103,8 +96,6 @@ class Radarr:
             tag_id = self._get_tag_for_user(user_id)
         except ValueError:
             # tag_id = self._radarr.create_tag(str(user_id))['id']
-
-            self._logger.warning(f'{user_id} does not have a tag')
 
             return False
 
