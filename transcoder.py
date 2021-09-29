@@ -132,7 +132,10 @@ def run() -> None:
 
         item = transcode_queue.get()
 
-        do_transcode(item)  # type: ignore
+        try:
+            do_transcode(item)  # type: ignore
+        except Exception as e:
+            logger.warning(f'got exception when trying to transcode: {str(e)}')
 
         transcode_queue.task_done()
 
