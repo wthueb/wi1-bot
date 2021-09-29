@@ -38,11 +38,11 @@ class TranscodeItem:
 
 
 def do_transcode(item: TranscodeItem):
-    filename = item.path.split('/')[-1]
+    basename = item.path.split('/')[-1]
 
-    logger.info(f'starting transcode: {filename}')
+    logger.info(f'starting transcode: {basename}')
 
-    push.send(f'{filename}', title='starting transcode')
+    push.send(f'{basename}', title='starting transcode')
 
     probe_command = [
         '/usr/bin/ffprobe',
@@ -60,7 +60,7 @@ def do_transcode(item: TranscodeItem):
     # if compression amount not > config value, don't transcode
     # if compression amount > 1, don't transcode
 
-    tmp_path = os.path.join('/tmp/', filename)
+    tmp_path = os.path.join('/tmp/', basename)
 
     command = [
         '/usr/bin/ffmpeg',
@@ -108,18 +108,20 @@ def do_transcode(item: TranscodeItem):
 
     folder = '/'.join(item.path.split('/')[:-1])
 
-    new_filename = f"{'.'.join(filename.split('.')[:-1])}-TRANSCODED.{filename.split('.')[-1]}"
+    filename, extension = '.'.join(basename.split('.')[:-1]), basename.split('.')[-1]
 
-    new_path = os.path.join(folder, new_filename)
+    new_basename = f'{filename}-TRANSCODED.{extension}'
+
+    new_path = os.path.join(folder, new_basename)
 
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
 
     radarr.refresh_movie(item.movie_id)
 
-    logger.info(f'finished transcode: {filename} -> {new_filename}')
+    logger.info(f'finished transcode: {basename} -> {new_basename}')
 
-    push.send(f'{filename} -> {new_filename}', title='file transcoded')
+    push.send(f'{basename} -> {new_basename}', title='file transcoded')
 
 
 def run() -> None:
