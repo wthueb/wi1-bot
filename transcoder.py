@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import threading
+from time import sleep
 
 import persistqueue
 import yaml
@@ -143,6 +144,8 @@ def _worker() -> None:
             logger.warning('got exception when trying to transcode', exc_info=True)
 
         transcode_queue.task_done()
+
+        sleep(3)
 
 
 def start() -> None:
