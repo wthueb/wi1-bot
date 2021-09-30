@@ -5,18 +5,18 @@ from pyarr import RadarrAPI
 
 class Movie:
     def __init__(self, movie_json: dict) -> None:
-        self.title = movie_json['title']
-        self.year = movie_json['year']
-        self.tmdb_id = movie_json['tmdbId']
+        self.title: str = movie_json['title']
+        self.year: int = movie_json['year']
+        self.tmdb_id: int = movie_json['tmdbId']
 
         self.full_title = f'{self.title} ({self.year})'
 
         self.url = f'https://themoviedb.org/movie/{self.tmdb_id}'
 
-        self.imdb_id = None
+        self.imdb_id: str = ''
 
         try:
-            self.imdb_id = movie_json['imdbId']
+            self.imdb_id: str = movie_json['imdbId']
             self.url = f'https://imdb.com/title/{self.imdb_id}'
         except KeyError:
             pass

@@ -6,8 +6,9 @@ import os.path
 from flask import Flask, request
 import yaml
 
-from radarr import Radarr
 import push
+from radarr import Radarr
+from sonarr import Sonarr
 import transcoder
 
 
@@ -20,6 +21,7 @@ logger = logging.getLogger('wi1-bot.arr_webhook')
 logger.setLevel(logging.DEBUG)
 
 radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
+sonarr = Sonarr(config['sonarr']['url'], config['sonarr']['api_key'])
 
 
 def on_grab(req: dict) -> None:
@@ -29,26 +31,44 @@ def on_grab(req: dict) -> None:
 
 
 def on_download(req: dict) -> None:
-    movie_folder = req['movie']['folderPath']
-    basename = req['movieFile']['relativePath']
+    if 'movie' in req:
+        movie_json = radarr._radarr.get_movie_by_movie_id(req['movie']['id'])
+        quality_profile = radarr.get_quality_profile_name(movie_json['qualityProfileId'])
 
-    push.send(basename, title='file downloaded')
+        movie_folder = req['movie']['folderPath']
+        basename = req['movieFile']['relativePath']
 
-    path = os.path.join(movie_folder, basename)
+        push.send(basename, title='movie downloaded')
 
-    movie_json = radarr._radarr.get_movie_by_movie_id(req['movie']['id'])
+        path = os.path.join(movie_folder, basename)
 
-    quality_profile = radarr.get_quality_profile_name(movie_json['qualityProfileId'])
+        update = ('radarr', movie_json['id'])
+    elif 'series' in req:
+        series_json = sonarr._sonarr.get_series(req['series']['id'])
+        quality_profile = sonarr.get_quality_profile_name(series_json['qualityProfileId'])
 
-    if quality_profile not in config['transcoding']:
+        series_folder = req['series']['path']
+        basename = req['episodeFile']['relativePath'].split('/')[-1]
+
+        push.send(basename, title='episode downloaded')
+
+        path = os.path.join(series_folder, req['episodeFile']['relativePath'])
+
+        update = ('sonarr', series_json['id'])
+    else:
+        raise ValueError('unknown download request')
+
+    if quality_profile not in config['transcoding']['profiles']:
         return
 
-    quality = transcoder.TranscodeQuality(
-        video_bitrate=config['transcoding'][quality_profile]['video_bitrate'],
-        audio_codec=config['transcoding'][quality_profile]['audio_codec'],
-        audio_channels=config['transcoding'][quality_profile]['audio_channels'])
+    quality_options = config['transcoding']['profiles'][quality_profile]
 
-    transcode_item = transcoder.TranscodeItem(movie_json['id'], path, quality)
+    quality = transcoder.TranscodeQuality(
+        video_bitrate=quality_options['video_bitrate'],
+        audio_codec=quality_options['audio_codec'],
+        audio_channels=quality_options['audio_channels'])
+
+    transcode_item = transcoder.TranscodeItem(path, quality, update)
 
     transcoder.transcode_queue.put(transcode_item)
 

@@ -13,6 +13,7 @@ import yaml
 
 import push
 from radarr import Radarr
+from sonarr import Sonarr
 
 with open('config.yaml', 'rb') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
@@ -33,10 +34,10 @@ class TranscodeQuality:
 
 
 class TranscodeItem:
-    def __init__(self, movie_id: int, path: str, quality: TranscodeQuality) -> None:
-        self.movie_id = movie_id
+    def __init__(self, path: str, quality: TranscodeQuality, update: tuple[str, int]) -> None:
         self.path = path
         self.quality = quality
+        self.update = update
 
 
 def _do_transcode(item: TranscodeItem):
@@ -123,7 +124,10 @@ def _do_transcode(item: TranscodeItem):
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
 
-    radarr.refresh_movie(item.movie_id)
+    if item.update[0] == 'radarr':
+        radarr.refresh_movie(item.update[1])
+    elif item.update[0] == 'sonarr':
+        sonarr.refresh_series(item.update[1])
 
     logger.info(f'finished transcode: {basename} -> {new_basename}')
 
