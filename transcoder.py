@@ -22,6 +22,7 @@ logger = logging.getLogger('wi1-bot.arr_webhook.transcoder')
 logger.setLevel(logging.DEBUG)
 
 radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
+sonarr = Sonarr(config['sonarr']['url'], config['sonarr']['api_key'])
 
 transcode_queue = persistqueue.Queue('transcode-queue')
 
