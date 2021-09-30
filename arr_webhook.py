@@ -4,7 +4,6 @@ import multiprocessing
 import os.path
 
 from flask import Flask, request
-from flask.logging import default_handler
 import yaml
 
 from radarr import Radarr
@@ -16,7 +15,6 @@ with open('config.yaml', 'rb') as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
 app = Flask(__name__)
-app.logger.removeHandler(default_handler)
 
 logger = logging.getLogger('wi1-bot.arr_webhook')
 logger.setLevel(logging.DEBUG)
