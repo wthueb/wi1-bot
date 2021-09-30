@@ -43,8 +43,6 @@ def _do_transcode(item: TranscodeItem):
 
     logger.info(f'starting transcode: {basename}')
 
-    push.send(f'{basename}', title='starting transcode')
-
     probe_command = [
         '/usr/bin/ffprobe',
         '-hide_banner',
@@ -60,6 +58,8 @@ def _do_transcode(item: TranscodeItem):
     except ValueError:
         logger.warning(f'file does not exist: {item.path}, skipping transcoding')
         return
+
+    push.send(f'{basename}', title='starting transcode')
 
     # TODO: calculate compression amount ((video bitrate + audio bitrate) * duration / current size)
     # if compression amount not > config value, don't transcode
