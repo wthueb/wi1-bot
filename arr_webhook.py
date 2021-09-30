@@ -2,7 +2,6 @@ import logging
 import logging.handlers
 import multiprocessing
 import os.path
-import threading
 
 from flask import Flask, request
 from flask.logging import default_handler
@@ -76,9 +75,7 @@ def run(logging_queue: multiprocessing.Queue) -> None:
 
     logger.addHandler(queue_handler)
 
-    transcoder_thread = threading.Thread(target=transcoder.run)
-    transcoder_thread.daemon = True
-    transcoder_thread.start()
+    transcoder.start()
 
     logger.debug('starting webhook listener')
 

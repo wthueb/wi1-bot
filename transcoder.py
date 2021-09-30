@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import threading
 
 import persistqueue
 import yaml
@@ -37,7 +38,7 @@ class TranscodeItem:
         self.quality = quality
 
 
-def do_transcode(item: TranscodeItem):
+def _do_transcode(item: TranscodeItem):
     basename = item.path.split('/')[-1]
 
     logger.info(f'starting transcode: {basename}')
@@ -128,7 +129,7 @@ def do_transcode(item: TranscodeItem):
     push.send(f'{basename} -> {new_basename}', title='file transcoded')
 
 
-def run() -> None:
+def _worker() -> None:
     logger.debug('starting transcoder')
 
     while True:
@@ -137,12 +138,18 @@ def run() -> None:
         item = transcode_queue.get()
 
         try:
-            do_transcode(item)  # type: ignore
+            _do_transcode(item)  # type: ignore
         except Exception as e:
             logger.warning('got exception when trying to transcode', exc_info=True)
 
         transcode_queue.task_done()
 
 
+def start() -> None:
+    t = threading.Thread(target=_worker)
+    t.daemon = True
+    t.start()
+
+
 if __name__ == '__main__':
-    run()
+    _worker()
