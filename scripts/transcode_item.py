@@ -18,3 +18,5 @@ quality = transcoder.TranscodeQuality(2_000_000, 'aac', 2)
 item = transcoder.TranscodeItem(args.path, quality, None)
 
 transcoder.transcode_queue.put(item)
+
+print('place in queue:', transcoder.transcode_queue.size)
