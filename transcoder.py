@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import threading
+from typing import Optional
 from time import sleep
 
 import persistqueue
@@ -35,7 +36,7 @@ class TranscodeQuality:
 
 
 class TranscodeItem:
-    def __init__(self, path: str, quality: TranscodeQuality, update: tuple[str, int]) -> None:
+    def __init__(self, path: str, quality: TranscodeQuality, update: Optional[tuple[str, int]] = None) -> None:
         self.path = path
         self.quality = quality
         self.update = update
@@ -125,10 +126,11 @@ def _do_transcode(item: TranscodeItem):
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
 
-    if item.update[0] == 'radarr':
-        radarr.refresh_movie(item.update[1])
-    elif item.update[0] == 'sonarr':
-        sonarr.refresh_series(item.update[1])
+    if item.update:
+        if item.update[0] == 'radarr':
+            radarr.refresh_movie(item.update[1])
+        elif item.update[0] == 'sonarr':
+            sonarr.refresh_series(item.update[1])
 
     logger.info(f'finished transcode: {basename} -> {new_basename}')
 
