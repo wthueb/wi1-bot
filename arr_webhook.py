@@ -75,15 +75,18 @@ def on_download(req: dict) -> None:
 
 @app.route('/', methods=['POST'])
 def index():
-    if request.json is None or 'eventType' not in request.json:
-        return '', 400
+    try:
+        if request.json is None or 'eventType' not in request.json:
+            return '', 400
 
-    logger.debug(f'got request: {request.json}')
+        #  logger.debug(f'got request: {request.json}')
 
-    if request.json['eventType'] == 'Grab':
-        on_grab(request.json)
-    elif request.json['eventType'] == 'Download':
-        on_download(request.json)
+        if request.json['eventType'] == 'Grab':
+            on_grab(request.json)
+        elif request.json['eventType'] == 'Download':
+            on_download(request.json)
+    except Exception as e:
+        logger.warning(f'error handling request: {str(request.data)}')
 
     return '', 200
 
