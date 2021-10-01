@@ -25,7 +25,7 @@ logger.setLevel(logging.DEBUG)
 radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 sonarr = Sonarr(config['sonarr']['url'], config['sonarr']['api_key'])
 
-transcode_queue = persistqueue.Queue('transcode-queue')
+transcode_queue = persistqueue.SQLiteQueue('transcode-queue', multithreading=True)
 
 
 class TranscodeQuality:
