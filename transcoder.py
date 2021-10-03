@@ -29,10 +29,12 @@ transcode_queue = persistqueue.SQLiteQueue('transcode-queue', multithreading=Tru
 
 
 class TranscodeQuality:
-    def __init__(self, video_bitrate: int, audio_codec: str, audio_channels: int) -> None:
+    def __init__(self, video_bitrate: int, audio_codec: str, audio_channels: int,
+                 audio_bitrate: str) -> None:
         self.video_bitrate = video_bitrate
         self.audio_codec = audio_codec
         self.audio_channels = audio_channels
+        self.audio_bitrate = audio_bitrate
 
 
 class TranscodeItem:
@@ -84,8 +86,10 @@ def _do_transcode(item: TranscodeItem):
         '-profile:v', 'main',
         '-b:v', str(item.quality.video_bitrate),
         '-maxrate', str(item.quality.video_bitrate*2),
+        '-bufsize', str(item.quality.video_bitrate*2),
         '-c:a', item.quality.audio_codec,
         '-ac', str(item.quality.audio_channels),
+        '-b:a', item.quality.audio_bitrate,
         '-c:s', 'copy',
         tmp_path
     ]

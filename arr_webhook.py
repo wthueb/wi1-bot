@@ -66,7 +66,8 @@ def on_download(req: dict) -> None:
     quality = transcoder.TranscodeQuality(
         video_bitrate=quality_options['video_bitrate'],
         audio_codec=quality_options['audio_codec'],
-        audio_channels=quality_options['audio_channels'])
+        audio_channels=quality_options['audio_channels'],
+        audio_bitrate=quality_options['audio_bitrate'])
 
     transcode_item = transcoder.TranscodeItem(path, quality, update)
 
