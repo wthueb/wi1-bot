@@ -27,6 +27,9 @@ async def reply(ctx, msg: str, title: str = None, error: bool = False) -> None:
     if title is None:
         title = ''
 
+    if len(msg) > 2048:
+        msg = msg[:2045] + '...'
+
     embed = discord.Embed(title=title, description=msg,
                           color=discord.Color.red() if error else discord.Color.blue())
 
