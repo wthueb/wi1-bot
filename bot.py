@@ -46,7 +46,7 @@ async def select_movies(ctx, command: str, movies: list[Movie]) -> Tuple[command
         if resp.author != ctx.message.author or resp.channel != ctx.channel:
             return False
 
-        regex = re.compile(r'^(c|(\d+,?)+)$')
+        regex = re.compile(r'^(c|(\d+,?)+)$', re.IGNORECASE)
 
         if re.match(regex, resp.content.strip()):
             return True
