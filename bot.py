@@ -131,7 +131,7 @@ async def addmovie_cmd(ctx, *args: str):
 
         await sleep(5)
 
-        if not radarr.add_tag(movie, ctx.message.author._user.id):
+        if not radarr.add_tag(movie, ctx.message.author.id):
             push.send(f'get {ctx.message.author.name} a tag', title='tag needed', priority=1)
 
             await ctx.send(f"hey <@!{config['discord']['admin_id']}> get this guy a tag")
@@ -154,7 +154,7 @@ async def delmovie_cmd(ctx, *args: str):
         if 'plex-admin' in [role.name for role in ctx.message.author.roles]:
             movies = radarr.lookup_library(query)[:50]
         else:
-            movies = radarr.lookup_user_movies(query, ctx.message.author._user.id)[:50]
+            movies = radarr.lookup_user_movies(query, ctx.message.author.id)[:50]
 
         if not movies:
             if 'plex-admin' in [role.name for role in ctx.message.author.roles]:
@@ -217,12 +217,12 @@ async def quota_cmd(ctx):
         return
 
     async with ctx.typing():
-        used = radarr.get_quota_amount(ctx.message.author._user.id) / 1024**3
+        used = radarr.get_quota_amount(ctx.message.author.id) / 1024**3
 
         maximum = 0
 
         try:
-            maximum = config['discord']['quotas'][ctx.message.author._user.id]
+            maximum = config['discord']['quotas'][ctx.message.author.id]
         except Exception:
             pass
 
