@@ -127,6 +127,13 @@ def _do_transcode(item: TranscodeItem):
 
     new_path = os.path.join(folder, new_basename)
 
+    if not os.path.exists(item.path):
+        logger.info(f"file doesn't exist: {item.path}, deleting transcoded file")
+
+        os.remove(tmp_path)
+
+        return
+
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
 
