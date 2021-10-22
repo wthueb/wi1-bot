@@ -5,6 +5,8 @@ from pyarr import RadarrAPI
 
 class Movie:
     def __init__(self, movie_json: dict) -> None:
+        self._json = movie_json
+
         self.title: str = movie_json['title']
         self.year: int = movie_json['year']
         self.tmdb_id: int = movie_json['tmdbId']
@@ -123,6 +125,20 @@ class Radarr:
 
     def search_missing(self) -> None:
         self._radarr.post_command(name='MissingMoviesSearch')
+
+    def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
+        try:
+            tag_id = self._get_tag_for_user(user_id)
+        except ValueError:
+            return []
+
+        tag_details = self._radarr.get_tag_details(tag_id)
+
+        possible_movies = self._radarr.lookup_movie(query)
+
+        user_movie_ids = tag_details['movieIds']
+
+        return [Movie(m) for m in possible_movies if 'id' in m and m['id'] in user_movie_ids]
 
     def get_quota_amount(self, user_id: int) -> int:
         try:

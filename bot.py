@@ -142,10 +142,6 @@ async def delmovie_cmd(ctx, *args: str):
     if ctx.channel.id != config['discord']['channel_id']:
         return
 
-    if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
-        await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
-        return
-
     if not args:
         await reply(ctx, 'usage: !delmovie KEYWORDS...')
         return
@@ -155,7 +151,10 @@ async def delmovie_cmd(ctx, *args: str):
     query = ' '.join(args)
 
     async with ctx.typing():
-        movies = radarr.lookup_library(query)[:50]
+        if 'plex-admin' in [role.name for role in ctx.message.author.roles]:
+            movies = radarr.lookup_library(query)[:50]
+        else:
+            movies = radarr.lookup_user_movies(query, ctx.message.author._user.id)[:50]
 
         if not movies:
             await reply(ctx, f'could not find the movie with the query: {query}', error=True)
