@@ -109,7 +109,7 @@ async def addmovie_cmd(ctx, *args: str):
         movies = radarr.lookup_movie(query)
 
         if not movies:
-            await reply(ctx, f'could not find the movie with the query: {query}', error=True)
+            await reply(ctx, f'could not find a movie matching the query: {query}', error=True)
             return
 
     resp, to_add = await select_movies(ctx, 'addmovie', movies)
@@ -157,7 +157,11 @@ async def delmovie_cmd(ctx, *args: str):
             movies = radarr.lookup_user_movies(query, ctx.message.author._user.id)[:50]
 
         if not movies:
-            await reply(ctx, f'could not find the movie with the query: {query}', error=True)
+            if 'plex-admin' in [role.name for role in ctx.message.author.roles]:
+                await reply(ctx, f'could not find a movie matching the query: {query}', error=True)
+            else:
+                await reply(ctx, f"you haven't added a movie matching the query: {query}", error=True)
+
             return
 
     resp, to_delete = await select_movies(ctx, 'delmovie', movies)
