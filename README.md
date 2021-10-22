@@ -4,7 +4,6 @@ A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing comm
 
 TODO:
 
-- Allow user to delete movies that they have added
 - Actually enforce download quotas
 - Add Sonarr support — !addshow
 - !linktmdb
