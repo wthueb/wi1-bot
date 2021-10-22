@@ -24,6 +24,10 @@ radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=['!', '.'])
 
 
+async def member_has_role(member: discord.Member, role: str) -> bool:
+    return role in [r.name for r in member.roles]
+
+
 async def reply(ctx, msg: str, title: str = None, error: bool = False) -> None:
     if title is None:
         title = ''
@@ -151,13 +155,13 @@ async def delmovie_cmd(ctx, *args: str):
     query = ' '.join(args)
 
     async with ctx.typing():
-        if 'plex-admin' in [role.name for role in ctx.message.author.roles]:
+        if member_has_role(ctx.message.author, 'plex-admin'):
             movies = radarr.lookup_library(query)[:50]
         else:
             movies = radarr.lookup_user_movies(query, ctx.message.author.id)[:50]
 
         if not movies:
-            if 'plex-admin' in [role.name for role in ctx.message.author.roles]:
+            if member_has_role(ctx.message.author, 'plex-admin'):
                 await reply(ctx, f'could not find a movie matching the query: {query}', error=True)
             else:
                 await reply(ctx, f"you haven't added a movie matching the query: {query}", error=True)
@@ -201,7 +205,7 @@ async def searchmissing_cmd(ctx):
     if ctx.channel.id != config['discord']['channel_id']:
         return
 
-    if 'plex-admin' not in [role.name for role in ctx.message.author.roles]:
+    if member_has_role(ctx.message.author, 'plex-admin'):
         await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
         return
 
