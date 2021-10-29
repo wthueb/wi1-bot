@@ -1,4 +1,4 @@
-from pushover import Client
+from pushover import Client, RequestError
 import yaml
 
 
@@ -16,6 +16,9 @@ except:
 
 
 def send(msg: str, title: str = None, url: str = None, priority: int = 0) -> None:
-    if _client:
-        _client.send_message(msg, title=title, url=url, priority=priority,
-                             device=config['pushover']['devices'])
+    try:
+        if _client:
+            _client.send_message(msg, title=title, url=url, priority=priority,
+                                 device=config['pushover']['devices'])
+    except RequestError:
+        pass
