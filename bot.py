@@ -155,13 +155,13 @@ async def delmovie_cmd(ctx, *args: str):
     query = ' '.join(args)
 
     async with ctx.typing():
-        if member_has_role(ctx.message.author, 'plex-admin'):
+        if await member_has_role(ctx.message.author, 'plex-admin'):
             movies = radarr.lookup_library(query)[:50]
         else:
             movies = radarr.lookup_user_movies(query, ctx.message.author.id)[:50]
 
         if not movies:
-            if member_has_role(ctx.message.author, 'plex-admin'):
+            if await member_has_role(ctx.message.author, 'plex-admin'):
                 await reply(ctx, f'could not find a movie matching the query: {query}', error=True)
             else:
                 await reply(ctx, f"you haven't added a movie matching the query: {query}", error=True)
@@ -205,7 +205,7 @@ async def searchmissing_cmd(ctx):
     if ctx.channel.id != config['discord']['channel_id']:
         return
 
-    if member_has_role(ctx.message.author, 'plex-admin'):
+    if await member_has_role(ctx.message.author, 'plex-admin'):
         await reply(ctx, f'user {ctx.message.author.name} does not have permission to use this command', error=True)
         return
 
