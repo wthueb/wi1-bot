@@ -50,7 +50,7 @@ async def select_movies(ctx, command: str, movies: list[Movie]) -> Tuple[command
         if resp.author != ctx.message.author or resp.channel != ctx.channel:
             return False
 
-        regex = re.compile(r'^(c|(\d+,?)+)$', re.IGNORECASE)
+        regex = re.compile(r'^(c|(\d+,?)+|[!.]addmovie .*)$', re.IGNORECASE)
 
         if re.match(regex, resp.content.strip()):
             return True
@@ -68,6 +68,9 @@ async def select_movies(ctx, command: str, movies: list[Movie]) -> Tuple[command
     if resp.content.strip().lower() == 'c':
         await reply(resp, f'{command} cancelled')
         return resp, []
+
+    if resp.content.strip()[1:].startswith('addmovie'):
+        return commands.Context(), []
 
     idxs = [int(i) for i in resp.content.strip().split(',') if i.isdigit()]
 
