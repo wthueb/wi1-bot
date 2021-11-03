@@ -160,6 +160,8 @@ def _worker() -> None:
             _do_transcode(item)  # type: ignore
         except Exception as e:
             logger.warning('got exception when trying to transcode', exc_info=True)
+            sleep(3)
+            continue
 
         transcode_queue.task_done()
 
