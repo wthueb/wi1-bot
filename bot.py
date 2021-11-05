@@ -70,7 +70,7 @@ async def select_movies(ctx, command: str, movies: list[Movie]) -> Tuple[command
         return resp, []
 
     if resp.content.strip()[1:].startswith('addmovie'):
-        return commands.Context(), []
+        return resp, []
 
     idxs = [int(i) for i in resp.content.strip().split(',') if i.isdigit()]
 
