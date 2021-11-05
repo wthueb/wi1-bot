@@ -11,7 +11,7 @@ _client = None
 try:
     if config['pushover']['user_key'] and config['pushover']['api_key']:
         _client = Client(config['pushover']['user_key'], api_token=config['pushover']['api_key'])
-except:
+except Exception:
     pass
 
 

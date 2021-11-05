@@ -6,7 +6,6 @@ import threading
 
 import arr_webhook
 import bot
-import transcoder
 
 
 def logger_thread(q):

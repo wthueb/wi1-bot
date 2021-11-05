@@ -158,7 +158,7 @@ def _worker() -> None:
 
         try:
             _do_transcode(item)  # type: ignore
-        except Exception as e:
+        except Exception:
             logger.warning('got exception when trying to transcode', exc_info=True)
             sleep(3)
             continue

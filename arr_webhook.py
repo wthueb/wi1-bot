@@ -86,8 +86,8 @@ def index():
             on_grab(request.json)
         elif request.json['eventType'] == 'Download':
             on_download(request.json)
-    except Exception as e:
-        logger.warning(f'error handling request: {str(request.data)}')
+    except Exception:
+        logger.warning(f'error handling request: {str(request.data)}', exc_info=True)
 
     return '', 200
 
