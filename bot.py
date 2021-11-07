@@ -63,7 +63,7 @@ async def select_movies(ctx, command: str, movies: list[Movie]) -> Tuple[command
         resp = await bot.wait_for('message', check=check, timeout=30)
     except Exception:
         await reply(ctx, f'timed out, {command} cancelled', error=True)
-        return commands.Context(), []
+        return ctx, []
 
     if resp.content.strip().lower() == 'c':
         await reply(resp, f'{command} cancelled')
@@ -108,7 +108,8 @@ async def addmovie_cmd(ctx, *args: str):
         await reply(ctx, 'usage: !addmovie KEYWORDS...')
         return
 
-    logger.debug(f'got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}')
+    logger.debug(
+        f'got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}')
 
     async with ctx.typing():
         query = ' '.join(args)
@@ -153,7 +154,8 @@ async def delmovie_cmd(ctx, *args: str):
         await reply(ctx, 'usage: !delmovie KEYWORDS...')
         return
 
-    logger.debug(f'got !delmovie command from user {ctx.message.author.name}: {ctx.message.content}')
+    logger.debug(
+        f'got !delmovie command from user {ctx.message.author.name}: {ctx.message.content}')
 
     query = ' '.join(args)
 
