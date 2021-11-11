@@ -119,8 +119,10 @@ def _do_transcode(item: TranscodeItem):
 
         # TODO
 
-    if proc.wait() != 0:
-        raise Exception(f'ffmpeg return error code')
+    ffmpeg_return = proc.wait()
+
+    if ffmpeg_return != 0:
+        raise Exception(f'ffmpeg exited with code {ffmpeg_return}')
 
     folder = '/'.join(item.path.split('/')[:-1])
 
