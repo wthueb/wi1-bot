@@ -94,6 +94,8 @@ def _do_transcode(item: TranscodeItem):
         tmp_path
     ]
 
+    logger.debug(' '.join(command))
+
     proc = subprocess.Popen(command, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, universal_newlines=True)
 
