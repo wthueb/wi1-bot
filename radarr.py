@@ -7,24 +7,24 @@ class Movie:
     def __init__(self, movie_json: dict) -> None:
         self._json = movie_json
 
-        self.title: str = movie_json['title']
-        self.year: int = movie_json['year']
-        self.tmdb_id: int = movie_json['tmdbId']
+        self.title: str = movie_json["title"]
+        self.year: int = movie_json["year"]
+        self.tmdb_id: int = movie_json["tmdbId"]
 
-        self.full_title = f'{self.title} ({self.year})'
+        self.full_title = f"{self.title} ({self.year})"
 
-        self.url = f'https://themoviedb.org/movie/{self.tmdb_id}'
+        self.url = f"https://themoviedb.org/movie/{self.tmdb_id}"
 
-        self.imdb_id: str = ''
+        self.imdb_id: str = ""
 
         try:
-            self.imdb_id: str = movie_json['imdbId']
-            self.url = f'https://imdb.com/title/{self.imdb_id}'
+            self.imdb_id: str = movie_json["imdbId"]
+            self.url = f"https://imdb.com/title/{self.imdb_id}"
         except KeyError:
             pass
 
     def __str__(self) -> str:
-        return f'[{self.full_title}]({self.url})'
+        return f"[{self.full_title}]({self.url})"
 
     def __repr__(self) -> str:
         return str(self.__dict__)
@@ -32,19 +32,20 @@ class Movie:
 
 class Download:
     def __init__(self, data: dict) -> None:
-        self.movie = Movie(data['movie'])
-        self.sizeleft = data['sizeleft']
-        self.size = data['size']
-        self.timeleft = data['timeleft'] if 'timeleft' in data else 'unknown'
-        self.status = data['status']
+        self.movie = Movie(data["movie"])
+        self.sizeleft = data["sizeleft"]
+        self.size = data["size"]
+        self.timeleft = data["timeleft"] if "timeleft" in data else "unknown"
+        self.status = data["status"]
 
-        self.pct_done = (self.size-self.sizeleft) / self.size * 100
+        self.pct_done = (self.size - self.sizeleft) / self.size * 100
 
     def __str__(self) -> str:
         return (
-            f'{self.movie}: {self.pct_done:.1f}% done '
-            f'({(self.size-self.sizeleft) / 1024**3:.2f}/{self.size / 1024**3:.2f} GB)\n'
-            f'eta: {self.timeleft}')
+            f"{self.movie}: {self.pct_done:.1f}% done "
+            f"({(self.size-self.sizeleft) / 1024**3:.2f}/{self.size / 1024**3:.2f} GB)\n"
+            f"eta: {self.timeleft}"
+        )
 
     def __repr__(self) -> str:
         return str(self.__dict__)
@@ -62,7 +63,7 @@ class Radarr:
     def lookup_library(self, query: str) -> list[Movie]:
         possible_movies = self._radarr.lookup_movie(query)
 
-        possible_movies = [Movie(m) for m in possible_movies if 'id' in m]
+        possible_movies = [Movie(m) for m in possible_movies if "id" in m]
 
         return possible_movies
 
@@ -70,24 +71,27 @@ class Radarr:
         profiles = self._radarr.get_quality_profiles()
 
         for profile in profiles:
-            if profile['id'] == profile_id:
-                return profile['name']
+            if profile["id"] == profile_id:
+                return profile["name"]
 
-        raise ValueError(f'no quality profile with the id {profile_id}')
+        raise ValueError(f"no quality profile with the id {profile_id}")
 
-    def add_movie(self, movie: Movie, profile: str = 'good') -> bool:
+    def add_movie(self, movie: Movie, profile: str = "good") -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
             return False
 
         quality_profile_id = self._get_quality_profile(profile)
 
         if quality_profile_id is None:
-            raise ValueError(f'{profile} is not a valid quality profile name')
+            raise ValueError(f"{profile} is not a valid quality profile name")
 
-        root_folder = self._radarr.get_root_folder()[0]['path']
+        root_folder = self._radarr.get_root_folder()[0]["path"]
 
-        self._radarr.add_movie(db_id=movie.tmdb_id,
-                               quality_profile_id=quality_profile_id, root_dir=root_folder)
+        self._radarr.add_movie(
+            db_id=movie.tmdb_id,
+            quality_profile_id=quality_profile_id,
+            root_dir=root_folder,
+        )
 
         return True
 
@@ -101,7 +105,7 @@ class Radarr:
 
             return False
 
-        self._add_tag(movie_json['id'], tag_id)
+        self._add_tag(movie_json["id"], tag_id)
 
         return True
 
@@ -109,12 +113,12 @@ class Radarr:
         potential = self._radarr.get_movie(movie.tmdb_id)
 
         if not potential:
-            raise ValueError(f'{movie} is not in the library')
+            raise ValueError(f"{movie} is not in the library")
 
         movie_json = potential[0]
 
-        db_id = movie_json['id']
-        path = movie_json['folderName']
+        db_id = movie_json["id"]
+        path = movie_json["folderName"]
 
         self._radarr.del_movie(db_id, delete_files=True, add_exclusion=False)
 
@@ -124,7 +128,7 @@ class Radarr:
             pass
 
     def search_missing(self) -> None:
-        self._radarr.post_command(name='MissingMoviesSearch')
+        self._radarr.post_command(name="MissingMoviesSearch")
 
     def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
         try:
@@ -136,9 +140,11 @@ class Radarr:
 
         possible_movies = self._radarr.lookup_movie(query)
 
-        user_movie_ids = tag_details['movieIds']
+        user_movie_ids = tag_details["movieIds"]
 
-        return [Movie(m) for m in possible_movies if 'id' in m and m['id'] in user_movie_ids]
+        return [
+            Movie(m) for m in possible_movies if "id" in m and m["id"] in user_movie_ids
+        ]
 
     def get_quota_amount(self, user_id: int) -> int:
         try:
@@ -148,59 +154,59 @@ class Radarr:
 
         tag_details = self._radarr.get_tag_details(tag_id)
 
-        tagged_movies = tag_details['movieIds']
+        tagged_movies = tag_details["movieIds"]
 
         total = 0
 
         for movie in self._radarr.get_movie():
-            if movie['id'] in tagged_movies:
-                total += movie['sizeOnDisk']
+            if movie["id"] in tagged_movies:
+                total += movie["sizeOnDisk"]
 
         return total
 
     def get_downloads(self) -> list[Download]:
         queue = self._radarr.get_queue_details()
 
-        downloads = [Download(d) for d in queue if 'movie' in d]
+        downloads = [Download(d) for d in queue if "movie" in d]
 
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 
     def refresh_movie(self, movie_id: int) -> None:
-        self._radarr.post_command('RefreshMovie', movieIds=[movie_id])
+        self._radarr.post_command("RefreshMovie", movieIds=[movie_id])
 
     def _get_quality_profile(self, label: str) -> int:
         profiles = self._radarr.get_quality_profiles()
 
         for profile in profiles:
-            if profile['name'].lower() == label.lower():
-                return profile['id']
+            if profile["name"].lower() == label.lower():
+                return profile["id"]
 
-        raise ValueError(f'no quality profile with the name {label}')
+        raise ValueError(f"no quality profile with the name {label}")
 
     def _get_tag_for_user(self, user_id: int) -> int:
         tags = self._radarr.get_tag()
 
         for tag in tags:
-            if str(user_id) in tag['label']:
-                return tag['id']
+            if str(user_id) in tag["label"]:
+                return tag["id"]
 
-        raise ValueError(f'no tag with the user id {user_id}')
+        raise ValueError(f"no tag with the user id {user_id}")
 
     def _add_tag(self, movie_id: int, tag_id: int) -> dict:
-        path = '/api/v3/movie/editor'
+        path = "/api/v3/movie/editor"
 
-        edit_json = {'movieIds': [movie_id], 'tags': [tag_id], 'applyTags': 'add'}
+        edit_json = {"movieIds": [movie_id], "tags": [tag_id], "applyTags": "add"}
 
         res = self._radarr.request_put(path, data=edit_json)
 
         return res
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import yaml
 
-    with open('config.yaml', 'rb') as f:
+    with open("config.yaml", "rb") as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
 
-    radarr = Radarr(config['radarr']['url'], config['radarr']['api_key'])
+    radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
     pyarr = radarr._radarr
