@@ -52,7 +52,10 @@ async def select_movies(
     await reply(
         ctx,
         "\n".join(movie_list),
-        title="type in the number of the movie (or multiple separated by commas), or type c to cancel",
+        title=(
+            "type in the number of the movie (or multiple separated by commas), or type"
+            " c to cancel"
+        ),
     )
 
     def check(resp: discord.Message):
@@ -121,7 +124,8 @@ async def addmovie_cmd(ctx, *args: str):
         return
 
     logger.debug(
-        f"got !addmovie command from user {ctx.message.author.name}: {ctx.message.content}"
+        f"got !addmovie command from user {ctx.message.author.name}:"
+        f" {ctx.message.content}"
     )
 
     async with ctx.typing():
@@ -146,7 +150,8 @@ async def addmovie_cmd(ctx, *args: str):
             continue
 
         logger.info(
-            f"{ctx.message.author.name} has added the movie {movie.full_title} to the plex"
+            f"{ctx.message.author.name} has added the movie {movie.full_title} to the"
+            " plex"
         )
 
         push.send(
@@ -179,7 +184,8 @@ async def delmovie_cmd(ctx, *args: str):
         return
 
     logger.debug(
-        f"got !delmovie command from user {ctx.message.author.name}: {ctx.message.content}"
+        f"got !delmovie command from user {ctx.message.author.name}:"
+        f" {ctx.message.content}"
     )
 
     query = " ".join(args)
@@ -215,7 +221,8 @@ async def delmovie_cmd(ctx, *args: str):
         radarr.del_movie(movie)
 
         logger.info(
-            f"{ctx.message.author.name} has deleted the movie {movie.full_title} from the plex"
+            f"{ctx.message.author.name} has deleted the movie {movie.full_title} from"
+            " the plex"
         )
 
         push.send(
@@ -255,7 +262,8 @@ async def searchmissing_cmd(ctx):
     if await member_has_role(ctx.message.author, "plex-admin"):
         await reply(
             ctx,
-            f"user {ctx.message.author.name} does not have permission to use this command",
+            f"user {ctx.message.author.name} does not have permission to use this"
+            " command",
             error=True,
         )
         return
@@ -283,7 +291,10 @@ async def quota_cmd(ctx):
 
         pct = used / maximum * 100 if maximum != 0 else 100
 
-        msg = f"you have added {used:.2f}/{maximum:.2f} GB ({pct:.1f}%) of useless crap to the plex"
+        msg = (
+            f"you have added {used:.2f}/{maximum:.2f} GB ({pct:.1f}%) of useless crap"
+            " to the plex"
+        )
 
     await reply(ctx, msg)
 

@@ -42,9 +42,9 @@ class Download:
 
     def __str__(self) -> str:
         return (
-            f"{self.movie}: {self.pct_done:.1f}% done "
-            f"({(self.size-self.sizeleft) / 1024**3:.2f}/{self.size / 1024**3:.2f} GB)\n"
-            f"eta: {self.timeleft}"
+            f"{self.movie}: {self.pct_done:.1f}% done"
+            f" ({(self.size-self.sizeleft) / 1024**3:.2f}/{self.size / 1024**3:.2f} GB)\neta:"
+            f" {self.timeleft}"
         )
 
     def __repr__(self) -> str:
