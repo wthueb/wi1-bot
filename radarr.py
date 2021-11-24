@@ -1,4 +1,5 @@
 from shutil import rmtree
+from typing import Union
 
 from pyarr import RadarrAPI
 
@@ -41,10 +42,12 @@ class Download:
         self.pct_done = (self.size - self.sizeleft) / self.size * 100
 
     def __str__(self) -> str:
+        downloaded = (self.size - self.sizeleft) / 1024 ** 3
+        total = self.size / 1024 ** 3
+
         return (
             f"{self.movie}: {self.pct_done:.1f}% done"
-            f" ({(self.size-self.sizeleft) / 1024**3:.2f}/{self.size / 1024**3:.2f} GB)\neta:"
-            f" {self.timeleft}"
+            f" ({downloaded:.2f}/{total:.2f} GB)\neta: {self.timeleft}"
         )
 
     def __repr__(self) -> str:
@@ -95,8 +98,11 @@ class Radarr:
 
         return True
 
-    def add_tag(self, movie: Movie, user_id: int) -> bool:
-        movie_json = self._radarr.get_movie(movie.tmdb_id)[0]
+    def add_tag(self, movie: Union[Movie, list[Movie]], user_id: int) -> bool:
+        if isinstance(movie, Movie):
+            ids = [self._radarr.get_movie(movie.tmdb_id)[0]["id"]]
+        else:
+            ids = [self._radarr.get_movie(m.tmdb_id)[0]["id"] for m in movie]
 
         try:
             tag_id = self._get_tag_for_user(user_id)
@@ -105,7 +111,7 @@ class Radarr:
 
             return False
 
-        self._add_tag(movie_json["id"], tag_id)
+        self._add_tag(ids, tag_id)
 
         return True
 
@@ -192,10 +198,10 @@ class Radarr:
 
         raise ValueError(f"no tag with the user id {user_id}")
 
-    def _add_tag(self, movie_id: int, tag_id: int) -> dict:
+    def _add_tag(self, movie_ids: list[int], tag_id: int) -> dict:
         path = "/api/v3/movie/editor"
 
-        edit_json = {"movieIds": [movie_id], "tags": [tag_id], "applyTags": "add"}
+        edit_json = {"movieIds": movie_ids, "tags": [tag_id], "applyTags": "add"}
 
         res = self._radarr.request_put(path, data=edit_json)
 

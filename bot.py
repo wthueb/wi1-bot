@@ -161,17 +161,16 @@ async def addmovie_cmd(ctx, *args: str):
 
         await reply(resp, f"added movie {movie} to the plex")
 
-        await sleep(5)
+    await sleep(5)
 
-        # TODO: move out of for loop, update all movies at once (after five seconds)
-        if not radarr.add_tag(movie, ctx.message.author.id):
-            push.send(
-                f"get {ctx.message.author.name} a tag", title="tag needed", priority=1
-            )
+    if not radarr.add_tag(to_add, ctx.message.author.id):
+        push.send(
+            f"get {ctx.message.author.name} a tag", title="tag needed", priority=1
+        )
 
-            await ctx.send(
-                f'hey <@!{config["discord"]["admin_id"]}> get this guy a tag'
-            )
+        await ctx.send(
+            f'hey <@!{config["discord"]["admin_id"]}> get this guy a tag'
+        )
 
 
 @bot.command(name="delmovie", help="delete a movie from the plex")
