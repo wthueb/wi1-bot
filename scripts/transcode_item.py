@@ -1,22 +1,20 @@
 import argparse
-import os
-import sys
 
-sys.path.insert(0, os.getcwd())
-
-import transcoder
+from transcoder import queue
 
 
-parser = argparse.ArgumentParser(description='add item to transcode queue')
+parser = argparse.ArgumentParser(description="add item to transcode queue")
 
-parser.add_argument('path', help='file path to transcode')
+parser.add_argument("path", help="file path to transcode")
 
 args = parser.parse_args()
 
-quality = transcoder.TranscodeQuality(2_000_000, 'aac', 2, '128k')
+queue.add(
+    path=args.path,
+    video_bitrate=2_000_000,
+    audio_codec="aac",
+    audio_channels=2,
+    audio_bitrate="128k",
+)
 
-item = transcoder.TranscodeItem(args.path, quality, None)
-
-transcoder.transcode_queue.put(item)
-
-print('place in queue:', transcoder.transcode_queue.size)
+print("place in queue:", queue.size)

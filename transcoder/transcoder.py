@@ -6,15 +6,15 @@ import re
 import shutil
 import subprocess
 import threading
-from typing import Optional
 from time import sleep
 
-import persistqueue
 import yaml
 
 import push
 from radarr import Radarr
 from sonarr import Sonarr
+
+from .transcode_queue import queue, TranscodeItem
 
 with open("config.yaml", "rb") as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
@@ -25,36 +25,8 @@ logger.setLevel(logging.DEBUG)
 radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
-transcode_queue = persistqueue.SQLiteQueue("transcode-queue", multithreading=True)
 
-
-class TranscodeQuality:
-    def __init__(
-        self,
-        video_bitrate: int,
-        audio_codec: str,
-        audio_channels: int,
-        audio_bitrate: str,
-    ) -> None:
-        self.video_bitrate = video_bitrate
-        self.audio_codec = audio_codec
-        self.audio_channels = audio_channels
-        self.audio_bitrate = audio_bitrate
-
-
-class TranscodeItem:
-    def __init__(
-        self,
-        path: str,
-        quality: TranscodeQuality,
-        update: Optional[tuple[str, int]] = None,
-    ) -> None:
-        self.path = path
-        self.quality = quality
-        self.update = update
-
-
-def _do_transcode(item: TranscodeItem):
+def do_transcode(item: TranscodeItem):
     basename = item.path.split("/")[-1]
 
     logger.info(f"starting transcode: {basename}")
@@ -79,7 +51,8 @@ def _do_transcode(item: TranscodeItem):
 
     push.send(f"{basename}", title="starting transcode")
 
-    # TODO: calculate compression amount ((video bitrate + audio bitrate) * duration / current size)
+    # TODO: calculate compression amount
+    # (video bitrate + audio bitrate) * duration / current size
     # if compression amount not > config value, don't transcode
     # if compression amount > 1, don't transcode
 
@@ -104,23 +77,21 @@ def _do_transcode(item: TranscodeItem):
         "-profile:v",
         "main",
         "-b:v",
-        str(item.quality.video_bitrate),
+        str(item.video_bitrate),
         "-maxrate",
-        str(item.quality.video_bitrate * 2),
+        str(item.video_bitrate * 2),
         "-bufsize",
-        str(item.quality.video_bitrate * 2),
+        str(item.video_bitrate * 2),
         "-c:a",
-        item.quality.audio_codec,
+        item.audio_codec,
         "-ac",
-        str(item.quality.audio_channels),
+        str(item.audio_channels),
         "-b:a",
-        item.quality.audio_bitrate,
+        item.audio_bitrate,
         "-c:s",
         "copy",
         tmp_path,
     ]
-
-    logger.debug(" ".join(command))
 
     proc = subprocess.Popen(
         command,
@@ -130,7 +101,7 @@ def _do_transcode(item: TranscodeItem):
     )
 
     pattern = re.compile(
-        r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"
+        r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"  # noqa
     )
 
     for line in proc.stdout:  # type: ignore
@@ -153,11 +124,6 @@ def _do_transcode(item: TranscodeItem):
 
         # TODO
 
-    ffmpeg_return = proc.wait()
-
-    if ffmpeg_return != 0:
-        raise Exception(f"ffmpeg exited with code {ffmpeg_return}")
-
     folder = "/".join(item.path.split("/")[:-1])
 
     filename, extension = ".".join(basename.split(".")[:-1]), basename.split(".")[-1]
@@ -176,42 +142,42 @@ def _do_transcode(item: TranscodeItem):
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
 
-    if item.update:
-        if item.update[0] == "radarr":
-            radarr.refresh_movie(item.update[1])
-        elif item.update[0] == "sonarr":
-            sonarr.refresh_series(item.update[1])
+    if item.content_id is not None:
+        if new_path.startswith("/media/plex/movies/"):
+            radarr.refresh_movie(item.content_id)
+        elif new_path.startswith("/media/plex/shows/"):
+            sonarr.refresh_series(item.content_id)
 
     logger.info(f"finished transcode: {basename} -> {new_basename}")
 
     push.send(f"{basename} -> {new_basename}", title="file transcoded")
 
 
-def _worker() -> None:
+def worker() -> None:
     logger.debug("starting transcoder")
 
     while True:
-        logger.debug("waiting for queue item")
+        item = queue.get_one()
 
-        item = transcode_queue.get()
-
-        try:
-            _do_transcode(item)  # type: ignore
-        except Exception:
-            logger.warning("got exception when trying to transcode", exc_info=True)
+        if item is None:
             sleep(3)
             continue
 
-        transcode_queue.task_done()
+        try:
+            do_transcode(item)
+        except Exception:
+            logger.warning("got exception when trying to transcode", exc_info=True)
+
+        queue.remove(item)
 
         sleep(3)
 
 
 def start() -> None:
-    t = threading.Thread(target=_worker)
+    t = threading.Thread(target=worker)
     t.daemon = True
     t.start()
 
 
 if __name__ == "__main__":
-    _worker()
+    worker()

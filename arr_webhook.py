@@ -33,6 +33,7 @@ def on_grab(req: dict) -> None:
 def on_download(req: dict) -> None:
     if "movie" in req:
         movie_json = radarr._radarr.get_movie_by_movie_id(req["movie"]["id"])
+
         quality_profile = radarr.get_quality_profile_name(
             movie_json["qualityProfileId"]
         )
@@ -44,7 +45,7 @@ def on_download(req: dict) -> None:
 
         path = os.path.join(movie_folder, basename)
 
-        update = ("radarr", movie_json["id"])
+        content_id = movie_json["id"]
     elif "series" in req:
         series_json = sonarr._sonarr.get_series(req["series"]["id"])
         quality_profile = sonarr.get_quality_profile_name(
@@ -58,7 +59,7 @@ def on_download(req: dict) -> None:
 
         path = os.path.join(series_folder, req["episodeFile"]["relativePath"])
 
-        update = ("sonarr", series_json["id"])
+        content_id = series_json["id"]
     else:
         raise ValueError("unknown download request")
 
@@ -67,16 +68,14 @@ def on_download(req: dict) -> None:
 
     quality_options = config["transcoding"]["profiles"][quality_profile]
 
-    quality = transcoder.TranscodeQuality(
+    transcoder.queue.add(
+        path=path,
         video_bitrate=quality_options["video_bitrate"],
         audio_codec=quality_options["audio_codec"],
         audio_channels=quality_options["audio_channels"],
         audio_bitrate=quality_options["audio_bitrate"],
+        content_id=content_id,
     )
-
-    transcode_item = transcoder.TranscodeItem(path, quality, update)
-
-    transcoder.transcode_queue.put(transcode_item)
 
 
 @app.route("/", methods=["POST"])
