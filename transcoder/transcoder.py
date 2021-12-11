@@ -101,7 +101,7 @@ def do_transcode(item: TranscodeItem):
     )
 
     pattern = re.compile(
-        r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"  # noqa
+        r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"  # noqa: E501
     )
 
     for line in proc.stdout:  # type: ignore
