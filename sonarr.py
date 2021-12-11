@@ -1,6 +1,6 @@
 from shutil import rmtree
 
-from pyarr import SonarrAPI
+from pyarr import SonarrAPI  # type: ignore
 
 
 class Series:
@@ -17,7 +17,7 @@ class Series:
         self.imdb_id: str = ""
 
         try:
-            self.imdb_id: str = series_json["imdbId"]
+            self.imdb_id = series_json["imdbId"]
             self.url = f"https://imdb.com/title/{self.imdb_id}"
         except KeyError:
             pass

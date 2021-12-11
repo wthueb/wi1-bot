@@ -3,7 +3,6 @@ import multiprocessing
 import logging
 import logging.handlers
 import re
-from typing import Tuple
 
 import discord
 from discord.ext import commands
@@ -24,33 +23,35 @@ radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=["!", "."])
 
 
-async def member_has_role(member: discord.Member, role: str) -> bool:
-    return role in [r.name for r in member.roles]
+async def member_has_role(member: discord.Member | discord.User, role: str) -> bool:
+    if isinstance(member, discord.Member):
+        return role in [r.name for r in member.roles]
+
+    return False
 
 
-async def reply(ctx, msg: str, title: str = None, error: bool = False) -> None:
-    if title is None:
-        title = ""
-
-    if len(msg) > 2048:
-        msg = msg[:2045] + "..."
+async def reply(
+    msg: discord.Message, content: str, title: str = "", error: bool = False
+) -> None:
+    if len(content) > 2048:
+        content = content[:2045] + "..."
 
     embed = discord.Embed(
         title=title,
-        description=msg,
+        description=content,
         color=discord.Color.red() if error else discord.Color.blue(),
     )
 
-    await ctx.reply(embed=embed)
+    await msg.reply(embed=embed)
 
 
 async def select_movies(
-    ctx, command: str, movies: list[Movie]
-) -> Tuple[commands.Context, list[Movie]]:
+    msg: discord.Message, command: str, movies: list[Movie]
+) -> tuple[discord.Message, list[Movie]]:
     movie_list = [f"{i+1}. {movie}" for i, movie in enumerate(movies)]
 
     await reply(
-        ctx,
+        msg,
         "\n".join(movie_list),
         title=(
             "type in the number of the movie (or multiple separated by commas), or type"
@@ -59,7 +60,7 @@ async def select_movies(
     )
 
     def check(resp: discord.Message):
-        if resp.author != ctx.message.author or resp.channel != ctx.channel:
+        if resp.author != msg.author or resp.channel != msg.channel:
             return False
 
         regex = re.compile(r"^(c|(\d+,?)+|[!.]addmovie .*)$", re.IGNORECASE)
@@ -74,8 +75,8 @@ async def select_movies(
     try:
         resp = await bot.wait_for("message", check=check, timeout=30)
     except Exception:
-        await reply(ctx, f"timed out, {command} cancelled", error=True)
-        return ctx, []
+        await reply(msg, f"timed out, {command} cancelled", error=True)
+        return msg, []
 
     if resp.content.strip().lower() == "c":
         await reply(resp, f"{command} cancelled")
@@ -115,12 +116,12 @@ async def on_ready():
 
 
 @bot.command(name="addmovie", help="add a movie to the plex")
-async def addmovie_cmd(ctx, *args: str):
+async def addmovie_cmd(ctx: commands.Context, *args: str):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
     if not args:
-        await reply(ctx, "usage: !addmovie KEYWORDS...")
+        await reply(ctx.message, "usage: !addmovie KEYWORDS...")
         return
 
     logger.debug(
@@ -135,11 +136,13 @@ async def addmovie_cmd(ctx, *args: str):
 
         if not movies:
             await reply(
-                ctx, f"could not find a movie matching the query: {query}", error=True
+                ctx.message,
+                f"could not find a movie matching the query: {query}",
+                error=True,
             )
             return
 
-    resp, to_add = await select_movies(ctx, "addmovie", movies)
+    resp, to_add = await select_movies(ctx.message, "addmovie", movies)
 
     if not to_add:
         return
@@ -172,12 +175,12 @@ async def addmovie_cmd(ctx, *args: str):
 
 
 @bot.command(name="delmovie", help="delete a movie from the plex")
-async def delmovie_cmd(ctx, *args: str):
+async def delmovie_cmd(ctx: commands.Context, *args: str):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
     if not args:
-        await reply(ctx, "usage: !delmovie KEYWORDS...")
+        await reply(ctx.message, "usage: !delmovie KEYWORDS...")
         return
 
     logger.debug(
@@ -196,20 +199,20 @@ async def delmovie_cmd(ctx, *args: str):
         if not movies:
             if await member_has_role(ctx.message.author, "plex-admin"):
                 await reply(
-                    ctx,
+                    ctx.message,
                     f"could not find a movie matching the query: {query}",
                     error=True,
                 )
             else:
                 await reply(
-                    ctx,
+                    ctx.message,
                     f"you haven't added a movie matching the query: {query}",
                     error=True,
                 )
 
             return
 
-    resp, to_delete = await select_movies(ctx, "delmovie", movies)
+    resp, to_delete = await select_movies(ctx.message, "delmovie", movies)
 
     if not to_delete:
         return
@@ -234,7 +237,7 @@ async def delmovie_cmd(ctx, *args: str):
 @bot.command(
     name="downloads", aliases=["queue", "q"], help="see the status of movie downloads"
 )
-async def downloads_cmd(ctx):
+async def downloads_cmd(ctx: commands.Context):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
@@ -242,23 +245,23 @@ async def downloads_cmd(ctx):
         queue = radarr.get_downloads()
 
     if not queue:
-        await reply(ctx, "there are no pending downloads")
+        await reply(ctx.message, "there are no pending downloads")
         return
 
-    await reply(ctx, "\n\n".join(map(str, queue)), title="download progress")
+    await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
 @commands.cooldown(1, 60)
 @bot.command(
     name="searchmissing", help="search for missing movies that have been added"
 )
-async def searchmissing_cmd(ctx):
+async def searchmissing_cmd(ctx: commands.Context):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
     if await member_has_role(ctx.message.author, "plex-admin"):
         await reply(
-            ctx,
+            ctx.message,
             f"user {ctx.message.author.name} does not have permission to use this"
             " command",
             error=True,
@@ -267,12 +270,12 @@ async def searchmissing_cmd(ctx):
 
     radarr.search_missing()
 
-    await reply(ctx, "searching for missing movies...")
+    await reply(ctx.message, "searching for missing movies...")
 
 
 @commands.cooldown(1, 60, commands.BucketType.user)
 @bot.command(name="quota", help="see your used space on the plex")
-async def quota_cmd(ctx):
+async def quota_cmd(ctx: commands.Context):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
@@ -293,19 +296,19 @@ async def quota_cmd(ctx):
             " to the plex"
         )
 
-    await reply(ctx, msg)
+    await reply(ctx.message, msg)
 
 
 @commands.cooldown(1, 60)
 @bot.command(name="quotas", help="see everyone's used space on the plex")
-async def quotas_cmd(ctx):
+async def quotas_cmd(ctx: commands.Context):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
     quotas = config["discord"]["quotas"]
 
     if not quotas:
-        await reply(ctx, "quotas are not implemented here")
+        await reply(ctx.message, "quotas are not implemented here")
 
     async with ctx.typing():
         msg = []
@@ -320,7 +323,9 @@ async def quotas_cmd(ctx):
             msg.append(f"{user.display_name}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)")
 
     await reply(
-        ctx, "\n".join(sorted(msg)), title="quotas of users who have bought space"
+        ctx.message,
+        "\n".join(sorted(msg)),
+        title="quotas of users who have bought space",
     )
 
 

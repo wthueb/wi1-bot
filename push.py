@@ -1,4 +1,4 @@
-from pushover import Client, RequestError
+from pushover import Client, RequestError  # type: ignore
 import yaml
 
 

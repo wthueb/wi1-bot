@@ -1,7 +1,7 @@
 from shutil import rmtree
 from typing import Union
 
-from pyarr import RadarrAPI
+from pyarr import RadarrAPI  # type: ignore
 
 
 class Movie:
@@ -19,7 +19,7 @@ class Movie:
         self.imdb_id: str = ""
 
         try:
-            self.imdb_id: str = movie_json["imdbId"]
+            self.imdb_id = movie_json["imdbId"]
             self.url = f"https://imdb.com/title/{self.imdb_id}"
         except KeyError:
             pass

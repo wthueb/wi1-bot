@@ -53,7 +53,7 @@ if __name__ == "__main__":
         "loggers": {"wi1-bot": {"handlers": ["file"], "propagate": True}},
     }
 
-    logging_queue = multiprocessing.Queue()
+    logging_queue: multiprocessing.Queue = multiprocessing.Queue()
 
     webhook_worker = multiprocessing.Process(
         target=arr_webhook.run, args=(logging_queue,)
