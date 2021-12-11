@@ -70,8 +70,6 @@ async def select_movies(
 
         return False
 
-    resp = None
-
     try:
         resp = await bot.wait_for("message", check=check, timeout=30)
     except Exception:
