@@ -93,36 +93,36 @@ def do_transcode(item: TranscodeItem):
         tmp_path,
     ]
 
-    proc = subprocess.Popen(
+    with subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,
-    )
-
-    pattern = re.compile(
-        r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"  # noqa: E501
-    )
-
-    for line in proc.stdout:  # type: ignore
-        match = pattern.search(line)
-
-        if not match:
-            continue
-
-        curtime = timedelta(
-            hours=int(match.group("hours")),
-            minutes=int(match.group("minutes")),
-            seconds=float(match.group("seconds")),
+        bufsize=1,
+    ) as proc:
+        pattern = re.compile(
+            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"  # noqa: E501
         )
 
-        percent_done = curtime / duration
+        for line in proc.stdout:  # type: ignore
+            match = pattern.search(line)
 
-        speed = float(match.group("speed"))
+            if not match:
+                continue
 
-        time_remaining = (duration - curtime) / speed
+            curtime = timedelta(
+                hours=int(match.group("hours")),
+                minutes=int(match.group("minutes")),
+                seconds=float(match.group("seconds")),
+            )
 
-        # TODO
+            percent_done = curtime / duration
+
+            speed = float(match.group("speed"))
+
+            time_remaining = (duration - curtime) / speed
+
+            # TODO
 
     folder = "/".join(item.path.split("/")[:-1])
 
