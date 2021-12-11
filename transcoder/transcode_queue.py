@@ -2,11 +2,11 @@ from typing import Optional, Generic, Type, TypeVar
 from types import MethodType
 
 from mongoengine import (
-    Document,
     connect,
+    Document,
+    QuerySet,
 )
 from mongoengine.fields import StringField, IntField
-from mongoengine.queryset import QuerySet
 
 
 def no_op(self, x):
