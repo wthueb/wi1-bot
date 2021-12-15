@@ -4,8 +4,9 @@ import logging.handlers
 import multiprocessing
 import threading
 
-import arr_webhook
 import bot
+import transcoder
+import webhook
 
 
 def logger_thread(q):
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     logging_queue: multiprocessing.Queue = multiprocessing.Queue()
 
     webhook_worker = multiprocessing.Process(
-        target=arr_webhook.run, args=(logging_queue,)
+        target=webhook.run, args=(logging_queue,)
     )
     webhook_worker.start()
 
@@ -67,6 +68,8 @@ if __name__ == "__main__":
 
     logging_thread = threading.Thread(target=logger_thread, args=(logging_queue,))
     logging_thread.start()
+
+    transcoder.start()
 
     webhook_worker.join()
     bot_worker.join()

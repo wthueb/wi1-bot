@@ -19,7 +19,7 @@ from .transcode_queue import queue, TranscodeItem
 with open("config.yaml", "rb") as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
-logger = logging.getLogger("wi1-bot.arr_webhook.transcoder")
+logger = logging.getLogger("wi1-bot.transcoder")
 logger.setLevel(logging.DEBUG)
 
 radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])

@@ -17,7 +17,7 @@ with open("config.yaml", "rb") as f:
 
 app = Flask(__name__)
 
-logger = logging.getLogger("wi1-bot.arr_webhook")
+logger = logging.getLogger("wi1-bot.webhook")
 logger.setLevel(logging.DEBUG)
 
 radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
@@ -100,8 +100,6 @@ def run(logging_queue: multiprocessing.Queue) -> None:
     queue_handler = logging.handlers.QueueHandler(logging_queue)
 
     logger.addHandler(queue_handler)
-
-    transcoder.start()
 
     logger.debug("starting webhook listener")
 
