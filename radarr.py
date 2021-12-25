@@ -133,6 +133,19 @@ class Radarr:
         except FileNotFoundError:
             pass
 
+    def movie_downloaded(self, movie: Movie) -> bool:
+        potential = self._radarr.get_movie(movie.tmdb_id)
+
+        if not potential:
+            return False
+
+        files = self._radarr.get_movie_files_by_movie_id(potential[0]["id"])
+
+        if files:
+            return True
+
+        return False
+
     def search_missing(self) -> None:
         self._radarr.post_command(name="MissingMoviesSearch")
 

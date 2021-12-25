@@ -147,7 +147,10 @@ async def addmovie_cmd(ctx: commands.Context, *args: str):
 
     for movie in to_add:
         if not radarr.add_movie(movie):
-            await reply(resp, f"{movie} is already on the plex (idiot)")
+            if radarr.movie_downloaded(movie):
+                await reply(resp, f"{movie} is already DOWNLOADED on the plex (idiot)")
+            else:
+                await reply(resp, f"{movie} is already on the plex (idiot)")
             continue
 
         logger.info(
