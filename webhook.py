@@ -63,7 +63,10 @@ def on_download(req: dict) -> None:
     else:
         raise ValueError("unknown download request")
 
-    if quality_profile not in config["transcoding"]["profiles"]:
+    try:
+        if quality_profile not in config["transcoding"]["profiles"]:
+            return
+    except KeyError:
         return
 
     quality_options = config["transcoding"]["profiles"][quality_profile]

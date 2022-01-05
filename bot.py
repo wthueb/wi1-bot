@@ -306,6 +306,9 @@ async def quotas_cmd(ctx: commands.Context):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
+    if "quotas" not in config["discord"]:
+        await reply(ctx.message, "quotas are not implemented here")
+
     quotas = config["discord"]["quotas"]
 
     if not quotas:

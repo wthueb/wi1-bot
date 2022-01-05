@@ -1,0 +1,57 @@
+---
+radarr:
+  # radarr url you use to get to the dashboard
+  url: http://localhost:7878
+  # radarr api key (Settings->General->Security->API Key)
+  api_key: XXX
+
+sonarr:
+  # sonarr url you use to get to the dashboard
+  url: http://localhost:8989
+  # sonarr api key (Settings->General->Security->API Key)
+  api_key: XXX
+
+# pushover settings, optional
+pushover:
+  # pushover user key
+  user_key: XXX
+  # pushover application api key
+  api_key: XXX
+  # comma separated list of pushover device names
+  devices: device1,device2
+
+discord:
+  # discord bot token
+  bot_token: XXX
+  # what the bot is watching, optional
+  bot_presence: Casablanca
+
+  # discord channel id that the bot will be in
+  channel_id: 892569917281402890
+  # your discord user id, for pinging to add tags for users
+  admin_id: 104368283272105984
+
+  # specify quotas for users, optional
+  quotas:
+    # value is in gigabytes
+    DISCORD_USER_ID1: 123
+    DISCORD_USER_ID2: 456
+
+# transcoding settings, optional
+transcoding:
+  profiles:
+    # name of profile must match name in radarr/sonarr, all four keys required
+    good:
+      # -b:v in ffmpeg
+      video_bitrate: 5000000
+      # -c:a in ffmpeg
+      audio_codec: aac
+      # -ac in ffmpeg
+      audio_channels: 2
+      # -b:a in ffmpeg
+      audio_bitrate: 128k
+    great:
+      video_bitrate: 8000000
+      audio_codec: dca
+      audio_channels: 6
+      audio_bitrate: 384k
