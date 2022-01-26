@@ -31,6 +31,9 @@ def do_transcode(item: TranscodeItem):
 
     logger.info(f"starting transcode: {basename}")
 
+    if basename.endswith(".avi"):
+        logger.info(f"skipping transcode: .avi not supported")
+
     probe_command = [
         "/usr/bin/ffprobe",
         "-hide_banner",
