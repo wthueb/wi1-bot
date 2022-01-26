@@ -114,11 +114,11 @@ async def on_ready():
 
 
 @bot.command(name="addmovie", help="add a movie to the plex")
-async def addmovie_cmd(ctx: commands.Context, *args: str):
+async def addmovie_cmd(ctx: commands.Context, *, query: str = ''):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
-    if not args:
+    if not query:
         await reply(ctx.message, "usage: !addmovie KEYWORDS...")
         return
 
@@ -128,8 +128,6 @@ async def addmovie_cmd(ctx: commands.Context, *args: str):
     )
 
     async with ctx.typing():
-        query = " ".join(args)
-
         movies = radarr.lookup_movie(query)
 
         if not movies:
@@ -176,11 +174,11 @@ async def addmovie_cmd(ctx: commands.Context, *args: str):
 
 
 @bot.command(name="delmovie", help="delete a movie from the plex")
-async def delmovie_cmd(ctx: commands.Context, *args: str):
+async def delmovie_cmd(ctx: commands.Context, *, query: str = ''):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
-    if not args:
+    if not query:
         await reply(ctx.message, "usage: !delmovie KEYWORDS...")
         return
 
@@ -188,8 +186,6 @@ async def delmovie_cmd(ctx: commands.Context, *args: str):
         f"got !delmovie command from user {ctx.message.author.name}:"
         f" {ctx.message.content}"
     )
-
-    query = " ".join(args)
 
     async with ctx.typing():
         if await member_has_role(ctx.message.author, "plex-admin"):
