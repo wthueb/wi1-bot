@@ -29,10 +29,11 @@ sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 def do_transcode(item: TranscodeItem):
     basename = item.path.split("/")[-1]
 
-    logger.info(f"starting transcode: {basename}")
-
     if basename.endswith(".avi"):
-        logger.info(f"skipping transcode: .avi not supported")
+        logger.info("skipping transcode: .avi not supported")
+        return
+
+    logger.info(f"starting transcode: {basename}")
 
     probe_command = [
         "/usr/bin/ffprobe",
