@@ -143,6 +143,8 @@ async def addmovie_cmd(ctx: commands.Context, *, query: str = ''):
     if not to_add:
         return
 
+    added = []
+
     for movie in to_add:
         if not radarr.add_movie(movie):
             if radarr.movie_downloaded(movie):
@@ -150,6 +152,8 @@ async def addmovie_cmd(ctx: commands.Context, *, query: str = ''):
             else:
                 await reply(resp, f"{movie} is already on the plex (idiot)")
             continue
+
+        added.append(movie)
 
         logger.info(
             f"{ctx.message.author.name} has added the movie {movie.full_title} to the"
@@ -165,7 +169,7 @@ async def addmovie_cmd(ctx: commands.Context, *, query: str = ''):
 
     await sleep(10)
 
-    if not radarr.add_tag(to_add, ctx.message.author.id):
+    if not radarr.add_tag(added, ctx.message.author.id):
         push.send(
             f"get {ctx.message.author.name} a tag", title="tag needed", priority=1
         )
