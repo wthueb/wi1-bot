@@ -1,5 +1,7 @@
 import argparse
 
+import sys,os
+sys.path.insert(0, os.getcwd())
 from transcoder import queue
 
 
