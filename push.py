@@ -27,5 +27,5 @@ def send(msg: str, title: str = None, url: str = None, priority: int = 0) -> Non
                 priority=priority,
                 device=config["pushover"]["devices"],
             )
-    except RequestError:
+    except Exception:
         pass
