@@ -63,7 +63,7 @@ async def select_movies(
         if resp.author != msg.author or resp.channel != msg.channel:
             return False
 
-        regex = re.compile(r"^(c|(\d+,?)+|[!.]addmovie .*)$", re.IGNORECASE)
+        regex = re.compile(fr"^(c|(\d+,?)+|[!.]{command} .*)$", re.IGNORECASE)
 
         if re.match(regex, resp.content.strip()):
             return True
@@ -80,10 +80,12 @@ async def select_movies(
         await reply(resp, f"{command} cancelled")
         return resp, []
 
-    if resp.content.strip()[1:].startswith("addmovie"):
+    if resp.content.strip()[1:].startswith(command):
         return resp, []
 
-    idxs = [int(i) for i in resp.content.strip().split(",") if i.isdigit()]
+    choices = resp.content.strip().split(",")
+
+    idxs = [int(i) for i in choices if i.isdigit()]
 
     for idx in idxs:
         if idx < 1 or idx > len(movies):
@@ -114,7 +116,7 @@ async def on_ready():
 
 
 @bot.command(name="addmovie", help="add a movie to the plex")
-async def addmovie_cmd(ctx: commands.Context, *, query: str = ''):
+async def addmovie_cmd(ctx: commands.Context, *, query: str = ""):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
@@ -178,7 +180,7 @@ async def addmovie_cmd(ctx: commands.Context, *, query: str = ''):
 
 
 @bot.command(name="delmovie", help="delete a movie from the plex")
-async def delmovie_cmd(ctx: commands.Context, *, query: str = ''):
+async def delmovie_cmd(ctx: commands.Context, *, query: str = ""):
     if ctx.channel.id != config["discord"]["channel_id"]:
         return
 
