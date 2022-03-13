@@ -1,4 +1,8 @@
 import argparse
+import os
+import sys
+
+sys.path.insert(0, os.getcwd())
 
 from transcoder import queue
 
@@ -11,6 +15,7 @@ args = parser.parse_args()
 
 queue.add(
     path=args.path,
+    video_codec="hevc_nvenc",
     video_bitrate=2_000_000,
     audio_codec="aac",
     audio_channels=2,

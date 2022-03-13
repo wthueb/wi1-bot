@@ -64,19 +64,29 @@ def on_download(req: dict) -> None:
         raise ValueError("unknown download request")
 
     try:
-        if quality_profile not in config["transcoding"]["profiles"]:
-            return
+        quality_options = config["transcoding"]["profiles"][quality_profile]
     except KeyError:
         return
 
-    quality_options = config["transcoding"]["profiles"][quality_profile]
+    def get_key(d, k):
+        try:
+            return d[k]
+        except KeyError:
+            return None
+
+    video_codec = get_key(quality_options, "video_codec")
+    video_bitrate = get_key(quality_options, "video_bitrate")
+    audio_codec = get_key(quality_options, "audio_codec")
+    audio_channels = get_key(quality_options, "audio_channels")
+    audio_bitrate = get_key(quality_options, "audio_bitrate")
 
     transcoder.queue.add(
         path=path,
-        video_bitrate=quality_options["video_bitrate"],
-        audio_codec=quality_options["audio_codec"],
-        audio_channels=quality_options["audio_channels"],
-        audio_bitrate=quality_options["audio_bitrate"],
+        video_codec=video_codec,
+        video_bitrate=video_bitrate,
+        audio_codec=audio_codec,
+        audio_channels=audio_channels,
+        audio_bitrate=audio_bitrate,
         content_id=content_id,
     )
 
