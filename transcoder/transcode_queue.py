@@ -28,10 +28,11 @@ class TranscodeItem(Document):
 
     path = StringField(required=True)
 
-    video_bitrate = IntField(required=True)
-    audio_codec = StringField(required=True)
-    audio_channels = IntField(required=True)
-    audio_bitrate = StringField(required=True)
+    video_codec = StringField(required=False)
+    video_bitrate = IntField(required=False)
+    audio_codec = StringField(required=False)
+    audio_channels = IntField(required=False)
+    audio_bitrate = StringField(required=False)
 
     content_id = IntField(required=False)
 
@@ -43,29 +44,22 @@ class TranscodeQueue:
     def add(
         self,
         path: str,
-        video_bitrate: int,
-        audio_codec: str,
-        audio_channels: int,
-        audio_bitrate: str,
+        video_codec: Optional[str] = None,
+        video_bitrate: Optional[int] = None,
+        audio_codec: Optional[str] = None,
+        audio_channels: Optional[int] = None,
+        audio_bitrate: Optional[str] = None,
         content_id: Optional[int] = None,
     ) -> None:
-        if content_id is not None:
-            TranscodeItem(
-                path=path,
-                video_bitrate=video_bitrate,
-                audio_codec=audio_codec,
-                audio_channels=audio_channels,
-                audio_bitrate=audio_bitrate,
-                content_id=content_id,
-            ).save()
-        else:
-            TranscodeItem(
-                path=path,
-                video_bitrate=video_bitrate,
-                audio_codec=audio_codec,
-                audio_channels=audio_channels,
-                audio_bitrate=audio_bitrate,
-            ).save()
+        TranscodeItem(
+            path=path,
+            video_codec=video_codec,
+            video_bitrate=video_bitrate,
+            audio_codec=audio_codec,
+            audio_channels=audio_channels,
+            audio_bitrate=audio_bitrate,
+            content_id=content_id,
+        ).save()
 
     def get_one(self) -> Optional[TranscodeItem]:
         return TranscodeItem.objects.first()

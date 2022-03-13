@@ -36,7 +36,7 @@ def do_transcode(item: TranscodeItem):
     logger.info(f"starting transcode: {basename}")
 
     probe_command = [
-        "/usr/bin/ffprobe",
+        "ffprobe",
         "-hide_banner",
         "-show_entries",
         "format=duration",
@@ -63,35 +63,49 @@ def do_transcode(item: TranscodeItem):
     tmp_path = os.path.join("/tmp/", basename)
 
     command = [
-        "/usr/bin/ffmpeg",
+        "ffmpeg",
         "-hide_banner",
         "-y",
-        "-hwaccel",
-        "cuda",
-        "-i",
-        item.path,
-        "-c:v",
-        "hevc_nvenc",
-        "-preset",
-        "fast",
-        "-profile:v",
-        "main",
-        "-b:v",
-        str(item.video_bitrate),
-        "-maxrate",
-        str(item.video_bitrate * 2),
-        "-bufsize",
-        str(item.video_bitrate * 2),
-        "-c:a",
-        item.audio_codec,
-        "-ac",
-        str(item.audio_channels),
-        "-b:a",
-        item.audio_bitrate,
-        "-c:s",
-        "copy",
-        tmp_path,
     ]
+
+    try:
+        command.extend(["-hwaccel", config["transcoding"]["hwaccel"]])
+    except KeyError:
+        pass
+
+    command.extend(["-i", item.path])
+
+    if item.video_codec:
+        command.extend(
+            ["-c:v", item.video_codec, "-preset", "fast", "-profile:v", "main"]
+        )
+    else:
+        command.extend(["-c:v", "copy"])
+
+    if item.video_bitrate:
+        command.extend(
+            [
+                "-b:v",
+                str(item.video_bitrate),
+                "-maxrate",
+                str(item.video_bitrate * 2),
+                "-bufsize",
+                str(item.video_bitrate * 2),
+            ]
+        )
+
+    if item.audio_codec:
+        command.extend(["-c:a", item.audio_codec])
+    else:
+        command.extend(["-c:a", "copy"])
+
+    if item.audio_channels:
+        command.extend(["-ac", str(item.audio_channels)])
+
+    if item.audio_bitrate:
+        command.extend(["-b:a", str(item.audio_bitrate)])
+
+    command.extend(["-c:s", "copy", tmp_path])
 
     with subprocess.Popen(
         command,

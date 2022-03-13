@@ -39,16 +39,20 @@ discord:
 
 # transcoding settings, optional
 transcoding:
+  # -hwaccel in ffmpeg, optional
+  hwaccel: cuda
   profiles:
-    # name of profile must match name in radarr/sonarr, all four keys required
+    # name of profile must match name in radarr/sonarr
     good:
-      # -b:v in ffmpeg
+      # -c:v in ffmpeg, optional
+      video_codec: hevc_nvenc
+      # -b:v in ffmpeg, optional
       video_bitrate: 5000000
-      # -c:a in ffmpeg
+      # -c:a in ffmpeg, optional
       audio_codec: aac
-      # -ac in ffmpeg
+      # -ac in ffmpeg, optional
       audio_channels: 2
-      # -b:a in ffmpeg
+      # -b:a in ffmpeg, optional
       audio_bitrate: 128k
     great:
       video_bitrate: 8000000
