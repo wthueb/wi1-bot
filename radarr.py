@@ -222,10 +222,7 @@ class Radarr:
 
 
 if __name__ == "__main__":
-    import yaml
-
-    with open("config.yaml", "rb") as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    from config import config
 
     radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
     pyarr = radarr._radarr

@@ -107,10 +107,7 @@ class Sonarr:
 
 
 if __name__ == "__main__":
-    import yaml
-
-    with open("config.yaml", "rb") as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+    from config import config
 
     sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
     pyarr = sonarr._sonarr

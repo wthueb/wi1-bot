@@ -4,16 +4,13 @@ import multiprocessing
 import os.path
 
 from flask import Flask, request
-import yaml
 
+from config import config
 import push
 from radarr import Radarr
 from sonarr import Sonarr
 import transcoder
 
-
-with open("config.yaml", "rb") as f:
-    config = yaml.load(f, Loader=yaml.SafeLoader)
 
 app = Flask(__name__)
 
