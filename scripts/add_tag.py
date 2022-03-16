@@ -4,14 +4,9 @@ import sys
 
 sys.path.insert(0, os.getcwd())
 
-import yaml
-
+from config import config
 from radarr import Radarr
 from sonarr import Sonarr
-
-
-with open('config.yaml', 'rb') as f:
-    config = yaml.load(f, Loader=yaml.SafeLoader)
 
 
 parser = argparse.ArgumentParser()
