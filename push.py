@@ -1,9 +1,5 @@
+from config import config
 from pushover import Client, RequestError  # type: ignore
-import yaml
-
-
-with open("config.yaml", "rb") as f:
-    config = yaml.load(f, Loader=yaml.SafeLoader)
 
 
 _client = None
