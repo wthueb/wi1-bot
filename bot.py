@@ -117,9 +117,10 @@ def run(logging_queue: multiprocessing.Queue) -> None:
     bot.run(config["discord"]["bot_token"])
 
 
+bot.add_cog(MovieCog(bot))
+
+
 if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler())
-
-    bot.add_cog(MovieCog(bot))
 
     bot.run(config["discord"]["bot_token"])
