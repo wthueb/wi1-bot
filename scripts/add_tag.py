@@ -1,8 +1,4 @@
 import argparse
-import os
-import sys
-
-sys.path.insert(0, os.getcwd())
 
 from config import config
 from radarr import Radarr

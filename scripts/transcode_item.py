@@ -1,9 +1,6 @@
 import argparse
-import os
-import sys
 
-sys.path.insert(0, os.getcwd())
-
+from config import config
 from transcoder import queue
 
 
@@ -13,13 +10,15 @@ parser.add_argument("path", help="file path to transcode")
 
 args = parser.parse_args()
 
+qp = config["transcoding"]["profiles"]["good"]
+
 queue.add(
     path=args.path,
-    video_codec="hevc_nvenc",
-    video_bitrate=2_000_000,
-    audio_codec="aac",
-    audio_channels=2,
-    audio_bitrate="128k",
+    video_codec=qp["video_codec"],
+    video_bitrate=qp["video_bitrate"],
+    audio_codec=qp["audio_codec"],
+    audio_channels=qp["audio_channels"],
+    audio_bitrate=qp["audio_bitrate"],
 )
 
 print("place in queue:", queue.size)
