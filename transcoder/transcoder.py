@@ -106,7 +106,7 @@ def do_transcode(item: TranscodeItem):
 
     command.extend(["-c:s", "copy", tmp_path])
 
-    logger.debug(f"ffmpeg command: {command}")
+    logger.debug(f"ffmpeg command: {' '.join(command)}")
 
     with subprocess.Popen(
         command,
