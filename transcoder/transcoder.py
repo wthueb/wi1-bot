@@ -112,14 +112,18 @@ def do_transcode(item: TranscodeItem):
         command,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        universal_newlines=True,
+        text=True,
         bufsize=1,
     ) as proc:
         pattern = re.compile(
-            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+.?\d+)\s*bitrate.*speed=(?P<speed>(\d+)?(\.\d)?)x"  # noqa: E501
+            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>(\d+)?(\.\d+)?)x"
         )
 
+        output = []
+
         for line in proc.stdout:  # type: ignore
+            output.append(line)
+
             match = pattern.search(line)
 
             if not match:
@@ -138,6 +142,12 @@ def do_transcode(item: TranscodeItem):
             time_remaining = (duration - curtime) / speed
 
             # TODO
+
+        status = proc.wait()
+
+        if status != 0:
+            logger.error(f"ffmpeg failed: {output[-1].strip()}")
+            return
 
     folder = "/".join(item.path.split("/")[:-1])
 
@@ -194,4 +204,5 @@ def start() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     worker()
