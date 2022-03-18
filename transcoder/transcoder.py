@@ -39,10 +39,10 @@ def do_transcode(item: TranscodeItem):
         item.path,
     ]
 
-    probe_result = subprocess.run(probe_command, capture_output=True)
+    probe_result = subprocess.run(probe_command, capture_output=True, text=True)
 
     try:
-        duration = timedelta(seconds=float(probe_result.stdout.decode("utf-8").strip()))
+        duration = timedelta(seconds=float(probe_result.stdout.strip()))
     except ValueError:
         logger.debug(f"file does not exist: {item.path}, skipping transcoding")
         return
