@@ -116,7 +116,7 @@ def do_transcode(item: TranscodeItem):
         bufsize=1,
     ) as proc:
         pattern = re.compile(
-            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>(\d+)?(\.\d+)?)x"
+            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"
         )
 
         output = []
