@@ -30,10 +30,8 @@ def do_transcode(item: TranscodeItem):
     basename = item.path.split("/")[-1]
 
     if basename.endswith(".avi"):
-        logger.info("skipping transcode: .avi not supported")
+        logger.debug(f"cannot transcode {basename}: .avi not supported")
         return
-
-    logger.info(f"starting transcode: {basename}")
 
     probe_command = [
         "ffprobe",
@@ -50,9 +48,10 @@ def do_transcode(item: TranscodeItem):
     try:
         duration = timedelta(seconds=float(probe_result.stdout.decode("utf-8").strip()))
     except ValueError:
-        logger.warning(f"file does not exist: {item.path}, skipping transcoding")
+        logger.debug(f"file does not exist: {item.path}, skipping transcoding")
         return
 
+    logger.info(f"starting transcode: {basename}")
     push.send(f"{basename}", title="starting transcode")
 
     # TODO: calculate compression amount
@@ -106,6 +105,8 @@ def do_transcode(item: TranscodeItem):
         command.extend(["-b:a", str(item.audio_bitrate)])
 
     command.extend(["-c:s", "copy", tmp_path])
+
+    logger.debug(f"ffmpeg command: {command}")
 
     with subprocess.Popen(
         command,
@@ -163,7 +164,6 @@ def do_transcode(item: TranscodeItem):
             sonarr.refresh_series(item.content_id)
 
     logger.info(f"finished transcode: {basename} -> {new_basename}")
-
     push.send(f"{basename} -> {new_basename}", title="file transcoded")
 
 
