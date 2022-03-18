@@ -1,4 +1,4 @@
-from asyncio import sleep
+import asyncio
 import logging
 import re
 
@@ -12,13 +12,13 @@ from radarr import Radarr, Movie
 
 
 class MovieCog(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger("wi1-bot.bot")
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 
     @commands.command(name="addmovie", help="add a movie to the plex")
-    async def addmovie_cmd(self, ctx: commands.Context, *, query: str = ""):
+    async def addmovie_cmd(self, ctx: commands.Context, *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !addmovie KEYWORDS...")
             return
@@ -66,7 +66,7 @@ class MovieCog(commands.Cog):
 
             await reply(resp, f"added movie {movie} to the plex")
 
-        await sleep(10)
+        await asyncio.sleep(10)
 
         if not self.radarr.add_tag(to_add, ctx.message.author.id):
             push.send(
@@ -78,7 +78,7 @@ class MovieCog(commands.Cog):
             )
 
     @commands.command(name="delmovie", help="delete a movie from the plex")
-    async def delmovie_cmd(self, ctx: commands.Context, *, query: str = ""):
+    async def delmovie_cmd(self, ctx: commands.Context, *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !delmovie KEYWORDS...")
             return
@@ -91,26 +91,26 @@ class MovieCog(commands.Cog):
         async with ctx.typing():
             if await member_has_role(ctx.message.author, "plex-admin"):
                 movies = self.radarr.lookup_library(query)[:50]
-            else:
-                movies = self.radarr.lookup_user_movies(query, ctx.message.author.id)[
-                    :50
-                ]
 
-            if not movies:
-                if await member_has_role(ctx.message.author, "plex-admin"):
+                if not movies:
                     await reply(
                         ctx.message,
                         f"could not find a movie matching the query: {query}",
                         error=True,
                     )
-                else:
+                    return
+            else:
+                movies = self.radarr.lookup_user_movies(query, ctx.message.author.id)[
+                    :50
+                ]
+
+                if not movies:
                     await reply(
                         ctx.message,
                         f"you haven't added a movie matching the query: {query}",
                         error=True,
                     )
-
-                return
+                    return
 
         resp, to_delete = await self.select_movies(ctx.message, "delmovie", movies)
 
@@ -146,11 +146,12 @@ class MovieCog(commands.Cog):
             ),
         )
 
-        def check(resp: discord.Message):
+        def check(resp: discord.Message) -> bool:
             if resp.author != msg.author or resp.channel != msg.channel:
                 return False
 
-            regex = re.compile(fr"^(c|(\d+,?)+|[!.]{command} .*)$", re.IGNORECASE)
+            # c, idxs, or new command
+            regex = re.compile(r"^(c|(\d+,?)+|[!.].+ .*)$", re.IGNORECASE)
 
             if re.match(regex, resp.content.strip()):
                 return True
@@ -159,7 +160,7 @@ class MovieCog(commands.Cog):
 
         try:
             resp = await self.bot.wait_for("message", check=check, timeout=30)
-        except Exception:
+        except asyncio.TimeoutError:
             await reply(msg, f"timed out, {command} cancelled", error=True)
             return msg, []
 
@@ -167,12 +168,14 @@ class MovieCog(commands.Cog):
             await reply(resp, f"{command} cancelled")
             return resp, []
 
-        if resp.content.strip()[1:].startswith(command):
+        if resp.content.strip()[0] in [".", "!"]:
             return resp, []
 
         choices = resp.content.strip().split(",")
 
         idxs = [int(i) for i in choices if i.isdigit()]
+
+        selected = []
 
         for idx in idxs:
             if idx < 1 or idx > len(movies):
@@ -181,9 +184,6 @@ class MovieCog(commands.Cog):
                 )
                 return resp, []
 
-        selected = []
-
-        for idx in idxs:
             selected.append(movies[idx - 1])
 
         return resp, selected
