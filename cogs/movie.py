@@ -19,9 +19,6 @@ class MovieCog(commands.Cog):
 
     @commands.command(name="addmovie", help="add a movie to the plex")
     async def addmovie_cmd(self, ctx: commands.Context, *, query: str = ""):
-        if ctx.channel.id != config["discord"]["channel_id"]:
-            return
-
         if not query:
             await reply(ctx.message, "usage: !addmovie KEYWORDS...")
             return
@@ -82,9 +79,6 @@ class MovieCog(commands.Cog):
 
     @commands.command(name="delmovie", help="delete a movie from the plex")
     async def delmovie_cmd(self, ctx: commands.Context, *, query: str = ""):
-        if ctx.channel.id != config["discord"]["channel_id"]:
-            return
-
         if not query:
             await reply(ctx.message, "usage: !delmovie KEYWORDS...")
             return

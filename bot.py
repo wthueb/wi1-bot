@@ -26,15 +26,13 @@ async def check_channel(ctx: commands.Context) -> bool:
 
 @bot.event
 async def on_ready():
-    try:
+    if "bot_presence" in config["discord"]:
         await bot.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching,
                 name=config["discord"]["bot_presence"],
             )
         )
-    except Exception:
-        pass
 
     logger.debug("bot is ready")
 
@@ -82,6 +80,7 @@ async def quota_cmd(ctx: commands.Context):
 async def quotas_cmd(ctx: commands.Context):
     if "quotas" not in config["discord"]:
         await reply(ctx.message, "quotas are not implemented here")
+        return
 
     quotas = config["discord"]["quotas"]
 
