@@ -2,6 +2,12 @@
 
 A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing commands like !addmovie and !downloads.
 
+Usage:
+
+1. Copy `config.yaml.template` to `config.yaml` and set the necessary values.
+2. `pip install -r requirements.txt`
+3. `python start.py`
+
 TODO:
 
 - Actually enforce download quotas
