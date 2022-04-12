@@ -1,6 +1,6 @@
-import multiprocessing
 import logging
 import logging.handlers
+import multiprocessing
 
 import discord
 from discord.ext import commands
@@ -9,7 +9,6 @@ from cogs import MovieCog
 from config import config
 from helpers import reply
 from radarr import Radarr
-
 
 logger = logging.getLogger("wi1-bot.bot")
 logger.setLevel(logging.DEBUG)
@@ -56,7 +55,7 @@ async def downloads_cmd(ctx: commands.Context) -> None:
 @bot.command(name="quota", help="see your used space on the plex")
 async def quota_cmd(ctx: commands.Context) -> None:
     async with ctx.typing():
-        used = radarr.get_quota_amount(ctx.message.author.id) / 1024 ** 3
+        used = radarr.get_quota_amount(ctx.message.author.id) / 1024**3
 
         maximum = 0
 
@@ -91,7 +90,7 @@ async def quotas_cmd(ctx: commands.Context) -> None:
         msg = []
 
         for user_id, total in quotas.items():
-            used = radarr.get_quota_amount(user_id) / 1024 ** 3
+            used = radarr.get_quota_amount(user_id) / 1024**3
 
             pct = used / total * 100 if total != 0 else 100
 

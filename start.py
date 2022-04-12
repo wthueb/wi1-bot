@@ -44,7 +44,7 @@ if __name__ == "__main__":
             "file": {
                 "class": "logging.handlers.RotatingFileHandler",
                 "filename": "logs/wi1-bot.log",
-                "maxBytes": 1024 ** 2 * 10,  # 10 MB
+                "maxBytes": 1024**2 * 10,  # 10 MB
                 "backupCount": 20,
                 "level": "INFO",
                 "formatter": "detailed",
@@ -56,9 +56,7 @@ if __name__ == "__main__":
 
     logging_queue: multiprocessing.Queue = multiprocessing.Queue()
 
-    webhook_worker = multiprocessing.Process(
-        target=webhook.run, args=(logging_queue,)
-    )
+    webhook_worker = multiprocessing.Process(target=webhook.run, args=(logging_queue,))
     webhook_worker.start()
 
     bot_worker = multiprocessing.Process(target=bot.run, args=(logging_queue,))

@@ -3,12 +3,11 @@ import logging
 import re
 
 import discord
-from discord.ext import commands
-
-from config import config
-from helpers import reply, member_has_role
 import push
-from radarr import Radarr, Movie
+from config import config
+from discord.ext import commands
+from helpers import member_has_role, reply
+from radarr import Movie, Radarr
 
 
 class MovieCog(commands.Cog):
@@ -55,8 +54,8 @@ class MovieCog(commands.Cog):
                 continue
 
             self.logger.info(
-                f"{ctx.message.author.name} has added the movie {movie.full_title} to the"
-                " plex"
+                f"{ctx.message.author.name} has added the movie {movie.full_title} to"
+                " the plex"
             )
 
             push.send(
@@ -121,8 +120,8 @@ class MovieCog(commands.Cog):
             self.radarr.del_movie(movie)
 
             self.logger.info(
-                f"{ctx.message.author.name} has deleted the movie {movie.full_title} from"
-                " the plex"
+                f"{ctx.message.author.name} has deleted the movie"
+                f" {movie.full_title} from the plex"
             )
 
             push.send(
@@ -141,8 +140,8 @@ class MovieCog(commands.Cog):
             msg,
             "\n".join(movie_list),
             title=(
-                "type in the number of the movie (or multiple separated by commas), or type"
-                " c to cancel"
+                "type in the number of the movie (or multiple separated by commas), or"
+                " type c to cancel"
             ),
         )
 

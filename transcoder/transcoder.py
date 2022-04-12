@@ -1,4 +1,3 @@
-from datetime import timedelta
 import logging
 import logging.handlers
 import os
@@ -6,14 +5,15 @@ import re
 import shutil
 import subprocess
 import threading
+from datetime import timedelta
 from time import sleep
 
-from config import config
 import push
+from config import config
 from radarr import Radarr
 from sonarr import Sonarr
 
-from .transcode_queue import queue, TranscodeItem
+from .transcode_queue import TranscodeItem, queue
 
 logger = logging.getLogger("wi1-bot.transcoder")
 logger.setLevel(logging.DEBUG)
@@ -112,7 +112,7 @@ def do_transcode(item: TranscodeItem):
         bufsize=1,
     ) as proc:
         pattern = re.compile(
-            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"
+            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa
         )
 
         output = []

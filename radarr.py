@@ -42,8 +42,8 @@ class Download:
         self.pct_done = (self.size - self.sizeleft) / self.size * 100
 
     def __str__(self) -> str:
-        downloaded = (self.size - self.sizeleft) / 1024 ** 3
-        total = self.size / 1024 ** 3
+        downloaded = (self.size - self.sizeleft) / 1024**3
+        total = self.size / 1024**3
 
         return (
             f"{self.movie}: {self.pct_done:.1f}% done"
