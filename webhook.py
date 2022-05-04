@@ -13,6 +13,8 @@ from config import config
 
 app = Flask(__name__)
 
+logging.getLogger("werkzeug").disabled = True
+
 logger = logging.getLogger("wi1-bot.webhook")
 logger.setLevel(logging.DEBUG)
 
