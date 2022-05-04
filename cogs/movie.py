@@ -7,7 +7,7 @@ import push
 from config import config
 from discord.ext import commands
 from helpers import member_has_role, reply
-from radarr import Movie, Radarr
+from arr.radarr import Movie, Radarr
 
 
 class MovieCog(commands.Cog):

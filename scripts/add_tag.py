@@ -1,7 +1,7 @@
 import argparse
 
 from config import config
-from radarr import Radarr
+from arr.radarr import Radarr
 from sonarr import Sonarr
 
 

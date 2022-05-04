@@ -5,10 +5,11 @@ import multiprocessing
 import discord
 from discord.ext import commands
 
+from arr.radarr import Radarr
+from arr.sonarr import Sonarr
 from cogs import MovieCog
 from config import config
 from helpers import reply
-from radarr import Radarr
 
 logger = logging.getLogger("wi1-bot.bot")
 logger.setLevel(logging.DEBUG)
@@ -16,6 +17,7 @@ logger.setLevel(logging.DEBUG)
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=["!", "."])
 
 radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
+sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
 
 @bot.check
@@ -42,7 +44,9 @@ async def on_ready() -> None:
 )
 async def downloads_cmd(ctx: commands.Context) -> None:
     async with ctx.typing():
-        queue = radarr.get_downloads()
+        queue = radarr.get_downloads() + sonarr.get_downloads()
+
+        queue.sort(key=lambda d: (d.timeleft, -d.pct_done))
 
     if not queue:
         await reply(ctx.message, "there are no pending downloads")
@@ -77,11 +81,11 @@ async def quota_cmd(ctx: commands.Context) -> None:
 @commands.cooldown(1, 60)
 @bot.command(name="quotas", help="see everyone's used space on the plex")
 async def quotas_cmd(ctx: commands.Context) -> None:
-    if "quotas" not in config["discord"]:
+    try:
+        quotas = config["discord"]["quotas"]
+    except ValueError:
         await reply(ctx.message, "quotas are not implemented here")
         return
-
-    quotas = config["discord"]["quotas"]
 
     if not quotas:
         await reply(ctx.message, "quotas are not implemented here")
@@ -108,7 +112,7 @@ async def quotas_cmd(ctx: commands.Context) -> None:
 def run(logging_queue: multiprocessing.Queue) -> None:
     queue_handler = logging.handlers.QueueHandler(logging_queue)
 
-    logger.addHandler(queue_handler)
+    logging.getLogger().addHandler(queue_handler)
 
     logger.debug("starting bot")
 

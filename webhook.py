@@ -5,12 +5,11 @@ import os.path
 
 from flask import Flask, request
 
-from config import config
 import push
-from radarr import Radarr
-from sonarr import Sonarr
 import transcoder
-
+from arr.radarr import Radarr
+from arr.sonarr import Sonarr
+from config import config
 
 app = Flask(__name__)
 
@@ -109,7 +108,7 @@ def index():
 def run(logging_queue: multiprocessing.Queue) -> None:
     queue_handler = logging.handlers.QueueHandler(logging_queue)
 
-    logger.addHandler(queue_handler)
+    logging.getLogger().addHandler(queue_handler)
 
     logger.debug("starting webhook listener")
 

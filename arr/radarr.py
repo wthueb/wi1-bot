@@ -1,57 +1,9 @@
 from shutil import rmtree
-from typing import Union
 
 from pyarr import RadarrAPI  # type: ignore
 
-
-class Movie:
-    def __init__(self, movie_json: dict) -> None:
-        self._json = movie_json
-
-        self.title: str = movie_json["title"]
-        self.year: int = movie_json["year"]
-        self.tmdb_id: int = movie_json["tmdbId"]
-
-        self.full_title = f"{self.title} ({self.year})"
-
-        self.url = f"https://themoviedb.org/movie/{self.tmdb_id}"
-
-        self.imdb_id: str = ""
-
-        try:
-            self.imdb_id = movie_json["imdbId"]
-            self.url = f"https://imdb.com/title/{self.imdb_id}"
-        except KeyError:
-            pass
-
-    def __str__(self) -> str:
-        return f"[{self.full_title}]({self.url})"
-
-    def __repr__(self) -> str:
-        return str(self.__dict__)
-
-
-class Download:
-    def __init__(self, data: dict) -> None:
-        self.movie = Movie(data["movie"])
-        self.sizeleft = data["sizeleft"]
-        self.size = data["size"]
-        self.timeleft = data["timeleft"] if "timeleft" in data else "unknown"
-        self.status = data["status"]
-
-        self.pct_done = (self.size - self.sizeleft) / self.size * 100
-
-    def __str__(self) -> str:
-        downloaded = (self.size - self.sizeleft) / 1024**3
-        total = self.size / 1024**3
-
-        return (
-            f"{self.movie}: {self.pct_done:.1f}% done"
-            f" ({downloaded:.2f}/{total:.2f} GB)\neta: {self.timeleft}"
-        )
-
-    def __repr__(self) -> str:
-        return str(self.__dict__)
+from .download import Download
+from .movie import Movie
 
 
 class Radarr:
@@ -98,7 +50,7 @@ class Radarr:
 
         return True
 
-    def add_tag(self, movie: Union[Movie, list[Movie]], user_id: int) -> bool:
+    def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
         if isinstance(movie, Movie):
             ids = [self._radarr.get_movie(movie.tmdb_id)[0]["id"]]
         else:
@@ -186,7 +138,7 @@ class Radarr:
     def get_downloads(self) -> list[Download]:
         queue = self._radarr.get_queue_details()
 
-        downloads = [Download(d) for d in queue if "movie" in d]
+        downloads = [Download(d) for d in queue]
 
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 

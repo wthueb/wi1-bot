@@ -10,8 +10,8 @@ from time import sleep
 
 import push
 from config import config
-from radarr import Radarr
-from sonarr import Sonarr
+from arr.radarr import Radarr
+from arr.sonarr import Sonarr
 
 from .transcode_queue import TranscodeItem, queue
 
