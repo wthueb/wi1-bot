@@ -44,7 +44,8 @@ class Sonarr:
         self._sonarr.post_command("RefreshSeries", seriesId=series_id)
 
     def get_quality_profile_name(self, profile_id: int):
-        profiles = self._sonarr.get_quality_profiles()
+        # profiles = self._sonarr.get_quality_profile()
+        profiles = self._sonarr.request_get("profile")
 
         for profile in profiles:
             if profile["id"] == profile_id:

@@ -23,7 +23,7 @@ class Radarr:
         return possible_movies
 
     def get_quality_profile_name(self, profile_id: int):
-        profiles = self._radarr.get_quality_profiles()
+        profiles = self._radarr.get_quality_profile()
 
         for profile in profiles:
             if profile["id"] == profile_id:
@@ -146,7 +146,7 @@ class Radarr:
         self._radarr.post_command("RefreshMovie", movieIds=[movie_id])
 
     def _get_quality_profile(self, label: str) -> int:
-        profiles = self._radarr.get_quality_profiles()
+        profiles = self._radarr.get_quality_profile()
 
         for profile in profiles:
             if profile["name"].lower() == label.lower():
