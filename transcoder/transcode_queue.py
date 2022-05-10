@@ -39,7 +39,7 @@ class TranscodeItem(Document):
 
 class TranscodeQueue:
     def __init__(self) -> None:
-        connect("transcode_queue")
+        connect("transcode_queue", connect=False)
 
     def add(
         self,
