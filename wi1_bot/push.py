@@ -1,7 +1,6 @@
-from pushover import Client, RequestError  # type: ignore
+from pushover import Client  # type: ignore
 
 from wi1_bot.config import config
-
 
 _client = None
 
@@ -14,7 +13,9 @@ except Exception:
     pass
 
 
-def send(msg: str, title: str = None, url: str = None, priority: int = 0) -> None:
+def send(
+    msg: str, title: str | None = None, url: str | None = None, priority: int = 0
+) -> None:
     try:
         if _client:
             _client.send_message(
