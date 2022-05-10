@@ -1,2 +1,5 @@
 logs/
 config.yaml
+
+build/
+*.egg-info/

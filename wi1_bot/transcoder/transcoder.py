@@ -8,10 +8,10 @@ import threading
 from datetime import timedelta
 from time import sleep
 
-import push
-from config import config
-from arr.radarr import Radarr
-from arr.sonarr import Sonarr
+from wi1_bot import push
+from wi1_bot.config import config
+from wi1_bot.arr.radarr import Radarr
+from wi1_bot.arr.sonarr import Sonarr
 
 from .transcode_queue import TranscodeItem, queue
 

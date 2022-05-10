@@ -4,9 +4,9 @@ import logging.handlers
 import multiprocessing
 import threading
 
-import bot
-import transcoder
-import webhook
+from wi1_bot import bot
+from wi1_bot import transcoder
+from wi1_bot import webhook
 
 
 def logger_thread(q):
@@ -21,7 +21,7 @@ def logger_thread(q):
         logger.handle(record)
 
 
-if __name__ == "__main__":
+def main():
     logging_config = {
         "version": 1,
         "disable_existing_loggers": True,
@@ -69,8 +69,19 @@ if __name__ == "__main__":
 
     transcoder.start()
 
-    webhook_worker.join()
-    bot_worker.join()
+    try:
+        webhook_worker.join()
+        bot_worker.join()
+    except KeyboardInterrupt:
+        webhook_worker.terminate()
+        webhook_worker.join()
+
+        bot_worker.terminate()
+        bot_worker.join()
 
     logging_queue.put(None)
     logging_thread.join()
+
+
+if __name__ == "__main__":
+    main()

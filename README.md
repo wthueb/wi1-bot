@@ -5,8 +5,8 @@ A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing comm
 Usage:
 
 1. Copy `config.yaml.template` to `config.yaml` and set the necessary values.
-2. `pip install -r requirements.txt`
-3. `python start.py`
+2. `pip install .`
+3. `wi1-bot`
 
 TODO:
 

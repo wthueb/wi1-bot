@@ -3,11 +3,12 @@ import logging
 import re
 
 import discord
-import push
-from config import config
 from discord.ext import commands
-from helpers import member_has_role, reply
-from arr.radarr import Movie, Radarr
+
+import wi1_bot.push
+from wi1_bot.arr.radarr import Movie, Radarr
+from wi1_bot.config import config
+from wi1_bot.helpers import member_has_role, reply
 
 
 class MovieCog(commands.Cog):

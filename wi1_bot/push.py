@@ -1,5 +1,6 @@
-from config import config
 from pushover import Client, RequestError  # type: ignore
+
+from wi1_bot.config import config
 
 
 _client = None
