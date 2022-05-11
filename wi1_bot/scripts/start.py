@@ -2,11 +2,10 @@ import logging
 import logging.config
 import logging.handlers
 import multiprocessing
+import os
 import threading
 
-from wi1_bot import bot
-from wi1_bot import transcoder
-from wi1_bot import webhook
+from wi1_bot import bot, transcoder, webhook
 
 
 def logger_thread(q):
@@ -61,6 +60,9 @@ def main():
 
     bot_worker = multiprocessing.Process(target=bot.run, args=(logging_queue,))
     bot_worker.start()
+
+    if not os.path.isdir("logs"):
+        os.mkdir("logs")
 
     logging.config.dictConfig(logging_config)
 
