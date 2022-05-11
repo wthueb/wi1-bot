@@ -5,8 +5,7 @@ import multiprocessing
 import discord
 from discord.ext import commands
 
-from wi1_bot.arr.radarr import Radarr
-from wi1_bot.arr.sonarr import Sonarr
+from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.cogs import MovieCog
 from wi1_bot.config import config
 from wi1_bot.helpers import reply

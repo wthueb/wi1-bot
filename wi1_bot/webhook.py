@@ -5,10 +5,8 @@ import os.path
 
 from flask import Flask, request
 
-from wi1_bot import push
-from wi1_bot import transcoder
-from wi1_bot.arr.radarr import Radarr
-from wi1_bot.arr.sonarr import Sonarr
+from wi1_bot import push, transcoder
+from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
 
 app = Flask(__name__)

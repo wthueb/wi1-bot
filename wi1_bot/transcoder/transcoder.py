@@ -9,9 +9,8 @@ from datetime import timedelta
 from time import sleep
 
 from wi1_bot import push
+from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
-from wi1_bot.arr.radarr import Radarr
-from wi1_bot.arr.sonarr import Sonarr
 
 from .transcode_queue import TranscodeItem, queue
 

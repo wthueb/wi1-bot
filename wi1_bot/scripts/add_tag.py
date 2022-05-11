@@ -1,8 +1,7 @@
 import argparse
 
+from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
-from wi1_bot.arr.radarr import Radarr
-from wi1_bot.arr.sonarr import Sonarr
 
 
 def main():

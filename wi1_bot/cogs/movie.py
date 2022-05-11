@@ -5,7 +5,7 @@ import re
 import discord
 from discord.ext import commands
 
-import wi1_bot.push
+from wi1_bot import push
 from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.config import config
 from wi1_bot.helpers import member_has_role, reply
