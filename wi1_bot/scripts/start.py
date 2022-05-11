@@ -3,21 +3,8 @@ import logging.config
 import logging.handlers
 import multiprocessing
 import os
-import threading
 
 from wi1_bot import bot, transcoder, webhook
-
-
-def logger_thread(q):
-    while True:
-        record = q.get()
-
-        if record is None:
-            break
-
-        logger = logging.getLogger(record.name)
-
-        logger.handle(record)
 
 
 def main():
@@ -66,23 +53,23 @@ def main():
 
     logging.config.dictConfig(logging_config)
 
-    logging_thread = threading.Thread(target=logger_thread, args=(logging_queue,))
-    logging_thread.start()
-
     transcoder.start()
 
     try:
-        webhook_worker.join()
-        bot_worker.join()
+        while True:
+            record = logging_queue.get()
+
+            logger = logging.getLogger(record.name)
+
+            logger.handle(record)
     except KeyboardInterrupt:
-        webhook_worker.terminate()
-        webhook_worker.join()
+        pass
 
-        bot_worker.terminate()
-        bot_worker.join()
+    webhook_worker.terminate()
+    bot_worker.terminate()
 
-    logging_queue.put(None)
-    logging_thread.join()
+    webhook_worker.join()
+    bot_worker.join()
 
 
 if __name__ == "__main__":
