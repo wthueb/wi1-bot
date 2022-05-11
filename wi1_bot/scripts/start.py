@@ -64,12 +64,12 @@ def main():
             logger.handle(record)
     except KeyboardInterrupt:
         pass
+    finally:
+        webhook_worker.terminate()
+        bot_worker.terminate()
 
-    webhook_worker.terminate()
-    bot_worker.terminate()
-
-    webhook_worker.join()
-    bot_worker.join()
+        webhook_worker.join()
+        bot_worker.join()
 
 
 if __name__ == "__main__":
