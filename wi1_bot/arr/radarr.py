@@ -107,11 +107,11 @@ class Radarr:
         except ValueError:
             return []
 
-        tag_details = self._radarr.get_tag_details(tag_id)
+        tag_detail = self._radarr.get_tag_detail(tag_id)
 
         possible_movies = self._radarr.lookup_movie(query)
 
-        user_movie_ids = tag_details["movieIds"]
+        user_movie_ids = tag_detail["movieIds"]
 
         return [
             Movie(m) for m in possible_movies if "id" in m and m["id"] in user_movie_ids
@@ -123,9 +123,9 @@ class Radarr:
         except ValueError:
             return 0
 
-        tag_details = self._radarr.get_tag_details(tag_id)
+        tag_detail = self._radarr.get_tag_detail(tag_id)
 
-        tagged_movies = tag_details["movieIds"]
+        tagged_movies = tag_detail["movieIds"]
 
         total = 0
 
