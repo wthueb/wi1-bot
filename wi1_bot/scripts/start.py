@@ -12,13 +12,18 @@ def main():
         "version": 1,
         "disable_existing_loggers": True,
         "formatters": {
+            "basic": {
+                "class": "logging.Formatter",
+                "format": "[%(asctime)s] %(levelname)s %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            },
             "detailed": {
                 "class": "logging.Formatter",
                 "format": (
                     "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d]"
                     " %(message)s"
                 ),
-            }
+            },
         },
         "handlers": {
             "console": {
@@ -33,7 +38,7 @@ def main():
                 "maxBytes": 1024**2 * 10,  # 10 MB
                 "backupCount": 20,
                 "level": "INFO",
-                "formatter": "detailed",
+                "formatter": "basic",
             },
         },
         "loggers": {
