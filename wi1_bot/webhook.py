@@ -1,6 +1,4 @@
 import logging
-import logging.handlers
-import multiprocessing
 import os.path
 
 from flask import Flask, request
@@ -105,11 +103,7 @@ def index():
     return "", 200
 
 
-def run(logging_queue: multiprocessing.Queue) -> None:
-    queue_handler = logging.handlers.QueueHandler(logging_queue)
-
-    logging.getLogger().addHandler(queue_handler)
-
+def run() -> None:
     logger.debug("starting webhook listener")
 
     app.run(host="localhost", port=9000)

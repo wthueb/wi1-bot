@@ -1,6 +1,4 @@
 import logging
-import logging.handlers
-import multiprocessing
 
 import discord
 from discord.ext import commands
@@ -108,17 +106,13 @@ async def quotas_cmd(ctx: commands.Context) -> None:
     )
 
 
-def run(logging_queue: multiprocessing.Queue) -> None:
-    queue_handler = logging.handlers.QueueHandler(logging_queue)
+bot.add_cog(MovieCog(bot))
 
-    logging.getLogger().addHandler(queue_handler)
 
+def run() -> None:
     logger.debug("starting bot")
 
     bot.run(config["discord"]["bot_token"])
-
-
-bot.add_cog(MovieCog(bot))
 
 
 if __name__ == "__main__":

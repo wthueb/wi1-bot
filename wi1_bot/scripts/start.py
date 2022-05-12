@@ -36,40 +36,29 @@ def main():
                 "formatter": "detailed",
             },
         },
-        "root": {"level": "DEBUG", "handlers": ["console"]},
-        "loggers": {"wi1-bot": {"handlers": ["file"], "propagate": True}},
+        "loggers": {
+            "": {"level": "DEBUG", "handlers": ["console"]},
+            "wi1-bot": {"handlers": ["file"], "propagate": True},
+        },
     }
-
-    logging_queue: multiprocessing.Queue = multiprocessing.Queue()
-
-    webhook_worker = multiprocessing.Process(target=webhook.run, args=(logging_queue,))
-    webhook_worker.start()
-
-    bot_worker = multiprocessing.Process(target=bot.run, args=(logging_queue,))
-    bot_worker.start()
 
     if not os.path.isdir("logs"):
         os.mkdir("logs")
 
     logging.config.dictConfig(logging_config)
 
+    webhook_worker = multiprocessing.Process(target=webhook.run)
+    webhook_worker.start()
+
     transcoder.start()
 
     try:
-        while True:
-            record = logging_queue.get()
-
-            logger = logging.getLogger(record.name)
-
-            logger.handle(record)
+        bot.run()
     except KeyboardInterrupt:
         pass
     finally:
         webhook_worker.terminate()
-        bot_worker.terminate()
-
         webhook_worker.join()
-        bot_worker.join()
 
 
 if __name__ == "__main__":
