@@ -63,7 +63,9 @@ class Radarr:
 
             return False
 
-        self._add_tag(ids, tag_id)
+        edit_json = {"movieIds": ids, "tags": [tag_id], "applyTags": "add"}
+
+        self._radarr.upd_movies(edit_json)
 
         return True
 
@@ -162,15 +164,6 @@ class Radarr:
                 return tag["id"]
 
         raise ValueError(f"no tag with the user id {user_id}")
-
-    def _add_tag(self, movie_ids: list[int], tag_id: int) -> dict:
-        path = "/api/v3/movie/editor"
-
-        edit_json = {"movieIds": movie_ids, "tags": [tag_id], "applyTags": "add"}
-
-        res = self._radarr.request_put(path, data=edit_json)
-
-        return res
 
 
 if __name__ == "__main__":
