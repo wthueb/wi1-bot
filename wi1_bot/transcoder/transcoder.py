@@ -13,8 +13,7 @@ from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
 
-logger = logging.getLogger("wi1-bot.transcoder")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
@@ -172,8 +171,6 @@ def do_transcode(item: TranscodeItem):
 
 
 def worker() -> None:
-    logger.debug("starting transcoder")
-
     while True:
         item = queue.get_one()
 
@@ -192,6 +189,8 @@ def worker() -> None:
 
 
 def start() -> None:
+    logger.debug("starting transcoder")
+
     t = threading.Thread(target=worker)
     t.daemon = True
     t.start()

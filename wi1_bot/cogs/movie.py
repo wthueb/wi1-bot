@@ -14,7 +14,7 @@ from wi1_bot.helpers import member_has_role, reply
 class MovieCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.logger = logging.getLogger("wi1-bot.bot")
+        self.logger = logging.getLogger(__name__)
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 
     @commands.command(name="addmovie", help="add a movie to the plex")

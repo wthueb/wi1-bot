@@ -1,7 +1,6 @@
 import logging
 import logging.config
 import logging.handlers
-import multiprocessing
 import os
 
 from wi1_bot import bot, transcoder, webhook
@@ -40,10 +39,18 @@ def main():
                 "level": "INFO",
                 "formatter": "basic",
             },
+            "file_debug": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/wi1-bot.debug.log",
+                "maxBytes": 1024**2 * 10,  # 10 MB
+                "backupCount": 20,
+                "level": "DEBUG",
+                "formatter": "detailed",
+            }
         },
         "loggers": {
-            "": {"level": "DEBUG", "handlers": ["console"]},
-            "wi1-bot": {"handlers": ["file"], "propagate": True},
+            "": {"level": "DEBUG", "handlers": ["console", "file_debug"]},
+            "wi1_bot": {"level": "DEBUG", "handlers": ["file"], "propagate": True},
         },
     }
 
@@ -52,18 +59,13 @@ def main():
 
     logging.config.dictConfig(logging_config)
 
-    webhook_worker = multiprocessing.Process(target=webhook.run)
-    webhook_worker.start()
-
+    webhook.start()
     transcoder.start()
 
     try:
         bot.run()
     except KeyboardInterrupt:
         pass
-    finally:
-        webhook_worker.terminate()
-        webhook_worker.join()
 
 
 if __name__ == "__main__":

@@ -8,8 +8,7 @@ from wi1_bot.cogs import MovieCog
 from wi1_bot.config import config
 from wi1_bot.helpers import reply
 
-logger = logging.getLogger("wi1-bot.bot")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=["!", "."])
 

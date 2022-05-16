@@ -1,5 +1,6 @@
 import logging
 import os.path
+import threading
 
 from flask import Flask, request
 
@@ -11,8 +12,7 @@ app = Flask(__name__)
 
 logging.getLogger("werkzeug").disabled = True
 
-logger = logging.getLogger("wi1-bot.webhook")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
@@ -91,7 +91,7 @@ def index():
         if request.json is None or "eventType" not in request.json:
             return "", 400
 
-        #  logger.debug(f'got request: {request.json}')
+        logger.debug(f"got request: {request.json}")
 
         if request.json["eventType"] == "Grab":
             on_grab(request.json)
@@ -103,10 +103,12 @@ def index():
     return "", 200
 
 
-def run() -> None:
+def start() -> None:
     logger.debug("starting webhook listener")
 
-    app.run(host="localhost", port=9000)
+    t = threading.Thread(target=app.run, kwargs={"host": "localhost", "port": 9000})
+    t.daemon = True
+    t.start()
 
 
 if __name__ == "__main__":
