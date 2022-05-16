@@ -41,11 +41,7 @@ async def on_ready() -> None:
 )
 async def downloads_cmd(ctx: commands.Context) -> None:
     async with ctx.typing():
-        try:
-            queue = radarr.get_downloads() + sonarr.get_downloads()
-        except ValueError:
-            logger.error(f"{radarr._radarr.get_queue_details()}", exc_info=True)
-            return
+        queue = radarr.get_downloads() + sonarr.get_downloads()
 
         queue.sort(key=lambda d: (d.timeleft, -d.pct_done))
 

@@ -18,7 +18,7 @@ class Download:
                 series_imdb_id=imdb_id,
             )
         else:
-            raise ValueError("unknown download type")
+            self.content = data["title"]
 
         self.sizeleft = data["sizeleft"]
         self.size = data["size"]
