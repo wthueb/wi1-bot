@@ -4,7 +4,6 @@ import re
 
 import discord
 from discord.ext import commands
-
 from wi1_bot import push
 from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.config import config
@@ -24,8 +23,7 @@ class MovieCog(commands.Cog):
             return
 
         self.logger.debug(
-            f"got !addmovie command from user {ctx.message.author.name}:"
-            f" {ctx.message.content}"
+            f"got command from {ctx.message.author}: {ctx.message.content}"
         )
 
         async with ctx.typing():
@@ -39,7 +37,7 @@ class MovieCog(commands.Cog):
                 )
                 return
 
-        resp, to_add = await self.select_movies(ctx.message, "addmovie", movies)
+        resp, to_add = await self._select_movies(ctx.message, "addmovie", movies)
 
         if not to_add:
             return
@@ -84,8 +82,7 @@ class MovieCog(commands.Cog):
             return
 
         self.logger.debug(
-            f"got !delmovie command from user {ctx.message.author.name}:"
-            f" {ctx.message.content}"
+            f"got command from {ctx.message.author}: {ctx.message.content}"
         )
 
         async with ctx.typing():
@@ -112,7 +109,7 @@ class MovieCog(commands.Cog):
                     )
                     return
 
-        resp, to_delete = await self.select_movies(ctx.message, "delmovie", movies)
+        resp, to_delete = await self._select_movies(ctx.message, "delmovie", movies)
 
         if not to_delete:
             return
@@ -132,7 +129,7 @@ class MovieCog(commands.Cog):
 
             await reply(resp, f"deleted movie {movie} from the plex")
 
-    async def select_movies(
+    async def _select_movies(
         self, msg: discord.Message, command: str, movies: list[Movie]
     ) -> tuple[discord.Message, list[Movie]]:
         movie_list = [f"{i+1}. {movie}" for i, movie in enumerate(movies)]

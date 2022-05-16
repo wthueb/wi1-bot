@@ -91,14 +91,14 @@ def index():
         if request.json is None or "eventType" not in request.json:
             return "", 400
 
-        logger.debug(f"got request: {request.json}")
+        logger.debug(f"got request: {request.data}")
 
         if request.json["eventType"] == "Grab":
             on_grab(request.json)
         elif request.json["eventType"] == "Download":
             on_download(request.json)
     except Exception:
-        logger.warning(f"error handling request: {str(request.data)}", exc_info=True)
+        logger.warning(f"error handling request: {request.data}", exc_info=True)
 
     return "", 200
 

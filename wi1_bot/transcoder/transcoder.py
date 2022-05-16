@@ -22,6 +22,8 @@ sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 def do_transcode(item: TranscodeItem):
     basename = item.path.split("/")[-1]
 
+    logger.debug(f"attempting to transcode {basename}")
+
     if basename.endswith(".avi"):
         logger.debug(f"cannot transcode {basename}: .avi not supported")
         return
@@ -44,8 +46,7 @@ def do_transcode(item: TranscodeItem):
         logger.debug(f"file does not exist: {item.path}, skipping transcoding")
         return
 
-    logger.info(f"starting transcode: {basename}")
-    push.send(f"{basename}", title="starting transcode")
+    # push.send(f"{basename}", title="starting transcode")
 
     # TODO: calculate compression amount
     # (video bitrate + audio bitrate) * duration / current size
@@ -151,7 +152,7 @@ def do_transcode(item: TranscodeItem):
     new_path = os.path.join(folder, new_basename)
 
     if not os.path.exists(item.path):
-        logger.info(f"file doesn't exist: {item.path}, deleting transcoded file")
+        logger.debug(f"file doesn't exist: {item.path}, deleting transcoded file")
 
         os.remove(tmp_path)
 
@@ -166,7 +167,7 @@ def do_transcode(item: TranscodeItem):
         elif new_path.startswith("/media/plex/shows/"):
             sonarr.refresh_series(item.content_id)
 
-    logger.info(f"finished transcode: {basename} -> {new_basename}")
+    logger.info(f"transcoded: {basename} -> {new_basename}")
     push.send(f"{basename} -> {new_basename}", title="file transcoded")
 
 
