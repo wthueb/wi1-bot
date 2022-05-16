@@ -24,18 +24,18 @@ discord:
   # discord bot token
   bot_token: XXX
   # what the bot is watching, optional
-  bot_presence: Casablanca
+  bot_presence: David Cronenberg's Crash
 
   # discord channel id that the bot will be in
-  channel_id: 892569917281402890
-  # your discord user id, for pinging to add tags for users
-  admin_id: 104368283272105984
+  channel_id: XXX
+  # your discord user id
+  admin_id: XXX
 
   # specify quotas for users, optional
   quotas:
     # value is in gigabytes
-    DISCORD_USER_ID1: 123
-    DISCORD_USER_ID2: 456
+    USER1_ID: 123
+    USER2_ID: 456
 
 # transcoding settings, optional
 transcoding:
@@ -47,7 +47,7 @@ transcoding:
       # -c:v in ffmpeg, optional
       video_codec: hevc_nvenc
       # -b:v in ffmpeg, optional
-      video_bitrate: 5000000
+      video_bitrate: 5_000_000
       # -c:a in ffmpeg, optional
       audio_codec: aac
       # -ac in ffmpeg, optional
@@ -55,7 +55,7 @@ transcoding:
       # -b:a in ffmpeg, optional
       audio_bitrate: 128k
     great:
-      video_bitrate: 8000000
+      video_bitrate: 8_000_000
       audio_codec: dca
       audio_channels: 6
       audio_bitrate: 384k
