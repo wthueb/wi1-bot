@@ -42,6 +42,8 @@ class MovieCog(commands.Cog):
         if not to_add:
             return
 
+        added: list[Movie] = []
+
         for movie in to_add:
             if not self.radarr.add_movie(movie):
                 if self.radarr.movie_downloaded(movie):
@@ -64,9 +66,11 @@ class MovieCog(commands.Cog):
 
             await reply(resp, f"added movie {movie} to the plex")
 
+            added.append(movie)
+
         await asyncio.sleep(10)
 
-        if not self.radarr.add_tag(to_add, ctx.message.author.id):
+        if not self.radarr.add_tag(added, ctx.message.author.id):
             push.send(
                 f"get {ctx.message.author.name} a tag", title="tag needed", priority=1
             )
