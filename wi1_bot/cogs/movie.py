@@ -68,6 +68,9 @@ class MovieCog(commands.Cog):
 
             added.append(movie)
 
+        if not added:
+            return
+
         await asyncio.sleep(10)
 
         if not self.radarr.add_tag(added, ctx.message.author.id):
