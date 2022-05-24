@@ -1,12 +1,8 @@
-from typing import Optional, Generic, Type, TypeVar
 from types import MethodType
+from typing import Generic, Optional, Type, TypeVar
 
-from mongoengine import (
-    connect,
-    Document,
-    QuerySet,
-)
-from mongoengine.fields import StringField, IntField
+from mongoengine import Document, QuerySet, connect
+from mongoengine.fields import IntField, StringField
 
 
 def no_op(self, x):
@@ -39,7 +35,7 @@ class TranscodeItem(Document):
 
 class TranscodeQueue:
     def __init__(self) -> None:
-        connect("transcode_queue", connect=False)
+        connect("wi1_bot", connect=False)
 
     def add(
         self,
