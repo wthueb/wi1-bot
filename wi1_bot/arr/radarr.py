@@ -1,6 +1,6 @@
 from shutil import rmtree
 
-from pyarr import RadarrAPI  # type: ignore
+from pyarr import RadarrAPI
 
 from .download import Download
 from .movie import Movie

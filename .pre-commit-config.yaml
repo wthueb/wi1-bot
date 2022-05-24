@@ -1,0 +1,20 @@
+fail_fast: true
+
+repos:
+  - repo: https://github.com/ambv/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+        args: [--preview]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.950
+    hooks:
+      - id: mypy
+        additional_dependencies: [discord.py-stubs, mongo-types, types-PyYAML]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+    - id: flake8
+      args: [--max-line-length=88]

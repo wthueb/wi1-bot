@@ -41,7 +41,7 @@ def do_transcode(item: TranscodeItem):
     probe_result = subprocess.run(probe_command, capture_output=True, text=True)
 
     try:
-        duration = timedelta(seconds=float(probe_result.stdout.strip()))
+        duration = timedelta(seconds=float(probe_result.stdout.strip()))  # noqa: F841
     except ValueError:
         logger.debug(f"file does not exist: {item.path}, skipping transcoding")
         return
@@ -109,7 +109,7 @@ def do_transcode(item: TranscodeItem):
         text=True,
         bufsize=1,
     ) as proc:
-        pattern = re.compile(
+        pattern = re.compile(  # noqa: F841
             r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa
         )
 

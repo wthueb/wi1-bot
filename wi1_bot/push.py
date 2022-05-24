@@ -1,4 +1,4 @@
-from pushover import Client  # type: ignore
+from pushover import Client
 
 from wi1_bot.config import config
 

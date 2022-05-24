@@ -46,7 +46,7 @@ def main():
                 "backupCount": 20,
                 "level": "DEBUG",
                 "formatter": "detailed",
-            }
+            },
         },
         "loggers": {
             "": {"level": "DEBUG", "handlers": ["console", "file_debug"]},

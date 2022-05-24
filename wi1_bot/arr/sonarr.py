@@ -1,4 +1,4 @@
-from pyarr import SonarrAPI  # type: ignore
+from pyarr import SonarrAPI
 
 from .download import Download
 
