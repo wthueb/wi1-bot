@@ -116,26 +116,27 @@ def do_transcode(item: TranscodeItem):
         output = []
 
         for line in proc.stdout:  # type: ignore
-            output.append(line)
-
-            match = pattern.search(line)
-
-            if not match:
-                continue
-
-            curtime = timedelta(
-                hours=int(match.group("hours")),
-                minutes=int(match.group("minutes")),
-                seconds=float(match.group("seconds")),
-            )
-
-            percent_done = curtime / duration
-
-            speed = float(match.group("speed"))
-
-            time_remaining = (duration - curtime) / speed
-
             # TODO
+            # output.append(line)
+
+            # match = pattern.search(line)
+
+            # if not match:
+            #     continue
+
+            # curtime = timedelta(
+            #     hours=int(match.group("hours")),
+            #     minutes=int(match.group("minutes")),
+            #     seconds=float(match.group("seconds")),
+            # )
+
+            # percent_done = curtime / duration
+
+            # speed = float(match.group("speed"))
+
+            # careful of zero division
+            # time_remaining = (duration - curtime) / speed
+            pass
 
         status = proc.wait()
 
