@@ -5,18 +5,21 @@ A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing comm
 ### Usage
 
 1. Copy `config.yaml.template` to `config.yaml` and set the necessary values.
-2. `pip install .`
+2. `pip install git+https://github.com/wthueb/wi1-bot.git`
 3. `wi1-bot`
 
 ### Development
 
-1. `pip install -e .[dev]`
-2. `pre-commit install`
+1. `git clone https://github.com/wthueb/wi1-bot.git`
+2. `cd wi1-bot/`
+3. `pip install -e .[dev]`
+4. `pre-commit install`
 
 Requires Python >=3.10.
 
 ### TODO
 
+- Look for config file in `$XDG_CONFIG_HOME/.wi1-bot-config.yaml` or simply `~/.wi1-bot-config.yaml`
 - Actually enforce download quotas
 - Add Sonarr support — !addshow
 - !linktmdb
