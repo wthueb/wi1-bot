@@ -2,4 +2,6 @@ logs/
 config.yaml
 
 build/
+dist/
 *.egg-info/
+_version.py
