@@ -14,7 +14,7 @@ class Series:
 
         self.url = f"https://thetvdb.com/dereferrer/series/{self.tvdb_id}"
 
-        self.imdb_id: str = ""
+        self.imdb_id = ""
 
         try:
             self.imdb_id = series_json["imdbId"]

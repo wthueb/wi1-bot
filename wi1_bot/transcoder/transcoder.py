@@ -113,7 +113,7 @@ def do_transcode(item: TranscodeItem):
             r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa
         )
 
-        output = []
+        output: list[str] = []
 
         for line in proc.stdout:  # type: ignore
             # TODO

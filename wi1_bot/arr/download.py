@@ -4,6 +4,8 @@ from .movie import Movie
 
 class Download:
     def __init__(self, data: dict) -> None:
+        self.content: Movie | Episode | str
+
         if "movie" in data:
             self.content = Movie(data["movie"])
         elif "episode" in data:
