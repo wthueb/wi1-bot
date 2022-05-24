@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import shutil
 import subprocess
 import threading
@@ -109,15 +108,16 @@ def do_transcode(item: TranscodeItem):
         text=True,
         bufsize=1,
     ) as proc:
-        pattern = re.compile(  # noqa: F841
-            r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa
-        )
-
         output: list[str] = []
 
+        # pattern = re.compile(
+        #     r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa: E501
+        # )
+
         for line in proc.stdout:  # type: ignore
+            output.append(line)
+
             # TODO
-            # output.append(line)
 
             # match = pattern.search(line)
 
@@ -134,9 +134,8 @@ def do_transcode(item: TranscodeItem):
 
             # speed = float(match.group("speed"))
 
-            # careful of zero division
+            # # careful of zero division
             # time_remaining = (duration - curtime) / speed
-            pass
 
         status = proc.wait()
 
