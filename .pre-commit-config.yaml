@@ -11,7 +11,7 @@ repos:
     rev: v0.950
     hooks:
       - id: mypy
-        additional_dependencies: [discord.py-stubs, mongo-types, types-PyYAML]
+        additional_dependencies: [discord.py-stubs==1.7.3, mongo-types==0.15.1, types-PyYAML==6.0.7]
 
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1

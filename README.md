@@ -2,13 +2,20 @@
 
 A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing commands like !addmovie and !downloads.
 
-Usage:
+### Usage
 
 1. Copy `config.yaml.template` to `config.yaml` and set the necessary values.
 2. `pip install .`
 3. `wi1-bot`
 
-TODO:
+### Development
+
+1. `pip install -e .[dev]`
+2. `pre-commit install`
+
+Requires Python >=3.10.
+
+### TODO
 
 - Actually enforce download quotas
 - Add Sonarr support — !addshow
