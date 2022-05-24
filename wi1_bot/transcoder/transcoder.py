@@ -18,15 +18,7 @@ radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
 
-def do_transcode(item: TranscodeItem):
-    basename = item.path.split("/")[-1]
-
-    logger.debug(f"attempting to transcode {basename}")
-
-    if basename.endswith(".avi"):
-        logger.debug(f"cannot transcode {basename}: .avi not supported")
-        return
-
+def _get_duration(path: str) -> timedelta:
     probe_command = [
         "ffprobe",
         "-hide_banner",
@@ -34,26 +26,20 @@ def do_transcode(item: TranscodeItem):
         "format=duration",
         "-of",
         "default=noprint_wrappers=1:nokey=1",
-        item.path,
+        path,
     ]
 
     probe_result = subprocess.run(probe_command, capture_output=True, text=True)
 
     try:
-        duration = timedelta(seconds=float(probe_result.stdout.strip()))  # noqa: F841
+        duration = timedelta(seconds=float(probe_result.stdout.strip()))
     except ValueError:
-        logger.debug(f"file does not exist: {item.path}, skipping transcoding")
-        return
+        raise FileNotFoundError
 
-    # push.send(f"{basename}", title="starting transcode")
+    return duration
 
-    # TODO: calculate compression amount
-    # (video bitrate + audio bitrate) * duration / current size
-    # if compression amount not > config value, don't transcode
-    # if compression amount > 1, don't transcode
 
-    tmp_path = os.path.join("/tmp/", basename)
-
+def _build_ffmpeg_command(item: TranscodeItem, tmp_path: str) -> list[str]:
     command = [
         "ffmpeg",
         "-hide_banner",
@@ -99,6 +85,31 @@ def do_transcode(item: TranscodeItem):
 
     command.extend(["-c:s", "copy", tmp_path])
 
+    return command
+
+
+def do_transcode(item: TranscodeItem):
+    basename = item.path.split("/")[-1]
+
+    logger.debug(f"attempting to transcode {basename}")
+
+    if basename.endswith(".avi"):
+        logger.debug(f"cannot transcode {basename}: .avi not supported")
+        return
+
+    # push.send(f"{basename}", title="starting transcode")
+
+    # TODO: calculate compression amount
+    # (video bitrate + audio bitrate) * duration / current size
+    # if compression amount not > config value, don't transcode
+    # if compression amount > 1, don't transcode
+
+    # duration = _get_duration(item.path)
+
+    tmp_path = os.path.join("/tmp/", basename)
+
+    command = _build_ffmpeg_command(item, tmp_path)
+
     logger.debug(f"ffmpeg command: {' '.join(command)}")
 
     with subprocess.Popen(
@@ -143,9 +154,9 @@ def do_transcode(item: TranscodeItem):
             logger.error(f"ffmpeg failed: {output[-1].strip()}")
             return
 
-    folder = "/".join(item.path.split("/")[:-1])
+    folder = item.path[: item.path.rfind("/")]
 
-    filename, extension = ".".join(basename.split(".")[:-1]), basename.split(".")[-1]
+    filename, extension = basename[: basename.rfind(".")], basename.split(".")[-1]
 
     new_basename = f"{filename}-TRANSCODED.{extension}"
 
@@ -181,6 +192,8 @@ def worker() -> None:
 
         try:
             do_transcode(item)
+        except FileNotFoundError:
+            logger.debug(f"file does not exist: {item.path}, skipping transcoding")
         except Exception:
             logger.warning("got exception when trying to transcode", exc_info=True)
 
