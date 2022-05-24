@@ -1,6 +1,5 @@
 import logging
 import logging.config
-import logging.handlers
 import os
 
 from wi1_bot import bot, transcoder, webhook
