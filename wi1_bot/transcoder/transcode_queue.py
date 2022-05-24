@@ -1,26 +1,11 @@
-from types import MethodType
-from typing import Generic, Optional, Type, TypeVar
+from typing import Any
 
-from mongoengine import Document, QuerySet, connect
+from mongoengine import Document, connect  # type: ignore
 from mongoengine.fields import IntField, StringField
 
 
-def no_op(self, x):
-    return self
-
-
-QuerySet.__class_getitem__ = MethodType(no_op, QuerySet)
-
-U = TypeVar("U", bound=Document)
-
-
-class QuerySetManager(Generic[U]):
-    def __get__(self, instance: object, cls: Type[U]) -> QuerySet[U]:
-        return QuerySet(cls, cls._get_collection())
-
-
 class TranscodeItem(Document):
-    objects = QuerySetManager["TranscodeItem"]()
+    objects: Any
 
     path = StringField(required=True)
 
@@ -40,12 +25,12 @@ class TranscodeQueue:
     def add(
         self,
         path: str,
-        video_codec: Optional[str] = None,
-        video_bitrate: Optional[int] = None,
-        audio_codec: Optional[str] = None,
-        audio_channels: Optional[int] = None,
-        audio_bitrate: Optional[str] = None,
-        content_id: Optional[int] = None,
+        video_codec: str | None = None,
+        video_bitrate: int | None = None,
+        audio_codec: str | None = None,
+        audio_channels: int | None = None,
+        audio_bitrate: str | None = None,
+        content_id: int | None = None,
     ) -> None:
         TranscodeItem(
             path=path,
@@ -57,7 +42,7 @@ class TranscodeQueue:
             content_id=content_id,
         ).save()
 
-    def get_one(self) -> Optional[TranscodeItem]:
+    def get_one(self) -> TranscodeItem | None:
         return TranscodeItem.objects.first()
 
     def remove(self, item: TranscodeItem) -> None:
