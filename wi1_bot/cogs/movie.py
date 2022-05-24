@@ -4,6 +4,7 @@ import re
 
 import discord
 from discord.ext import commands
+
 from wi1_bot import push
 from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.config import config
