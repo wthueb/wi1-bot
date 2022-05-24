@@ -1,6 +1,6 @@
 from typing import Any
 
-from mongoengine import Document, connect  # type: ignore
+from mongoengine import Document, connect
 from mongoengine.fields import IntField, StringField
 
 
