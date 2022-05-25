@@ -22,14 +22,21 @@ class Radarr:
 
         return possible_movies
 
-    def get_quality_profile_name(self, profile_id: int):
-        profiles = self._radarr.get_quality_profile()
+    def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
+        try:
+            tag_id = self._get_tag_for_user_id(user_id)
+        except ValueError:
+            return []
 
-        for profile in profiles:
-            if profile["id"] == profile_id:
-                return profile["name"]
+        tag_detail = self._radarr.get_tag_detail(tag_id)
 
-        raise ValueError(f"no quality profile with the id {profile_id}")
+        possible_movies = self._radarr.lookup_movie(query)
+
+        user_movie_ids = tag_detail["movieIds"]
+
+        return [
+            Movie(m) for m in possible_movies if "id" in m and m["id"] in user_movie_ids
+        ]
 
     def add_movie(self, movie: Movie, profile: str = "good") -> bool:
         if self._radarr.get_movie(movie.tmdb_id):
@@ -44,25 +51,6 @@ class Radarr:
             quality_profile_id=quality_profile_id,
             root_dir=root_folder,
         )
-
-        return True
-
-    def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
-        if isinstance(movie, Movie):
-            ids = [self._radarr.get_movie(movie.tmdb_id)[0]["id"]]
-        else:
-            ids = [self._radarr.get_movie(m.tmdb_id)[0]["id"] for m in movie]
-
-        try:
-            tag_id = self._get_tag_for_user_id(user_id)
-        except ValueError:
-            # tag_id = self._radarr.create_tag(str(user_id))['id']
-
-            return False
-
-        edit_json = {"movieIds": ids, "tags": [tag_id], "applyTags": "add"}
-
-        self._radarr.upd_movies(edit_json)
 
         return True
 
@@ -97,42 +85,24 @@ class Radarr:
 
         return False
 
-    def search_missing(self) -> None:
-        self._radarr.post_command(name="MissingMoviesSearch")
+    def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
+        if isinstance(movie, Movie):
+            ids = [self._radarr.get_movie(movie.tmdb_id)[0]["id"]]
+        else:
+            ids = [self._radarr.get_movie(m.tmdb_id)[0]["id"] for m in movie]
 
-    def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
         try:
             tag_id = self._get_tag_for_user_id(user_id)
         except ValueError:
-            return []
+            # tag_id = self._radarr.create_tag(str(user_id))['id']
 
-        tag_detail = self._radarr.get_tag_detail(tag_id)
+            return False
 
-        possible_movies = self._radarr.lookup_movie(query)
+        edit_json = {"movieIds": ids, "tags": [tag_id], "applyTags": "add"}
 
-        user_movie_ids = tag_detail["movieIds"]
+        self._radarr.upd_movies(edit_json)
 
-        return [
-            Movie(m) for m in possible_movies if "id" in m and m["id"] in user_movie_ids
-        ]
-
-    def get_quota_amount(self, user_id: int) -> int:
-        try:
-            tag_id = self._get_tag_for_user_id(user_id)
-        except ValueError:
-            return 0
-
-        tag_detail = self._radarr.get_tag_detail(tag_id)
-
-        tagged_movies = tag_detail["movieIds"]
-
-        total = 0
-
-        for movie in self._radarr.get_movie():
-            if movie["id"] in tagged_movies:
-                total += movie["sizeOnDisk"]
-
-        return total
+        return True
 
     def get_downloads(self) -> list[Download]:
         queue = self._radarr.get_queue_details()
@@ -141,8 +111,34 @@ class Radarr:
 
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 
+    def get_quota_amount(self, user_id: int) -> int:
+        try:
+            tag_id = self._get_tag_for_user_id(user_id)
+        except ValueError:
+            return 0
+
+        total = 0
+
+        for movie in self._radarr.get_movie():
+            if tag_id in movie["tags"]:
+                total += movie["sizeOnDisk"]
+
+        return total
+
+    def get_quality_profile_name(self, profile_id: int):
+        profiles = self._radarr.get_quality_profile()
+
+        for profile in profiles:
+            if profile["id"] == profile_id:
+                return profile["name"]
+
+        raise ValueError(f"no quality profile with the id {profile_id}")
+
     def rescan_movie(self, movie_id: int) -> None:
         self._radarr.post_command("RescanMovie", movieIds=[movie_id])
+
+    def search_missing(self) -> None:
+        self._radarr.post_command(name="MissingMoviesSearch")
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._radarr.get_quality_profile()

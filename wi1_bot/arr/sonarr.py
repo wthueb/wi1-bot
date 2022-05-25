@@ -40,8 +40,19 @@ class Sonarr:
 
         return downloads
 
-    def rescan_series(self, series_id: int) -> None:
-        self._sonarr.post_command("RescanSeries", seriesId=series_id)
+    def get_quota_amount(self, user_id: int) -> int:
+        try:
+            tag_id = self._get_tag_for_user_id(user_id)
+        except ValueError:
+            return 0
+
+        total = 0
+
+        for series in self._sonarr.get_series():
+            if tag_id in series["tags"]:
+                total += series["sizeOnDisk"]
+
+        return total
 
     def get_quality_profile_name(self, profile_id: int):
         profiles = self._sonarr.get_quality_profile()
@@ -51,3 +62,15 @@ class Sonarr:
                 return profile["name"]
 
         raise ValueError(f"no quality profile with the id {profile_id}")
+
+    def rescan_series(self, series_id: int) -> None:
+        self._sonarr.post_command("RescanSeries", seriesId=series_id)
+
+    def _get_tag_for_user_id(self, user_id: int) -> int:
+        tags = self._sonarr.get_tag()
+
+        for tag in tags:
+            if str(user_id) in tag["label"]:
+                return tag["id"]
+
+        raise ValueError(f"no tag with the user id {user_id}")

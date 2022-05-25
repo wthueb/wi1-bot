@@ -19,7 +19,6 @@ Requires Python >=3.10.
 
 ### TODO
 
-- Include Sonarr in quotas
 - Web dashboard for seeing transcode queue, transcode progress, quotas
 - Enforce quotas
 - Add Sonarr support — !addshow (maybe?)

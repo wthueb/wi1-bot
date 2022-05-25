@@ -59,13 +59,16 @@ async def quota_cmd(ctx: commands.Context) -> None:
     logger.debug(f"got command from {ctx.message.author}: {ctx.message.content}")
 
     async with ctx.typing():
-        used = radarr.get_quota_amount(ctx.message.author.id) / 1024**3
+        used = (
+            radarr.get_quota_amount(ctx.message.author.id)
+            + sonarr.get_quota_amount(ctx.message.author.id)
+        ) / 1024**3
 
         maximum = 0
 
         try:
             maximum = config["discord"]["quotas"][ctx.message.author.id]
-        except Exception:
+        except KeyError:
             pass
 
         pct = used / maximum * 100 if maximum != 0 else 100
@@ -96,7 +99,9 @@ async def quotas_cmd(ctx: commands.Context) -> None:
         msg = []
 
         for user_id, total in quotas.items():
-            used = radarr.get_quota_amount(user_id) / 1024**3
+            used = (
+                radarr.get_quota_amount(user_id) + sonarr.get_quota_amount(user_id)
+            ) / 1024**3
 
             pct = used / total * 100 if total != 0 else 100
 
