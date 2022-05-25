@@ -153,7 +153,7 @@ def do_transcode(item: TranscodeItem):
         status = proc.wait()
 
         if status != 0:
-            logger.error(f"ffmpeg failed: {output[-1].strip()}")
+            logger.error(f"ffmpeg failed (status {status}): {output[-1].strip()}")
             return
 
     folder = item.path[: item.path.rfind("/")]
