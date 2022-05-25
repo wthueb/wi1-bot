@@ -1,6 +1,5 @@
 import logging
 import logging.config
-import os
 
 from wi1_bot import bot, transcoder, webhook
 
@@ -30,31 +29,28 @@ def main():
                 "level": "DEBUG",
                 "formatter": "detailed",
             },
-            "file": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "filename": "logs/wi1-bot.log",
-                "maxBytes": 1024**2 * 10,  # 10 MB
-                "backupCount": 20,
-                "level": "INFO",
-                "formatter": "basic",
-            },
-            "file_debug": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "filename": "logs/wi1-bot.debug.log",
-                "maxBytes": 1024**2 * 10,  # 10 MB
-                "backupCount": 20,
-                "level": "DEBUG",
-                "formatter": "detailed",
-            },
+            # "file": {
+            #     "class": "logging.handlers.RotatingFileHandler",
+            #     "filename": "logs/wi1-bot.log",
+            #     "maxBytes": 1024**2 * 10,  # 10 MB
+            #     "backupCount": 20,
+            #     "level": "INFO",
+            #     "formatter": "basic",
+            # },
+            # "file_debug": {
+            #     "class": "logging.handlers.RotatingFileHandler",
+            #     "filename": "logs/wi1-bot.debug.log",
+            #     "maxBytes": 1024**2 * 10,  # 10 MB
+            #     "backupCount": 20,
+            #     "level": "DEBUG",
+            #     "formatter": "detailed",
+            # },
         },
         "loggers": {
-            "": {"level": "DEBUG", "handlers": ["console", "file_debug"]},
-            "wi1_bot": {"level": "DEBUG", "handlers": ["file"], "propagate": True},
+            "": {"level": "DEBUG", "handlers": ["console"]},
+            "wi1_bot": {"level": "DEBUG", "handlers": [], "propagate": True},
         },
     }
-
-    if not os.path.isdir("logs"):
-        os.mkdir("logs")
 
     logging.config.dictConfig(logging_config)
 
