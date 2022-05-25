@@ -88,14 +88,14 @@ def _build_ffmpeg_command(item: TranscodeItem, tmp_path: str) -> list[str]:
     return command
 
 
-def do_transcode(item: TranscodeItem):
+def do_transcode(item: TranscodeItem) -> bool:
     basename = item.path.split("/")[-1]
 
     logger.debug(f"attempting to transcode {basename}")
 
     if basename.endswith(".avi"):
         logger.debug(f"cannot transcode {basename}: .avi not supported")
-        return
+        return True
 
     # push.send(f"{basename}", title="starting transcode")
 
@@ -154,7 +154,11 @@ def do_transcode(item: TranscodeItem):
 
         if status != 0:
             logger.error(f"ffmpeg failed (status {status}): {output[-1].strip()}")
-            return
+
+            if "received signal 15" in output[-1]:
+                return False
+
+            return True
 
     folder = item.path[: item.path.rfind("/")]
 
@@ -169,7 +173,7 @@ def do_transcode(item: TranscodeItem):
 
         os.remove(tmp_path)
 
-        return
+        return True
 
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
@@ -184,6 +188,8 @@ def do_transcode(item: TranscodeItem):
     logger.info(f"transcoded: {basename} -> {new_basename}")
     push.send(f"{basename} -> {new_basename}", title="file transcoded")
 
+    return True
+
 
 def worker() -> None:
     while True:
@@ -194,13 +200,12 @@ def worker() -> None:
             continue
 
         try:
-            do_transcode(item)
+            if do_transcode(item):
+                queue.remove(item)
         except FileNotFoundError:
             logger.debug(f"file does not exist: {item.path}, skipping transcoding")
         except Exception:
             logger.warning("got exception when trying to transcode", exc_info=True)
-
-        queue.remove(item)
 
         sleep(3)
 
