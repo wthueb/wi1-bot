@@ -35,10 +35,7 @@ class Radarr:
         if self._radarr.get_movie(movie.tmdb_id):
             return False
 
-        quality_profile_id = self._get_quality_profile(profile)
-
-        if quality_profile_id is None:
-            raise ValueError(f"{profile} is not a valid quality profile name")
+        quality_profile_id = self._get_quality_profile_id(profile)
 
         root_folder = self._radarr.get_root_folder()[0]["path"]
 
@@ -57,7 +54,7 @@ class Radarr:
             ids = [self._radarr.get_movie(m.tmdb_id)[0]["id"] for m in movie]
 
         try:
-            tag_id = self._get_tag_for_user(user_id)
+            tag_id = self._get_tag_for_user_id(user_id)
         except ValueError:
             # tag_id = self._radarr.create_tag(str(user_id))['id']
 
@@ -105,7 +102,7 @@ class Radarr:
 
     def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
         try:
-            tag_id = self._get_tag_for_user(user_id)
+            tag_id = self._get_tag_for_user_id(user_id)
         except ValueError:
             return []
 
@@ -121,7 +118,7 @@ class Radarr:
 
     def get_quota_amount(self, user_id: int) -> int:
         try:
-            tag_id = self._get_tag_for_user(user_id)
+            tag_id = self._get_tag_for_user_id(user_id)
         except ValueError:
             return 0
 
@@ -144,19 +141,19 @@ class Radarr:
 
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 
-    def refresh_movie(self, movie_id: int) -> None:
-        self._radarr.post_command("RefreshMovie", movieIds=[movie_id])
+    def rescan_movie(self, movie_id: int) -> None:
+        self._radarr.post_command("RescanMovie", movieIds=[movie_id])
 
-    def _get_quality_profile(self, label: str) -> int:
+    def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._radarr.get_quality_profile()
 
         for profile in profiles:
-            if profile["name"].lower() == label.lower():
+            if profile["name"].lower() == name.lower():
                 return profile["id"]
 
-        raise ValueError(f"no quality profile with the name {label}")
+        raise ValueError(f"no quality profile with the name {name}")
 
-    def _get_tag_for_user(self, user_id: int) -> int:
+    def _get_tag_for_user_id(self, user_id: int) -> int:
         tags = self._radarr.get_tag()
 
         for tag in tags:

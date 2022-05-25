@@ -177,9 +177,9 @@ def do_transcode(item: TranscodeItem):
     # FIXME: don't hardcode library paths (config)
     if item.content_id is not None:
         if new_path.startswith("/media/plex/movies/"):
-            radarr.refresh_movie(item.content_id)
+            radarr.rescan_movie(item.content_id)
         elif new_path.startswith("/media/plex/shows/"):
-            sonarr.refresh_series(item.content_id)
+            sonarr.rescan_series(item.content_id)
 
     logger.info(f"transcoded: {basename} -> {new_basename}")
     push.send(f"{basename} -> {new_basename}", title="file transcoded")

@@ -40,7 +40,7 @@ class Sonarr:
 
         return downloads
 
-    def refresh_series(self, series_id: int) -> None:
+    def rescan_series(self, series_id: int) -> None:
         self._sonarr.post_command("RescanSeries", seriesId=series_id)
 
     def get_quality_profile_name(self, profile_id: int):
