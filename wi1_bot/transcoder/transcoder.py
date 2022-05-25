@@ -100,9 +100,9 @@ def do_transcode(item: TranscodeItem):
     # push.send(f"{basename}", title="starting transcode")
 
     # TODO: calculate compression amount
-    # (video bitrate + audio bitrate) * duration / current size
-    # if compression amount not > config value, don't transcode
-    # if compression amount > 1, don't transcode
+    # 1 - (video bitrate + audio bitrate) * duration / size
+    # if compression amount > config value, transcode
+    # else, don't transcode
 
     # duration = _get_duration(item.path)
 
@@ -128,7 +128,9 @@ def do_transcode(item: TranscodeItem):
         for line in proc.stdout:  # type: ignore
             output.append(line)
 
-            # TODO
+            # TODO: parse ffmpeg output and pass to web dashboard
+            # send data via multiprocessing.Pipe
+            # make class with __init__(pipe)?
 
             # match = pattern.search(line)
 
@@ -172,6 +174,7 @@ def do_transcode(item: TranscodeItem):
     shutil.move(tmp_path, new_path)
     os.remove(item.path)
 
+    # FIXME: don't hardcode library paths (config)
     if item.content_id is not None:
         if new_path.startswith("/media/plex/movies/"):
             radarr.refresh_movie(item.content_id)

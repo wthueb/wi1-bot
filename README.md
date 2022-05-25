@@ -19,8 +19,10 @@ Requires Python >=3.10.
 
 ### TODO
 
-- Actually enforce download quotas
-- Add Sonarr support — !addshow
+- Include Sonarr in quotas
+- Web dashboard for seeing transcode queue, transcode progress, quotas
+- Enforce quotas
+- Add Sonarr support — !addshow (maybe?)
 - !linktmdb
     - !rate / !ratings (https://developers.themoviedb.org/3/movies/rate-movie)
     - !movierec based off of ratings and similar-to-user ratings?
