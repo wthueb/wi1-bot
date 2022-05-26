@@ -1,7 +1,8 @@
 import logging
 import logging.config
 
-from wi1_bot import bot, transcoder, webhook
+from wi1_bot import transcoder, webhook
+from wi1_bot.discord import bot
 
 
 def main():

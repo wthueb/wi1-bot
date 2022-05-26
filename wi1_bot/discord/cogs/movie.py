@@ -8,7 +8,8 @@ from discord.ext import commands
 from wi1_bot import push
 from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.config import config
-from wi1_bot.helpers import member_has_role, reply
+
+from ..helpers import member_has_role, reply
 
 
 class MovieCog(commands.Cog):
