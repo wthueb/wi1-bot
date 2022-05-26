@@ -153,9 +153,14 @@ def do_transcode(item: TranscodeItem) -> bool:
         status = proc.wait()
 
         if status != 0:
-            logger.error(f"ffmpeg failed (status {status}): {output[-1].strip()}")
+            try:
+                last_output = output[-1].strip()
+            except IndexError:
+                last_output = "unknown"
 
-            if "received signal 15" in output[-1]:
+            logger.error(f"ffmpeg failed (status {status}): {last_output}")
+
+            if "received signal 15" in last_output:
                 return False
 
             return True
