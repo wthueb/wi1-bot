@@ -47,9 +47,6 @@ wi1-bot = "wi1_bot.scripts.start:main"
 transcode-item = "wi1_bot.scripts.transcode_item:main"
 add-tag = "wi1_bot.scripts.add_tag:main"
 
-[tool.setuptools_scm]
-write_to = "wi1_bot/_version.py"
-
 [tool.mypy]
 namespace_packages = true
 
