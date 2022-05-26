@@ -1,15 +1,13 @@
 import asyncio
 import logging
-import re
 
-import discord
 from discord.ext import commands
 
 from wi1_bot import push
 from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.config import config
 
-from ..helpers import member_has_role, reply
+from ..helpers import member_has_role, reply, select_from_list
 
 
 class MovieCog(commands.Cog):
@@ -24,14 +22,10 @@ class MovieCog(commands.Cog):
             await reply(ctx.message, "usage: !addmovie KEYWORDS...")
             return
 
-        self.logger.debug(
-            f"got command from {ctx.message.author}: {ctx.message.content}"
-        )
-
         async with ctx.typing():
-            movies = self.radarr.lookup_movie(query)
+            potential = self.radarr.lookup_movie(query)
 
-            if not movies:
+            if not potential:
                 await reply(
                     ctx.message,
                     f"could not find a movie matching the query: {query}",
@@ -39,7 +33,9 @@ class MovieCog(commands.Cog):
                 )
                 return
 
-        resp, to_add = await self._select_movies(ctx.message, "addmovie", movies)
+        resp, to_add = await select_from_list(
+            self.bot, ctx.message, "addmovie", potential
+        )
 
         if not to_add:
             return
@@ -90,15 +86,11 @@ class MovieCog(commands.Cog):
             await reply(ctx.message, "usage: !delmovie KEYWORDS...")
             return
 
-        self.logger.debug(
-            f"got command from {ctx.message.author}: {ctx.message.content}"
-        )
-
         async with ctx.typing():
             if await member_has_role(ctx.message.author, "plex-admin"):
-                movies = self.radarr.lookup_library(query)[:50]
+                potential = self.radarr.lookup_library(query)[:50]
 
-                if not movies:
+                if not potential:
                     await reply(
                         ctx.message,
                         f"could not find a movie matching the query: {query}",
@@ -106,11 +98,11 @@ class MovieCog(commands.Cog):
                     )
                     return
             else:
-                movies = self.radarr.lookup_user_movies(query, ctx.message.author.id)[
-                    :50
-                ]
+                potential = self.radarr.lookup_user_movies(
+                    query, ctx.message.author.id
+                )[:50]
 
-                if not movies:
+                if not potential:
                     await reply(
                         ctx.message,
                         f"you haven't added a movie matching the query: {query}",
@@ -118,7 +110,9 @@ class MovieCog(commands.Cog):
                     )
                     return
 
-        resp, to_delete = await self._select_movies(ctx.message, "delmovie", movies)
+        resp, to_delete = await select_from_list(
+            self.bot, ctx.message, "delmovie", potential
+        )
 
         if not to_delete:
             return
@@ -137,59 +131,3 @@ class MovieCog(commands.Cog):
             )
 
             await reply(resp, f"deleted movie {movie} from the plex")
-
-    async def _select_movies(
-        self, msg: discord.Message, command: str, movies: list[Movie]
-    ) -> tuple[discord.Message, list[Movie]]:
-        movie_list = [f"{i+1}. {movie}" for i, movie in enumerate(movies)]
-
-        await reply(
-            msg,
-            "\n".join(movie_list),
-            title=(
-                "type in the number of the movie (or multiple separated by commas), or"
-                " type c to cancel"
-            ),
-        )
-
-        def check(resp: discord.Message) -> bool:
-            if resp.author != msg.author or resp.channel != msg.channel:
-                return False
-
-            # c, idxs, or new command
-            regex = re.compile(r"^(c|(\d+,?)+|[!.].+ .*)$", re.IGNORECASE)
-
-            if re.match(regex, resp.content.strip()):
-                return True
-
-            return False
-
-        try:
-            resp = await self.bot.wait_for("message", check=check, timeout=30)
-        except asyncio.TimeoutError:
-            await reply(msg, f"timed out, {command} cancelled", error=True)
-            return msg, []
-
-        if resp.content.strip().lower() == "c":
-            await reply(resp, f"{command} cancelled")
-            return resp, []
-
-        if resp.content.strip()[0] in [".", "!"]:
-            return resp, []
-
-        choices = resp.content.strip().split(",")
-
-        idxs = [int(i) for i in choices if i.isdigit()]
-
-        selected = []
-
-        for idx in idxs:
-            if idx < 1 or idx > len(movies):
-                await reply(
-                    resp, f"invalid index ({idx}), {command} cancelled", error=True
-                )
-                return resp, []
-
-            selected.append(movies[idx - 1])
-
-        return resp, selected

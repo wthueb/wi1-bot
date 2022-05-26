@@ -18,9 +18,7 @@ class Radarr:
     def lookup_library(self, query: str) -> list[Movie]:
         possible_movies = self._radarr.lookup_movie(query)
 
-        possible_movies = [Movie(m) for m in possible_movies if "id" in m]
-
-        return possible_movies
+        return [Movie(m) for m in possible_movies if "id" in m]
 
     def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
         try:
