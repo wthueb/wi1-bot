@@ -17,7 +17,10 @@ async def reply(
     msg: discord.Message, content: str, title: str = "", error: bool = False
 ) -> None:
     if len(content) > 2048:
-        content = content[:2045] + "..."
+        while len(content) > 2048 - len("\n..."):
+            content = content[: content.rfind("\n")].rstrip()
+
+        content += "\n..."
 
     embed = discord.Embed(
         title=title,
