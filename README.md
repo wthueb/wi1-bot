@@ -1,6 +1,6 @@
 # wi1-bot
 
-A Discord bot to integrate Radarr (with plans for Sonarr as well), allowing commands like !addmovie and !downloads.
+A Discord bot to integrate [Radarr](https://radarr.video/) & [Sonarr](https://sonarr.tv/), allowing commands like !addmovie and !downloads.
 
 ### Usage
 
