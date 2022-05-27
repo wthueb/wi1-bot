@@ -34,7 +34,9 @@ dev = [
     "mongo-types==0.15.1",
     "mypy==0.950",
     "pre-commit==2.19.0",
-    "types-PyYAML==6.0.7"
+    "requests==2.27.1",
+    "types-PyYAML==6.0.7",
+    "types-requests==2.27.29"
 ]
 
 [project.urls]

@@ -26,10 +26,10 @@ def on_grab(req: dict) -> None:
 
 def on_download(req: dict) -> None:
     if "movie" in req:
-        movie_json = radarr._radarr.get_movie_by_movie_id(req["movie"]["id"])
+        content_id = req["movie"]["id"]
 
         quality_profile = radarr.get_quality_profile_name(
-            movie_json["qualityProfileId"]
+            radarr._radarr.get_movie_by_movie_id(content_id)["qualityProfileId"]
         )
 
         movie_folder = req["movie"]["folderPath"]
@@ -38,22 +38,19 @@ def on_download(req: dict) -> None:
         push.send(basename, title="movie downloaded")
 
         path = os.path.join(movie_folder, basename)
-
-        content_id = movie_json["id"]
     elif "series" in req:
-        series_json = sonarr._sonarr.get_series(req["series"]["id"])
+        content_id = req["series"]["id"]
+
         quality_profile = sonarr.get_quality_profile_name(
-            series_json["qualityProfileId"]
+            sonarr._sonarr.get_series(content_id)["qualityProfileId"]
         )
 
         series_folder = req["series"]["path"]
-        basename = req["episodeFile"]["relativePath"].split("/")[-1]
+        relative_path = req["episodeFile"]["relativePath"].split("/")[-1]
 
-        push.send(basename, title="episode downloaded")
+        push.send(relative_path.split("/")[-1], title="episode downloaded")
 
-        path = os.path.join(series_folder, req["episodeFile"]["relativePath"])
-
-        content_id = series_json["id"]
+        path = os.path.join(series_folder, relative_path)
     else:
         raise ValueError("unknown download request")
 
