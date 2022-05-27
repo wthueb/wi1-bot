@@ -1,29 +1,29 @@
 fail_fast: true
 
 repos:
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-      - id: black
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+  - repo: local
     hooks:
       - id: isort
+        name: isort
+        language: system
+        entry: isort
+        types: [python]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.950
-    hooks:
-      - id: mypy
-        additional_dependencies:
-          [
-            discord.py-stubs==1.7.3,
-            mongo-types==0.15.1,
-            types-PyYAML==6.0.7,
-            "types-requests==2.27.29",
-          ]
+      - id: black
+        name: black
+        language: system
+        entry: black
+        types: [python]
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 4.0.1
-    hooks:
       - id: flake8
+        name: flake8
+        language: system
+        entry: flake8
+        types: [python]
+
+      - id: mypy
+        name: mypy
+        language: system
+        entry: mypy wi1_bot
+        pass_filenames: false
+        types: [python]

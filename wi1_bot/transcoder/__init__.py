@@ -1,4 +1,4 @@
 from .transcode_queue import queue
-from .transcoder import start
+from .transcoder import Transcoder
 
-__all__ = ["queue", "start"]
+__all__ = ["queue", "Transcoder"]

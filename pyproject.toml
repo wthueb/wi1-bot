@@ -66,8 +66,8 @@ ignore_missing_imports = true
 
 [tool.black]
 line-length = 88
-preview = true
+target-version = ["py310"]
 
 [tool.isort]
 profile = "black"
-known_first_party = "wi1_bot"
+known_first_party = ["wi1_bot"]
