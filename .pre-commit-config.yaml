@@ -24,6 +24,6 @@ repos:
       - id: mypy
         name: mypy
         language: system
-        entry: mypy wi1_bot
+        entry: mypy -p wi1_bot
         pass_filenames: false
         types: [python]

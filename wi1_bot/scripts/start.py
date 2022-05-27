@@ -1,10 +1,8 @@
 import logging
 import logging.config
-from multiprocessing import Pipe
 
-from wi1_bot import webhook
+from wi1_bot import transcoder, webhook
 from wi1_bot.discord import bot
-from wi1_bot.transcoder import Transcoder
 
 
 def main():
@@ -58,11 +56,7 @@ def main():
     logging.config.dictConfig(logging_config)
 
     webhook.start()
-
-    ffmpeg_output_in, ffmpeg_output_out = Pipe()
-
-    t = Transcoder(ffmpeg_output=ffmpeg_output_in)
-    t.start()
+    transcoder.start()
 
     try:
         bot.run()
