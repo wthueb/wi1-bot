@@ -1,6 +1,6 @@
 [build-system]
-requires = ["flit_scm"]
-build-backend = "flit_scm:buildapi"
+requires = ["setuptools==61.*", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "wi1_bot"
@@ -30,12 +30,10 @@ dev = [
     "black==22.3.0",
     "discord.py-stubs==1.7.3",
     "flake8==4.0.1",
-    "flit==3.7.1",
     "isort==5.10.1",
     "mongo-types==0.15.1",
     "mypy==0.950",
     "pre-commit==2.19.0",
-    "setuptools-scm==6.4.2",
     "types-PyYAML==6.0.7"
 ]
 
@@ -47,6 +45,12 @@ wi1-bot = "wi1_bot.scripts.start:main"
 transcode-item = "wi1_bot.scripts.transcode_item:main"
 add-tag = "wi1_bot.scripts.add_tag:main"
 
+[tool.setuptools]
+py-modules = ["wi1_bot._version"]
+
+[tool.setuptools_scm]
+write_to = "wi1_bot/_version.py"
+
 [tool.mypy]
 namespace_packages = true
 
@@ -57,6 +61,10 @@ module = [
     "setuptools_scm"
 ]
 ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+preview = true
 
 [tool.isort]
 profile = "black"

@@ -1,8 +1,1 @@
-try:
-    from setuptools_scm import get_version
-
-    version = get_version()
-except (ImportError, LookupError):
-    version = "???"
-
-__version__ = version
+from wi1_bot._version import version as __version__  # noqa: F401
