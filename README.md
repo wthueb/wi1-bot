@@ -5,7 +5,7 @@ A Discord bot to integrate [Radarr](https://radarr.video/) & [Sonarr](https://so
 ### Usage
 
 1. Copy `config.yaml.template` to `$XDG_CONFIG_HOME/wi1_bot/config.yaml` and set the necessary values.
-2. `pip install git+https://github.com/wthueb/wi1-bot.git`
+2. `pip install wi1_bot` (or from source: `pip install git+https://github.com/wthueb/wi1-bot.git`)
 3. `wi1-bot`
 
 ### Development
