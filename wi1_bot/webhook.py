@@ -46,7 +46,7 @@ def on_download(req: dict) -> None:
         )
 
         series_folder = req["series"]["path"]
-        relative_path = req["episodeFile"]["relativePath"].split("/")[-1]
+        relative_path = req["episodeFile"]["relativePath"]
 
         push.send(relative_path.split("/")[-1], title="episode downloaded")
 
