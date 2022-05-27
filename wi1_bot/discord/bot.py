@@ -74,7 +74,7 @@ async def quota_cmd(ctx: commands.Context) -> None:
             + sonarr.get_quota_amount(ctx.message.author.id)
         ) / 1024**3
 
-        maximum = 0
+        maximum: float = 0
 
         try:
             maximum = config["discord"]["quotas"][ctx.message.author.id]
