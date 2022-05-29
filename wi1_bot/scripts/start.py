@@ -1,8 +1,9 @@
 import logging
 import logging.config
 
-from wi1_bot import transcoder, webhook
+from wi1_bot import webhook
 from wi1_bot.discord import bot
+from wi1_bot.transcoder import Transcoder
 
 
 def main():
@@ -56,7 +57,9 @@ def main():
     logging.config.dictConfig(logging_config)
 
     webhook.start()
-    transcoder.start()
+
+    t = Transcoder(ws=True)
+    t.start()
 
     try:
         bot.run()
