@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import threading
 from datetime import timedelta
-from queue import SimpleQueue
 from time import sleep
 
 from wi1_bot import push
@@ -13,7 +12,7 @@ from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
-from .websocket import start_ws
+from .websocket import Websocket
 
 
 class Transcoder:
@@ -26,10 +25,12 @@ class Transcoder:
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
         if self.ws:
-            self.output_queue: SimpleQueue = SimpleQueue()
+            self.ws_loop = asyncio.new_event_loop()
+            self.output_queue: asyncio.Queue = asyncio.Queue()
 
             def start() -> None:
-                asyncio.run(start_ws(self.output_queue))
+                ws = Websocket(self.output_queue)
+                self.ws_loop.run_until_complete(ws.start())
 
             self.ws_thread = threading.Thread(target=start)
             self.ws_thread.daemon = True
@@ -105,7 +106,9 @@ class Transcoder:
                 last_output = line.strip()
 
                 if self.ws:
-                    self.output_queue.put(last_output)
+                    asyncio.run_coroutine_threadsafe(
+                        self.output_queue.put(last_output), self.ws_loop
+                    )
 
             status = proc.wait()
 
