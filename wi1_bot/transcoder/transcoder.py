@@ -1,16 +1,31 @@
+import asyncio
 import logging
 import os
 import shutil
 import subprocess
 import threading
 from datetime import timedelta
+from queue import SimpleQueue
 from time import sleep
+
+from websockets.server import WebSocketServerProtocol
+from websockets.server import serve as serve_websocket
 
 from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
+
+
+async def start_ws(output_queue: SimpleQueue) -> None:
+    async def loop(ws: WebSocketServerProtocol):
+        while True:
+            item = output_queue.get()
+            await ws.send(str(item))
+
+    async with serve_websocket(loop, "localhost", 9001):
+        await asyncio.Future()
 
 
 class Transcoder:
@@ -21,6 +36,16 @@ class Transcoder:
 
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
+
+        if self.ws:
+            self.output_queue: SimpleQueue = SimpleQueue()
+
+            def start() -> None:
+                asyncio.run(start_ws(self.output_queue))
+
+            self.ws_thread = threading.Thread(target=start)
+            self.ws_thread.daemon = True
+            self.ws_thread.start()
 
     def start(self) -> None:
         self.logger.debug("starting transcoder")
@@ -89,36 +114,10 @@ class Transcoder:
             # )
 
             for line in proc.stdout:  # type: ignore
-                # TODO: create a websocket for displaying the output to the dashboard
-                # https://websockets.readthedocs.io/en/9.0.1/intro.html#browser-based-example
-                # write the output to a file as well
-
-                # function Log() {
-                #     const [log, setLog] = useState([]);
-                #     useEffect(() => {
-                #         const ws = new WebSocket("wss://ubuntu.wi1.xyz");
-                #         ws.onmessage = function (ev) {
-                #             const json = JSON.parse(ev.data);
-                #             try {
-                #                 if (json.event == "data") {
-                #                     setLog(json.data);
-                #                 }
-                #                 } catch (err) {
-                #                     console.log(err);
-                #                 }
-                #             };
-                #             return () => ws.close();
-                #         }, []);
-                #     return (
-                #         <div>
-                #         {log.map((entry) => (
-                #             <pre>{entry}</pre>
-                #         ))}
-                #         </div>
-                #     );
-                # }
-
                 last_output = line.strip()
+
+                if self.ws:
+                    self.output_queue.put(last_output)
 
             status = proc.wait()
 
@@ -233,5 +232,5 @@ class Transcoder:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    t = Transcoder()
-    t.start()
+    t = Transcoder(ws=True)
+    t._worker()
