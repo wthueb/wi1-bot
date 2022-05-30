@@ -8,24 +8,12 @@ from datetime import timedelta
 from queue import SimpleQueue
 from time import sleep
 
-from websockets.server import WebSocketServerProtocol
-from websockets.server import serve as serve_websocket
-
 from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
-
-
-async def start_ws(output_queue: SimpleQueue) -> None:
-    async def loop(ws: WebSocketServerProtocol):
-        while True:
-            item = output_queue.get()
-            await ws.send(str(item))
-
-    async with serve_websocket(loop, "localhost", 9001):
-        await asyncio.Future()
+from .websocket import start_ws
 
 
 class Transcoder:

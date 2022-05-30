@@ -51,6 +51,7 @@ def main():
         "loggers": {
             "": {"level": "DEBUG", "handlers": ["console"]},
             "wi1_bot": {"level": "DEBUG", "handlers": [], "propagate": True},
+            "websockets": {"level": "INFO", "handlers": [], "propagate": True},
         },
     }
 
