@@ -3,7 +3,7 @@ requires = ["setuptools==61.*", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wi1_bot"
+name = "wi1-bot"
 description = "Discord bot for Radarr/Sonarr integration"
 authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
 readme = "README.md"
