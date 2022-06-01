@@ -102,6 +102,11 @@ class Transcoder:
             #     r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa: E501
             # )
 
+            if self.ws:
+                asyncio.run_coroutine_threadsafe(
+                    self.output_queue.put(f"$ {' '.join(command)}"), self.ws_loop
+                )
+
             for line in proc.stdout:  # type: ignore
                 last_output = line.strip()
 
@@ -111,6 +116,11 @@ class Transcoder:
                     )
 
             status = proc.wait()
+
+            if self.ws:
+                asyncio.run_coroutine_threadsafe(
+                    self.output_queue.put("DONE"), self.ws_loop
+                )
 
             if status != 0:
                 self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
