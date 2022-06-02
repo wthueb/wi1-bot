@@ -11,6 +11,23 @@ sonarr:
   # sonarr api key (Settings->General->Security->API Key)
   api_key: XXX
 
+discord:
+  # discord bot token
+  bot_token: XXX
+  # discord channel id that the bot will be in
+  channel_id: XXX
+  # your discord user id
+  admin_id: XXX
+
+  # what the bot is watching, optional
+  bot_presence: David Cronenberg's Crash
+
+  # specify quotas for users, optional
+  quotas:
+    # value is in gigabytes
+    USER1_ID: 123
+    USER2_ID: 456
+
 # pushover settings, optional
 pushover:
   # pushover user key
@@ -20,27 +37,11 @@ pushover:
   # comma separated list of pushover device names
   devices: device1,device2
 
-discord:
-  # discord bot token
-  bot_token: XXX
-  # what the bot is watching, optional
-  bot_presence: David Cronenberg's Crash
-
-  # discord channel id that the bot will be in
-  channel_id: XXX
-  # your discord user id
-  admin_id: XXX
-
-  # specify quotas for users, optional
-  quotas:
-    # value is in gigabytes
-    USER1_ID: 123
-    USER2_ID: 456
-
 # transcoding settings, optional
 transcoding:
   # -hwaccel in ffmpeg, optional
   hwaccel: cuda
+  
   profiles:
     # name of profile must match name in radarr/sonarr
     good:

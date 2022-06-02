@@ -34,45 +34,75 @@ class PushoverConfig(TypedDict):
     devices: str
 
 
-# FIXME: python 3.11 supports typing.NotRequired (PEP 655), so we
-# won't have to deal with this horrid mess of
-# ___ConfigRequired followed by ___Config(___ConfigRequired, total=False)
-class DiscordConfigRequired(TypedDict):
+# FIXME: python 3.11 supports typing.NotRequired (PEP 655)
+
+# from typing import NotRequired
+
+# class DiscordConfig(TypedDict):
+#     bot_token: str
+#     channel_id: int
+#     admin_id: int
+#     bot_presence: NotRequired[str]
+#     quotas: NotRequired[dict[int, float]]
+
+
+# class TranscodingProfile(TypedDict):
+#     video_codec: NotRequired[str]
+#     video_bitrate: NotRequired[int]
+#     audio_codec: NotRequired[str]
+#     audio_channels: NotRequired[int]
+#     audio_bitrate: NotRequired[str]
+
+
+# class TranscodingConfig(TypedDict):
+#     profiles: dict[str, TranscodingProfile]
+#     hwaccel: NotRequired[str]
+
+
+# class Config(TypedDict):
+#     radarr: ArrConfig
+#     sonarr: ArrConfig
+#     discord: DiscordConfig
+#     pushover: NotRequired[PushoverConfig]
+#     transcoding: NotRequired[TranscodingConfig]
+
+
+class DiscordConfigOptional(TypedDict, total=False):
+    bot_presence: str
+    quotas: dict[int, float]
+
+
+class DiscordConfig(DiscordConfigOptional):
     bot_token: str
     channel_id: int
     admin_id: int
 
 
-class DiscordConfig(DiscordConfigRequired, total=False):
-    bot_presence: str  # optional
-    quotas: dict[int, float]  # optional
-
-
 class TranscodingProfile(TypedDict, total=False):
-    video_codec: str  # optional
-    video_bitrate: int  # optional
-    audio_codec: str  # optional
-    audio_channels: int  # optional
-    audio_bitrate: str  # optional
+    video_codec: str
+    video_bitrate: int
+    audio_codec: str
+    audio_channels: int
+    audio_bitrate: str
 
 
-class TranscodingConfigRequired(TypedDict):
-    profiles: dict[str, TranscodingProfile]
-
-
-class TranscodingConfig(TranscodingConfigRequired, total=False):
+class TranscodingConfigOptional(TypedDict, total=False):
     hwaccel: str  # optional
 
 
-class ConfigRequired(TypedDict):
+class TranscodingConfig(TranscodingConfigOptional):
+    profiles: dict[str, TranscodingProfile]
+
+
+class ConfigOptional(TypedDict, total=False):
+    pushover: PushoverConfig  # optional
+    transcoding: TranscodingConfig  # optional
+
+
+class Config(ConfigOptional):
     radarr: ArrConfig
     sonarr: ArrConfig
     discord: DiscordConfig
-
-
-class Config(ConfigRequired, total=False):
-    pushover: PushoverConfig  # optional
-    transcoding: TranscodingConfig  # optional
 
 
 with open(_config_path, "r") as f:
