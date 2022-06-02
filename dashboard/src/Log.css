@@ -1,0 +1,10 @@
+.terminal {
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: auto;
+
+  width: 60%;
+  max-height: 80%;
+
+  font-size: 13px;
+}
