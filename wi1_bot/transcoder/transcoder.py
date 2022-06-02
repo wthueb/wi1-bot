@@ -17,24 +17,22 @@ from .websocket import Websocket
 
 class Transcoder:
     def __init__(self, ws: bool = False) -> None:
-        self.ws = ws
-
         self.logger = logging.getLogger(__name__)
 
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
-        if self.ws:
-            self.ws_loop = asyncio.new_event_loop()
-            self.output_queue: asyncio.Queue = asyncio.Queue()
+        self.ws: Websocket | None = None
 
-            def start() -> None:
-                ws = Websocket(self.output_queue)
-                self.ws_loop.run_until_complete(ws.start())
+        if ws:
+            ws_loop = asyncio.new_event_loop()
+            self.ws = Websocket(ws_loop)
 
-            self.ws_thread = threading.Thread(target=start)
-            self.ws_thread.daemon = True
-            self.ws_thread.start()
+            ws_thread = threading.Thread(
+                target=ws_loop.run_until_complete, args=(self.ws.start(),)
+            )
+            ws_thread.daemon = True
+            ws_thread.start()
 
     def start(self) -> None:
         self.logger.debug("starting transcoder")
@@ -103,24 +101,18 @@ class Transcoder:
             # )
 
             if self.ws:
-                asyncio.run_coroutine_threadsafe(
-                    self.output_queue.put(f"$ {' '.join(command)}"), self.ws_loop
-                )
+                self.ws.put(f"$ {' '.join(command)}")
 
             for line in proc.stdout:  # type: ignore
                 last_output = line.strip()
 
                 if self.ws:
-                    asyncio.run_coroutine_threadsafe(
-                        self.output_queue.put(last_output), self.ws_loop
-                    )
+                    self.ws.put(last_output)
 
             status = proc.wait()
 
             if self.ws:
-                asyncio.run_coroutine_threadsafe(
-                    self.output_queue.put("DONE"), self.ws_loop
-                )
+                self.ws.put("DONE")
 
             if status != 0:
                 self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
