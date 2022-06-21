@@ -53,8 +53,7 @@ class MovieCog(commands.Cog):
                 continue
 
             self.logger.info(
-                f"{ctx.message.author.name} has added the movie {movie.full_title} to"
-                " the plex"
+                f"{ctx.message.author.name} has added the movie {movie.full_title}"
             )
 
             push.send(
@@ -121,8 +120,7 @@ class MovieCog(commands.Cog):
             self.radarr.del_movie(movie)
 
             self.logger.info(
-                f"{ctx.message.author.name} has deleted the movie"
-                f" {movie.full_title} from the plex"
+                f"{ctx.message.author.name} has deleted the movie {movie.full_title}"
             )
 
             push.send(

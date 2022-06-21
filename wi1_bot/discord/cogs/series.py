@@ -54,12 +54,11 @@ class SeriesCog(commands.Cog):
                 continue
 
             self.logger.info(
-                f"{ctx.message.author.name} has added the show {series.full_title} to"
-                " the plex"
+                f"{ctx.message.author.name} has added the show {series.full_title}"
             )
 
             push.send(
-                f"{ctx.message.author.name} has added the movie {series.full_title}",
+                f"{ctx.message.author.name} has added the show {series.full_title}",
                 url=series.url,
             )
 
@@ -115,8 +114,7 @@ class SeriesCog(commands.Cog):
             self.sonarr.del_series(series)
 
             self.logger.info(
-                f"{ctx.message.author.name} has deleted the show"
-                f" {series.full_title} from the plex"
+                f"{ctx.message.author.name} has deleted the show {series.full_title}"
             )
 
             push.send(
