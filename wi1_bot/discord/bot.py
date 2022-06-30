@@ -28,6 +28,11 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError) 
         return
     elif isinstance(error, commands.MissingRole):
         await reply(ctx.message, "you don't have permission to do that")
+    else:
+        logger.error(error)
+        await reply(
+            ctx.message, f"something went wrong (<@!{config['discord']['admin_id']}>)"
+        )
 
 
 @bot.event
