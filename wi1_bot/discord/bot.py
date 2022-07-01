@@ -24,15 +24,21 @@ async def check_channel(ctx: commands.Context) -> bool:
 
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
-    if isinstance(error, commands.CommandNotFound):
-        return
-    elif isinstance(error, commands.MissingRole):
-        await reply(ctx.message, "you don't have permission to do that")
-    else:
-        logger.error(error)
-        await reply(
-            ctx.message, f"something went wrong (<@!{config['discord']['admin_id']}>)"
-        )
+    match error:
+        case commands.CommandNotFound():
+            pass
+        case commands.MissingRole():
+            await reply(ctx.message, "you don't have permission to do that")
+        case commands.MemberNotFound():
+            await reply(ctx.message, "that user doesn't exist")
+        case commands.MissingRequiredArgument():
+            await reply(ctx.message, str(error))
+        case _:
+            logger.error(repr(error))
+            await reply(
+                ctx.message,
+                f"something went wrong (<@!{config['discord']['admin_id']}>)",
+            )
 
 
 @bot.event

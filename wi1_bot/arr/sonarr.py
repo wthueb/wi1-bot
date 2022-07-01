@@ -89,6 +89,9 @@ class Sonarr:
 
         return False
 
+    def create_tag(self, tag: str) -> None:
+        self._sonarr.create_tag(tag)
+
     def add_tag(self, series: Series, user_id: int) -> bool:
         try:
             tag_id = self._get_tag_for_user_id(user_id)

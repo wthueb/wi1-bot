@@ -83,6 +83,9 @@ class Radarr:
 
         return False
 
+    def create_tag(self, tag: str) -> None:
+        self._radarr.create_tag(tag)
+
     def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
         if isinstance(movie, Movie):
             ids = [self._radarr.get_movie(movie.tmdb_id)[0]["id"]]
