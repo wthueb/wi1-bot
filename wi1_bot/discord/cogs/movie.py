@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import TYPE_CHECKING
 
 from discord.ext import commands
 
@@ -10,16 +9,9 @@ from wi1_bot.config import config
 
 from ..helpers import member_has_role, reply, select_from_list
 
-if TYPE_CHECKING:
-    Bot = commands.Bot[commands.Context]
-    Cog = commands.Cog[commands.Context]
-else:
-    Bot = commands.Bot
-    Cog = commands.Cog
 
-
-class MovieCog(Cog):
-    def __init__(self, bot: Bot) -> None:
+class MovieCog(commands.Cog):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger(__name__)
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
@@ -29,8 +21,6 @@ class MovieCog(Cog):
         if not query:
             await reply(ctx.message, "usage: !addmovie KEYWORDS...")
             return
-
-        potential: list[Movie] = []
 
         async with ctx.typing():
             potential = self.radarr.lookup_movie(query)
@@ -94,8 +84,6 @@ class MovieCog(Cog):
         if not query:
             await reply(ctx.message, "usage: !delmovie KEYWORDS...")
             return
-
-        potential: list[Movie] = []
 
         async with ctx.typing():
             if await member_has_role(ctx.message.author, "plex-admin"):

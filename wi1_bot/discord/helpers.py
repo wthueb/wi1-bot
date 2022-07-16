@@ -1,14 +1,9 @@
 import asyncio
 import re
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
 import discord
 from discord.ext import commands
-
-if TYPE_CHECKING:
-    Bot = commands.Bot[commands.Context]
-else:
-    Bot = commands.Bot
 
 
 async def member_has_role(member: discord.Member | discord.User, role: str) -> bool:
@@ -40,7 +35,7 @@ T = TypeVar("T")
 
 
 async def select_from_list(
-    bot: Bot, msg: discord.Message, command: str, choices: list[T]
+    bot: commands.Bot, msg: discord.Message, command: str, choices: list[T]
 ) -> tuple[discord.Message, list[T]]:
     choices_text = "\n".join(f"{i+1}. {choice}" for i, choice in enumerate(choices))
 

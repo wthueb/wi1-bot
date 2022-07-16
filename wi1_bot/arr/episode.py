@@ -1,10 +1,7 @@
-from typing import Any
-
-
 class Episode:
     def __init__(
         self,
-        ep_json: dict[str, Any],
+        ep_json: dict,
         *,
         series_title: str,
         series_tvdb_id: int,

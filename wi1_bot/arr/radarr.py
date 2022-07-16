@@ -1,11 +1,9 @@
 from shutil import rmtree
-from typing import Any
 
 from pyarr import RadarrAPI
-from pyarr.models.radarr import RadarrCommands
 
 from .download import Download
-from .movie import Movie as Movie
+from .movie import Movie
 
 
 class Radarr:
@@ -28,11 +26,9 @@ class Radarr:
         except ValueError:
             return []
 
-        possible_movies = self._radarr.lookup_movie(query)
-
         tag_detail = self._radarr.get_tag_detail(tag_id)
 
-        assert isinstance(tag_detail, dict)
+        possible_movies = self._radarr.lookup_movie(query)
 
         user_movie_ids = tag_detail["movieIds"]
 
@@ -41,7 +37,7 @@ class Radarr:
         ]
 
     def add_movie(self, movie: Movie, profile: str = "good") -> bool:
-        if self._radarr.get_movie(movie.tmdb_id, tmdb=True):
+        if self._radarr.get_movie(movie.tmdb_id):
             return False
 
         quality_profile_id = self._get_quality_profile_id(profile)
@@ -50,7 +46,6 @@ class Radarr:
 
         self._radarr.add_movie(
             db_id=movie.tmdb_id,
-            tmdb=True,
             quality_profile_id=quality_profile_id,
             root_dir=root_folder,
         )
@@ -58,9 +53,7 @@ class Radarr:
         return True
 
     def del_movie(self, movie: Movie) -> None:
-        potential = self._radarr.get_movie(movie.tmdb_id, tmdb=True)
-
-        assert isinstance(potential, list)
+        potential = self._radarr.get_movie(movie.tmdb_id)
 
         if not potential:
             raise ValueError(f"{movie} is not in the library")
@@ -78,9 +71,7 @@ class Radarr:
             pass
 
     def movie_downloaded(self, movie: Movie) -> bool:
-        potential = self._radarr.get_movie(movie.tmdb_id, tmdb=True)
-
-        assert isinstance(potential, list)
+        potential = self._radarr.get_movie(movie.tmdb_id)
 
         if not potential:
             return False
@@ -97,21 +88,9 @@ class Radarr:
 
     def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
         if isinstance(movie, Movie):
-            movies = [movie]
+            ids = [self._radarr.get_movie(movie.tmdb_id)[0]["id"]]
         else:
-            movies = movie
-
-        def get_movie_using_tmdb(m: Movie) -> dict[str, Any]:
-            potential = self._radarr.get_movie(m.tmdb_id, tmdb=True)
-
-            assert isinstance(potential, list)
-
-            if not potential:
-                raise ValueError(f"{m} is not in the library")
-
-            return potential[0]
-
-        ids = [get_movie_using_tmdb(m)["id"] for m in movies]
+            ids = [self._radarr.get_movie(m.tmdb_id)[0]["id"] for m in movie]
 
         try:
             tag_id = self._get_tag_for_user_id(user_id)
@@ -142,36 +121,32 @@ class Radarr:
         total = 0
 
         for movie in self._radarr.get_movie():
-            assert isinstance(movie, dict)
-
             if tag_id in movie["tags"]:
                 total += movie["sizeOnDisk"]
 
         return total
 
-    def get_quality_profile_name(self, profile_id: int) -> str:
+    def get_quality_profile_name(self, profile_id: int):
         profiles = self._radarr.get_quality_profile()
 
         for profile in profiles:
             if profile["id"] == profile_id:
-                name: str = profile["name"]
-                return name
+                return profile["name"]
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
     def rescan_movie(self, movie_id: int) -> None:
-        self._radarr.post_command(RadarrCommands.RESCAN_MOVIE, movieIds=[movie_id])
+        self._radarr.post_command("RescanMovie", movieIds=[movie_id])
 
     def search_missing(self) -> None:
-        self._radarr.post_command(RadarrCommands.MISSING_MOVIES_SEARCH)
+        self._radarr.post_command(name="MissingMoviesSearch")
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._radarr.get_quality_profile()
 
         for profile in profiles:
             if profile["name"].lower() == name.lower():
-                id: int = profile["id"]
-                return id
+                return profile["id"]
 
         raise ValueError(f"no quality profile with the name {name}")
 
@@ -180,8 +155,7 @@ class Radarr:
 
         for tag in tags:
             if str(user_id) in tag["label"]:
-                id: int = tag["id"]
-                return id
+                return tag["id"]
 
         raise ValueError(f"no tag with the user id {user_id}")
 

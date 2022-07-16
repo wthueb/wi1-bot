@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import TYPE_CHECKING
 
 from discord.ext import commands
 
@@ -10,16 +9,9 @@ from wi1_bot.config import config
 
 from ..helpers import reply, select_from_list
 
-if TYPE_CHECKING:
-    Bot = commands.Bot[commands.Context]
-    Cog = commands.Cog[commands.Context]
-else:
-    Bot = commands.Bot
-    Cog = commands.Cog
 
-
-class SeriesCog(Cog):
-    def __init__(self, bot: Bot) -> None:
+class SeriesCog(commands.Cog):
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger(__name__)
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
@@ -30,8 +22,6 @@ class SeriesCog(Cog):
         if not query:
             await reply(ctx.message, "usage: !addshow KEYWORDS...")
             return
-
-        potential: list[Series] = []
 
         async with ctx.typing():
             potential = self.sonarr.lookup_series(query)
@@ -101,8 +91,6 @@ class SeriesCog(Cog):
         if not query:
             await reply(ctx.message, "usage: !delshow KEYWORDS...")
             return
-
-        potential: list[Series] = []
 
         async with ctx.typing():
             potential = self.sonarr.lookup_library(query)[:50]
