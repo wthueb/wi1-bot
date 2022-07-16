@@ -6,7 +6,7 @@ from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
 
 
-def main():
+def main() -> None:
     logging_config = {
         "version": 1,
         "disable_existing_loggers": True,

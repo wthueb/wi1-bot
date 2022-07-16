@@ -1,12 +1,14 @@
 from shutil import rmtree
+from typing import Any
 
 from pyarr import SonarrAPI
+from pyarr.models.sonarr import SonarrCommands
 
 from .download import Download
 
 
 class Series:
-    def __init__(self, series_json: dict) -> None:
+    def __init__(self, series_json: dict[str, Any]) -> None:
         self.title: str = series_json["title"]
         self.year: int = series_json["year"]
         self.tvdb_id: int = series_json["tvdbId"]
@@ -74,7 +76,7 @@ class Sonarr:
         self._sonarr.del_series(series.db_id, delete_files=True)
 
         try:
-            rmtree(series_json["path"])
+            rmtree(series_json["path"])  # type: ignore
         except FileNotFoundError:
             pass
 
@@ -100,11 +102,13 @@ class Sonarr:
 
             return False
 
+        assert series.db_id is not None
+
         series_json = self._sonarr.get_series(series.db_id)
 
-        series_json["tags"].append(tag_id)
+        series_json["tags"].append(tag_id)  # type: ignore
 
-        self._sonarr.upd_series(series_json)
+        self._sonarr.upd_series(series_json)  # type: ignore
 
         return True
 
@@ -125,28 +129,33 @@ class Sonarr:
 
         for series in self._sonarr.get_series():
             if tag_id in series["tags"]:
-                total += series["sizeOnDisk"]
+                try:
+                    total += series["statistics"]["sizeOnDisk"]
+                except KeyError:
+                    continue
 
         return total
 
-    def get_quality_profile_name(self, profile_id: int):
+    def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._sonarr.get_quality_profile()
 
         for profile in profiles:
             if profile["id"] == profile_id:
-                return profile["name"]
+                name: str = profile["name"]
+                return name
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
     def rescan_series(self, series_id: int) -> None:
-        self._sonarr.post_command("RescanSeries", seriesId=series_id)
+        self._sonarr.post_command(SonarrCommands.RESCAN_SERIES, seriesId=series_id)
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._sonarr.get_quality_profile()
 
         for profile in profiles:
             if profile["name"].lower() == name.lower():
-                return profile["id"]
+                id: int = profile["id"]
+                return id
 
         raise ValueError(f"no quality profile with the name {name}")
 
@@ -155,6 +164,7 @@ class Sonarr:
 
         for tag in tags:
             if str(user_id) in tag["label"]:
-                return tag["id"]
+                id: int = tag["id"]
+                return id
 
         raise ValueError(f"no tag with the user id {user_id}")

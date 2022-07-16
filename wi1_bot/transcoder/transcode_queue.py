@@ -43,7 +43,9 @@ class TranscodeQueue:
         ).save()
 
     def get_one(self) -> TranscodeItem | None:
-        return TranscodeItem.objects.first()
+        obj: TranscodeItem | None = TranscodeItem.objects.first()
+
+        return obj
 
     def remove(self, item: TranscodeItem) -> None:
         item.delete()
@@ -52,8 +54,9 @@ class TranscodeQueue:
         TranscodeItem.objects.delete()
 
     @property
-    def size(self):
-        return TranscodeItem.objects.count()
+    def size(self) -> int:
+        size: int = TranscodeItem.objects.count()
+        return size
 
 
 queue = TranscodeQueue()

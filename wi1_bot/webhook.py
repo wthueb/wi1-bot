@@ -1,6 +1,7 @@
 import logging
 import os.path
 import threading
+from typing import Any, Mapping, Tuple
 
 from flask import Flask, request
 
@@ -18,13 +19,14 @@ radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
 
-def on_grab(req: dict) -> None:
+def on_grab(req: dict[str, Any]) -> None:
     push.send(
         req["release"]["releaseTitle"], title=f"file grabbed ({req['downloadClient']})"
     )
 
 
-def on_download(req: dict) -> None:
+def on_download(req: dict[str, Any]) -> None:
+    content_id: int
     if "movie" in req:
         content_id = req["movie"]["id"]
 
@@ -42,7 +44,7 @@ def on_download(req: dict) -> None:
         content_id = req["series"]["id"]
 
         quality_profile = sonarr.get_quality_profile_name(
-            sonarr._sonarr.get_series(content_id)["qualityProfileId"]
+            sonarr._sonarr.get_series(content_id)["qualityProfileId"]  # type: ignore
         )
 
         series_folder = req["series"]["path"]
@@ -59,7 +61,7 @@ def on_download(req: dict) -> None:
     except KeyError:
         return
 
-    def get_key(d, k):
+    def get_key(d: Mapping[str, Any], k: str) -> Any | None:
         try:
             return d[k]
         except KeyError:
@@ -83,7 +85,7 @@ def on_download(req: dict) -> None:
 
 
 @app.route("/", methods=["POST"])
-def index():
+def index() -> Tuple[str, int]:
     try:
         if request.json is None or "eventType" not in request.json:
             return "", 400
@@ -95,7 +97,9 @@ def index():
         elif request.json["eventType"] == "Download":
             on_download(request.json)
     except Exception:
-        logger.warning(f"error handling request: {request.data}", exc_info=True)
+        logger.warning(
+            f"error handling request: {request.data.decode('utf-8')}", exc_info=True
+        )
 
     return "", 200
 
