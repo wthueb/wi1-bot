@@ -125,7 +125,10 @@ class Sonarr:
 
         for series in self._sonarr.get_series():
             if tag_id in series["tags"]:
-                total += series["sizeOnDisk"]
+                try:
+                    total += series["statistics"]["sizeOnDisk"]
+                except KeyError:
+                    continue
 
         return total
 
