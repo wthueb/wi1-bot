@@ -183,6 +183,7 @@ class Transcoder:
 
         try:
             command.extend(["-hwaccel", config["transcoding"]["hwaccel"]])
+            command.extend(["-hwaccel_output_format", config["transcoding"]["hwaccel"]])
         except KeyError:
             pass
 
