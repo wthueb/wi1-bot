@@ -136,7 +136,7 @@ class Radarr:
         raise ValueError(f"no quality profile with the id {profile_id}")
 
     def rescan_movie(self, movie_id: int) -> None:
-        self._radarr.post_command("RescanMovie", movieIds=[movie_id])
+        self._radarr.post_command("RescanMovie", movieId=movie_id)
 
     def search_missing(self) -> None:
         self._radarr.post_command(name="MissingMoviesSearch")
