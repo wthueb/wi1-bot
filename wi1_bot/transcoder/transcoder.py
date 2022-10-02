@@ -145,7 +145,7 @@ class Transcoder:
         # FIXME: don't hardcode library paths (config)
         if item.content_id is not None:
             if new_path.startswith("/media/plex/movies/"):
-                self.radarr.rescan_movie(item.content_id)
+                self.radarr.refresh_movie(item.content_id)
             elif new_path.startswith("/media/plex/shows/"):
                 self.sonarr.rescan_series(item.content_id)
 
