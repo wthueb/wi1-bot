@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import logging.config
 
@@ -63,7 +64,7 @@ def main():
     t.start()
 
     try:
-        bot.run()
+        asyncio.run(bot.run())
     except KeyboardInterrupt:
         pass
 

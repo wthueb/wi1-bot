@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import discord
@@ -59,7 +60,7 @@ async def before_invoke(ctx: commands.Context) -> None:
     logger.debug(f"got command from {ctx.message.author}: {ctx.message.content}")
 
 
-@commands.cooldown(1, 10)  # type: ignore
+@commands.cooldown(1, 10)
 @bot.command(
     name="downloads", aliases=["queue", "q"], help="see the status of movie downloads"
 )
@@ -76,7 +77,7 @@ async def downloads_cmd(ctx: commands.Context) -> None:
     await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
-@commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
+@commands.cooldown(1, 60, commands.BucketType.user)
 @bot.command(name="quota", help="see your used space on the plex")
 async def quota_cmd(ctx: commands.Context) -> None:
     async with ctx.typing():
@@ -102,7 +103,7 @@ async def quota_cmd(ctx: commands.Context) -> None:
     await reply(ctx.message, msg)
 
 
-@commands.cooldown(1, 60)  # type: ignore
+@commands.cooldown(1, 60)
 @bot.command(name="quotas", help="see everyone's used space on the plex")
 async def quotas_cmd(ctx: commands.Context) -> None:
     try:
@@ -135,7 +136,7 @@ async def quotas_cmd(ctx: commands.Context) -> None:
     )
 
 
-@bot.command(name="addtag", help="add a user tag")  # type: ignore
+@bot.command(name="addtag", help="add a user tag")
 @commands.has_role("plex-admin")
 async def addtag_cmd(ctx: commands.Context, name: str, user: discord.Member) -> None:
     tag = f"{name}: {user.id}"
@@ -146,17 +147,17 @@ async def addtag_cmd(ctx: commands.Context, name: str, user: discord.Member) -> 
     await reply(ctx.message, f"tag `{tag}` added for {user.display_name}")
 
 
-bot.add_cog(MovieCog(bot))
-bot.add_cog(SeriesCog(bot))
-
-
-def run() -> None:
+async def run() -> None:
     logger.debug("starting bot")
 
-    bot.run(config["discord"]["bot_token"])
+    async with bot:
+        await bot.add_cog(MovieCog(bot))
+        await bot.add_cog(SeriesCog(bot))
+
+        await bot.start(config["discord"]["bot_token"])
 
 
 if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler())
 
-    bot.run(config["discord"]["bot_token"])
+    asyncio.run(run())
