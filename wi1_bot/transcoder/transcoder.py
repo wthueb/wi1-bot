@@ -49,9 +49,11 @@ class Transcoder:
                 sleep(3)
                 continue
 
+            remove = True
+
             try:
-                if self._do_transcode(item):
-                    queue.remove(item)
+                if not self._do_transcode(item):
+                    remove = False
             except FileNotFoundError:
                 self.logger.debug(
                     f"file does not exist: {item.path}, skipping transcoding"
@@ -60,6 +62,9 @@ class Transcoder:
                 self.logger.warning(
                     "got exception when trying to transcode", exc_info=True
                 )
+
+            if remove:
+                queue.remove(item)
 
             sleep(3)
 
@@ -117,10 +122,11 @@ class Transcoder:
             if status != 0:
                 self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
 
+                if "No such file or directory" in last_output:
+                    raise FileNotFoundError
+
                 if "received signal 15" in last_output:
                     return False
-
-                return True
 
         folder = item.path[: item.path.rfind("/")]
 
@@ -142,17 +148,24 @@ class Transcoder:
         shutil.move(tmp_path, new_path)
         os.remove(item.path)
 
-        # FIXME: don't hardcode library paths (config)
-        if item.content_id is not None:
-            if new_path.startswith("/media/plex/movies/"):
-                self.radarr.refresh_movie(item.content_id)
-            elif new_path.startswith("/media/plex/shows/"):
-                self.sonarr.rescan_series(item.content_id)
-
         self.logger.info(f"transcoded: {basename} -> {new_basename}")
         push.send(f"{basename} -> {new_basename}", title="file transcoded")
 
         return True
+
+    def _rescan_content(self, item: TranscodeItem, new_path: str) -> None:
+        # FIXME: don't hardcode library paths (config)
+        if item.content_id is not None:
+            if new_path.startswith("/media/plex/movies/"):
+                self.radarr.rescan_movie(item.content_id)
+                # radarr bug that it doesn't see the deleted file and the new file
+                # in one rescan?
+                # have to sleep in between to ensure initial command finishes
+                # or use pyarr.get_command() to see command status
+                sleep(5)
+                self.radarr.rescan_movie(item.content_id)
+            elif new_path.startswith("/media/plex/shows/"):
+                self.sonarr.rescan_series(item.content_id)
 
     def _get_duration(self, path: str) -> timedelta:
         probe_command = [
