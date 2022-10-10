@@ -148,6 +148,8 @@ class Transcoder:
         shutil.move(tmp_path, new_path)
         os.remove(item.path)
 
+        self._rescan_content(item, new_path)
+
         self.logger.info(f"transcoded: {basename} -> {new_basename}")
         push.send(f"{basename} -> {new_basename}", title="file transcoded")
 
