@@ -1,6 +1,7 @@
 import logging
 import os.path
 import threading
+from typing import Any
 
 from flask import Flask, request
 
@@ -59,11 +60,14 @@ def on_download(req: dict) -> None:
     except KeyError:
         return
 
-    def get_key(d, k):
+    # python 3.11: TranscodingProfile and typing.LiteralString
+    def get_key(d: Any, k: str) -> Any:
         try:
             return d[k]
         except KeyError:
             return None
+
+    copy_all_streams = get_key(quality_options, "copy_all_streams")
 
     video_codec = get_key(quality_options, "video_codec")
     video_bitrate = get_key(quality_options, "video_bitrate")
@@ -73,6 +77,7 @@ def on_download(req: dict) -> None:
 
     transcoder.queue.add(
         path=path,
+        copy_all_streams=copy_all_streams,
         video_codec=video_codec,
         video_bitrate=video_bitrate,
         audio_codec=audio_codec,

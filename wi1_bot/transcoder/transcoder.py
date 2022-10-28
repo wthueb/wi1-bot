@@ -204,6 +204,9 @@ class Transcoder:
 
         command.extend(["-i", item.path])
 
+        if item.copy_all_streams:
+            command.extend(["-map", "0"])
+
         if item.video_codec:
             command.extend(
                 ["-c:v", item.video_codec, "-preset", "fast", "-profile:v", "main"]

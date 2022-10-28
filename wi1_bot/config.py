@@ -79,6 +79,7 @@ class DiscordConfig(DiscordConfigOptional):
 
 
 class TranscodingProfile(TypedDict, total=False):
+    copy_all_streams: bool
     video_codec: str
     video_bitrate: int
     audio_codec: str

@@ -45,6 +45,8 @@ transcoding:
   profiles:
     # name of profile must match name in radarr/sonarr
     good:
+      # -map 0 in ffmpeg, optional
+      copy_all_streams: true
       # -c:v in ffmpeg, optional
       video_codec: hevc_nvenc
       # -b:v in ffmpeg, optional
