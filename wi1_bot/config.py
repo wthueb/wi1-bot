@@ -26,6 +26,7 @@ if _config_path is None:
 class ArrConfig(TypedDict):
     url: str
     api_key: str
+    root_folder: str
 
 
 class PushoverConfig(TypedDict):

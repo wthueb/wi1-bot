@@ -158,7 +158,7 @@ class Transcoder:
     def _rescan_content(self, item: TranscodeItem, new_path: str) -> None:
         # FIXME: don't hardcode library paths (config)
         if item.content_id is not None:
-            if new_path.startswith("/media/plex/movies/"):
+            if new_path.startswith(config["radarr"]["root_folder"]):
                 self.radarr.rescan_movie(item.content_id)
                 # radarr bug that it doesn't see the deleted file and the new file
                 # in one rescan?
@@ -166,7 +166,7 @@ class Transcoder:
                 # or use pyarr.get_command() to see command status
                 sleep(5)
                 self.radarr.rescan_movie(item.content_id)
-            elif new_path.startswith("/media/plex/shows/"):
+            elif new_path.startswith(config["sonarr"]["root_folder"]):
                 self.sonarr.rescan_series(item.content_id)
 
     def _get_duration(self, path: str) -> timedelta:

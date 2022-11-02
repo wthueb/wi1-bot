@@ -4,12 +4,16 @@ radarr:
   url: http://localhost:7878
   # radarr api key (Settings->General->Security->API Key)
   api_key: XXX
+  # radarr root folder (absolute path)
+  root_folder: /full/path/movies
 
 sonarr:
   # sonarr url you use to get to the dashboard
   url: http://localhost:8989
   # sonarr api key (Settings->General->Security->API Key)
   api_key: XXX
+  # sonarr root folder (absolute path)
+  root_folder: /full/path/shows
 
 discord:
   # discord bot token
