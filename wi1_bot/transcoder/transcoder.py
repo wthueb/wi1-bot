@@ -1,6 +1,5 @@
-import asyncio
 import logging
-import os
+import pathlib
 import shutil
 import subprocess
 import threading
@@ -12,27 +11,22 @@ from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
-from .websocket import Websocket
+
+
+class SignalInterrupt(Exception):
+    pass
+
+
+class UnknownError(Exception):
+    pass
 
 
 class Transcoder:
-    def __init__(self, ws: bool = False) -> None:
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
 
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
-
-        self.ws: Websocket | None = None
-
-        if ws:
-            ws_loop = asyncio.new_event_loop()
-            self.ws = Websocket(ws_loop)
-
-            ws_thread = threading.Thread(
-                target=ws_loop.run_until_complete, args=(self.ws.start(),)
-            )
-            ws_thread.daemon = True
-            ws_thread.start()
 
     def start(self) -> None:
         self.logger.debug("starting transcoder")
@@ -49,33 +43,35 @@ class Transcoder:
                 sleep(3)
                 continue
 
-            remove = True
-
             try:
-                if not self._do_transcode(item):
-                    remove = False
+                self._do_transcode(item)
+                queue.remove(item)
+            except SignalInterrupt:
+                self.logger.debug(
+                    f"transcoding interrupted by signal: {item.path}, will retry"
+                )
             except FileNotFoundError:
                 self.logger.debug(
                     f"file does not exist: {item.path}, skipping transcoding"
                 )
+                queue.remove(item)
+            except UnknownError:
+                queue.remove(item)
             except Exception:
                 self.logger.warning(
                     "got exception when trying to transcode", exc_info=True
                 )
 
-            if remove:
-                queue.remove(item)
-
             sleep(3)
 
-    def _do_transcode(self, item: TranscodeItem) -> bool:
-        basename = item.path.split("/")[-1]
+    def _do_transcode(self, item: TranscodeItem) -> None:
+        path = pathlib.Path(item.path)
 
-        self.logger.debug(f"attempting to transcode {basename}")
+        self.logger.debug(f"attempting to transcode {path.name}")
 
-        if basename.endswith(".avi"):
-            self.logger.debug(f"cannot transcode {basename}: .avi not supported")
-            return True
+        if path.suffix == ".avi":
+            self.logger.debug(f"cannot transcode {path.name}: .avi not supported")
+            return
 
         # push.send(f"{basename}", title="starting transcode")
 
@@ -86,9 +82,12 @@ class Transcoder:
 
         # duration = _get_duration(item.path)
 
-        tmp_path = os.path.join("/tmp/", basename)
+        tmp_folder = pathlib.Path("/tmp/wi1-bot")
+        tmp_folder.mkdir(exist_ok=True)
 
-        command = self._build_ffmpeg_command(item, tmp_path)
+        transcode_to = tmp_folder / f"{path.stem}-TRANSCODED.mkv"
+
+        command = self._build_ffmpeg_command(item, transcode_to)
 
         self.logger.debug(f"ffmpeg command: {' '.join(command)}")
 
@@ -99,25 +98,16 @@ class Transcoder:
             text=True,
             bufsize=1,
         ) as proc:
-            last_output: str = "???"
+            last_output = ""
 
-            # pattern = re.compile(
-            #     r".*time=(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.?\d+).*speed=(?P<speed>.*?)x"  # noqa: E501
-            # )
+            tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
 
-            if self.ws:
-                self.ws.put(f"$ {' '.join(command)}")
-
-            for line in proc.stdout:  # type: ignore
-                last_output = line.strip()
-
-                if self.ws:
-                    self.ws.put(last_output)
+            with open(tmp_log_path, "w") as ffmpeg_log_file:
+                for line in proc.stdout:  # type: ignore
+                    ffmpeg_log_file.write(line)
+                    last_output = line.strip()
 
             status = proc.wait()
-
-            if self.ws:
-                self.ws.put("DONE")
 
             if status != 0:
                 self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
@@ -126,34 +116,31 @@ class Transcoder:
                     raise FileNotFoundError
 
                 if "received signal 15" in last_output:
-                    return False
+                    raise SignalInterrupt
 
-        folder = item.path[: item.path.rfind("/")]
+                perm_log_path = tmp_folder / f"{path.stem}.log"
+                shutil.copy(tmp_log_path, perm_log_path)
+                self.logger.error(f"log file: {perm_log_path}")
 
-        filename, extension = basename[: basename.rfind(".")], basename.split(".")[-1]
+                raise UnknownError
 
-        new_basename = f"{filename}-TRANSCODED.{extension}"
+        new_path = path.parent / transcode_to.name
 
-        new_path = os.path.join(folder, new_basename)
-
-        if not os.path.exists(item.path):
+        if not path.exists():
             self.logger.debug(
                 f"file doesn't exist: {item.path}, deleting transcoded file"
             )
 
-            os.remove(tmp_path)
+            transcode_to.unlink()
+            return
 
-            return True
+        shutil.move(transcode_to, new_path)
+        path.unlink()
 
-        shutil.move(tmp_path, new_path)
-        os.remove(item.path)
+        self._rescan_content(item, str(new_path))
 
-        self._rescan_content(item, new_path)
-
-        self.logger.info(f"transcoded: {basename} -> {new_basename}")
-        push.send(f"{basename} -> {new_basename}", title="file transcoded")
-
-        return True
+        self.logger.info(f"transcoded: {path.name} -> {new_path.name}")
+        push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
 
     def _rescan_content(self, item: TranscodeItem, new_path: str) -> None:
         # FIXME: don't hardcode library paths (config)
@@ -189,7 +176,9 @@ class Transcoder:
 
         return duration
 
-    def _build_ffmpeg_command(self, item: TranscodeItem, tmp_path: str) -> list[str]:
+    def _build_ffmpeg_command(
+        self, item: TranscodeItem, transcode_to: pathlib.Path
+    ) -> list[str]:
         command = [
             "ffmpeg",
             "-hide_banner",
@@ -237,12 +226,12 @@ class Transcoder:
         if item.audio_bitrate:
             command.extend(["-b:a", str(item.audio_bitrate)])
 
-        command.extend(["-c:s", "copy", tmp_path])
+        command.extend(["-c:s", "copy", str(transcode_to)])
 
         return command
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    t = Transcoder(ws=True)
+    t = Transcoder()
     t._worker()

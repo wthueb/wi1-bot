@@ -60,7 +60,7 @@ def main():
 
     webhook.start()
 
-    t = Transcoder(ws=False)
+    t = Transcoder()
     t.start()
 
     try:
