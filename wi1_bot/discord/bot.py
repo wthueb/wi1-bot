@@ -32,6 +32,8 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError) 
             await reply(ctx.message, "you don't have permission to do that")
         case commands.MemberNotFound():
             await reply(ctx.message, "that user doesn't exist")
+        case commands.CommandOnCooldown():
+            await reply(ctx.message, str(error))
         case commands.MissingRequiredArgument():
             await reply(ctx.message, str(error))
         case _:
