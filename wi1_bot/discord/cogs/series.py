@@ -4,7 +4,7 @@ import logging
 from discord.ext import commands
 
 from wi1_bot import push
-from wi1_bot.arr.sonarr import Series, Sonarr
+from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
 from wi1_bot.config import config
 
 from ..helpers import reply, select_from_list
@@ -24,7 +24,16 @@ class SeriesCog(commands.Cog):
             return
 
         async with ctx.typing():
-            potential = self.sonarr.lookup_series(query)
+            try:
+                potential = self.sonarr.lookup_series(query)
+            except SonarrError as e:
+                await reply(
+                    ctx.message,
+                    "there was an error that isn't "
+                    f"<@!{config['discord']['admin_id']}>'s fault: {e}",
+                    error=True,
+                )
+                return
 
             if not potential:
                 await reply(

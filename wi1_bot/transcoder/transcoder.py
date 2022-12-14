@@ -47,15 +47,13 @@ class Transcoder:
                 self._do_transcode(item)
                 queue.remove(item)
             except SignalInterrupt:
-                self.logger.debug(
-                    f"transcoding interrupted by signal: {item.path}, will retry"
-                )
+                # retry when restarted
+                pass
             except FileNotFoundError:
-                self.logger.debug(
-                    f"file does not exist: {item.path}, skipping transcoding"
-                )
+                # don't retry
                 queue.remove(item)
             except UnknownError:
+                # don't retry
                 queue.remove(item)
             except Exception:
                 self.logger.warning(
@@ -113,9 +111,15 @@ class Transcoder:
                 self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
 
                 if "No such file or directory" in last_output:
+                    self.logger.debug(
+                        f"file does not exist: {path}, skipping transcoding"
+                    )
                     raise FileNotFoundError
 
                 if "received signal 15" in last_output:
+                    self.logger.debug(
+                        f"transcoding interrupted by signal: {path}, will retry"
+                    )
                     raise SignalInterrupt
 
                 perm_log_path = tmp_folder / f"{path.stem}.log"

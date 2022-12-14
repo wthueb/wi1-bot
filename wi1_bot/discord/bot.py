@@ -26,7 +26,7 @@ async def check_channel(ctx: commands.Context) -> bool:
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
     match error:
-        case commands.CommandNotFound():
+        case commands.CommandNotFound() | commands.CheckFailure():
             pass
         case commands.MissingRole():
             await reply(ctx.message, "you don't have permission to do that")
@@ -62,7 +62,7 @@ async def before_invoke(ctx: commands.Context) -> None:
     logger.debug(f"got command from {ctx.message.author}: {ctx.message.content}")
 
 
-@commands.cooldown(1, 10)
+@commands.cooldown(1, 10)  # type: ignore
 @bot.command(
     name="downloads", aliases=["queue", "q"], help="see the status of movie downloads"
 )
@@ -79,7 +79,7 @@ async def downloads_cmd(ctx: commands.Context) -> None:
     await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
-@commands.cooldown(1, 60, commands.BucketType.user)
+@commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
 @bot.command(name="quota", help="see your used space on the plex")
 async def quota_cmd(ctx: commands.Context) -> None:
     async with ctx.typing():
@@ -105,7 +105,7 @@ async def quota_cmd(ctx: commands.Context) -> None:
     await reply(ctx.message, msg)
 
 
-@commands.cooldown(1, 60)
+@commands.cooldown(1, 60)  # type: ignore
 @bot.command(name="quotas", help="see everyone's used space on the plex")
 async def quotas_cmd(ctx: commands.Context) -> None:
     try:
@@ -138,7 +138,7 @@ async def quotas_cmd(ctx: commands.Context) -> None:
     )
 
 
-@bot.command(name="addtag", help="add a user tag")
+@bot.command(name="addtag", help="add a user tag")  # type: ignore
 @commands.has_role("plex-admin")
 async def addtag_cmd(ctx: commands.Context, name: str, user: discord.Member) -> None:
     tag = f"{name}: {user.id}"

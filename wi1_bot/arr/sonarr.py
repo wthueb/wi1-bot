@@ -32,12 +32,19 @@ class Series:
         return str(self.__dict__)
 
 
+class SonarrError(Exception):
+    pass
+
+
 class Sonarr:
     def __init__(self, url: str, api_key: str) -> None:
         self._sonarr = SonarrAPI(url, api_key)
 
     def lookup_series(self, query: str) -> list[Series]:
         possible_series = self._sonarr.lookup_series(query)
+
+        if isinstance(possible_series, dict):
+            raise SonarrError(possible_series["message"])
 
         return [Series(s) for s in possible_series]
 
