@@ -16,7 +16,7 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
-    "discord.py==2.0.1",
+    "discord.py==2.1.0",
     "Flask==2.1.2",
     "mongoengine==0.24.1",
     "pyarr==3.1.3",
@@ -30,7 +30,7 @@ dev = [
     "flake8==4.0.1",
     "isort==5.10.1",
     "mongo-types==0.15.1",
-    "mypy==0.982",
+    "mypy==0.991",
     "pre-commit==2.19.0",
     "requests==2.27.1",
     "types-PyYAML==6.0.7",
@@ -50,14 +50,10 @@ packages = ["wi1_bot"]
 [tool.setuptools_scm]
 write_to = "wi1_bot/_version.py"
 
-# [tool.mypy]
-# namespace_packages = true
-
 [[tool.mypy.overrides]]
 module = [
     "pushover",
     "pyarr",
-    "setuptools_scm"
 ]
 ignore_missing_imports = true
 
