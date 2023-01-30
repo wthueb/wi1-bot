@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 
 import discord
 from discord.ext import commands
@@ -37,7 +38,12 @@ async def on_command_error(ctx: commands.Context, error: commands.CommandError) 
         case commands.MissingRequiredArgument():
             await reply(ctx.message, str(error))
         case _:
-            logger.error(error, exc_info=True)
+            logger.error(
+                "".join(
+                    traceback.format_exception(type(error), error, error.__traceback__)
+                )
+            )
+
             await reply(
                 ctx.message,
                 f"something went wrong (<@!{config['discord']['admin_id']}>)",
