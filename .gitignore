@@ -1,5 +1,7 @@
 config.yaml
+/tests/files/
+
+build/
 dist/
 *.egg-info/
 _version.py
-/tests/files/

@@ -1,4 +1,5 @@
 import argparse
+import pathlib
 from typing import Any, Mapping
 
 from wi1_bot.config import config
@@ -15,6 +16,8 @@ def main() -> None:
     if "transcoding" not in config:
         raise ValueError("transcoding not configured")
 
+    path = pathlib.Path(args.path).resolve()
+
     qp = config["transcoding"]["profiles"]["good"]
 
     def get_key(d: Mapping[str, Any], k: str) -> Any | None:
@@ -24,7 +27,7 @@ def main() -> None:
             return None
 
     queue.add(
-        path=args.path,
+        path=str(path),
         copy_all_streams=get_key(qp, "copy_all_streams"),
         video_codec=get_key(qp, "video_codec"),
         video_bitrate=get_key(qp, "video_bitrate"),
