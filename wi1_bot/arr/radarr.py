@@ -20,7 +20,7 @@ class Radarr:
 
         return [Movie(m) for m in possible_movies if "id" in m]
 
-    def lookup_user_movies(self, query: str, user_id: int) -> list[Movie]:
+    def lookup_user_library(self, query: str, user_id: int) -> list[Movie]:
         try:
             tag_id = self._get_tag_for_user_id(user_id)
         except ValueError:

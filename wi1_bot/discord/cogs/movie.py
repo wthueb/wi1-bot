@@ -97,7 +97,7 @@ class MovieCog(commands.Cog):
                     )
                     return
             else:
-                potential = self.radarr.lookup_user_movies(
+                potential = self.radarr.lookup_user_library(
                     query, ctx.message.author.id
                 )[:50]
 

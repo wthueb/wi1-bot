@@ -53,6 +53,20 @@ class Sonarr:
 
         return [Series(s) for s in possible_series if "id" in s]
 
+    def lookup_user_library(self, query: str, user_id: int) -> list[Series]:
+        try:
+            tag_id = self._get_tag_for_user_id(user_id)
+        except ValueError:
+            return []
+
+        possible_series = self._sonarr.lookup_series(query)
+
+        # self._sonarr.get_tag_detail is broken/not supported in v1 sonarr API so have
+        # to filter the tmdb lookup (probably slower but saves an API call)
+        user_series = [s for s in possible_series if tag_id in s["tags"]]
+
+        return [Series(s) for s in user_series]
+
     def add_series(self, series: Series, profile: str = "good") -> bool:
         if series.db_id is not None:
             return False

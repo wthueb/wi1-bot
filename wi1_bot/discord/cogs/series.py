@@ -7,7 +7,7 @@ from wi1_bot import push
 from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
 from wi1_bot.config import config
 
-from ..helpers import reply, select_from_list
+from ..helpers import member_has_role, reply, select_from_list
 
 
 class SeriesCog(commands.Cog):
@@ -17,7 +17,7 @@ class SeriesCog(commands.Cog):
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
     @commands.command(name="addshow", help="add a show to the plex")
-    @commands.has_role("plex-admin")
+    @commands.has_any_role("plex-admin", "plex-shows")
     async def addshow_cmd(self, ctx: commands.Context, *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !addshow KEYWORDS...")
@@ -95,22 +95,35 @@ class SeriesCog(commands.Cog):
                 return
 
     @commands.command(name="delshow", help="delete a show from the plex")
-    @commands.has_role("plex-admin")
+    @commands.has_any_role("plex-admin", "plex-shows")
     async def delshow_command(self, ctx: commands.Context, *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !delshow KEYWORDS...")
             return
 
         async with ctx.typing():
-            potential = self.sonarr.lookup_library(query)[:50]
+            if await member_has_role(ctx.message.author, "plex-admin"):
+                potential = self.sonarr.lookup_library(query)[:50]
 
-            if not potential:
-                await reply(
-                    ctx.message,
-                    f"could not find a show matching the query: {query}",
-                    error=True,
-                )
-                return
+                if not potential:
+                    await reply(
+                        ctx.message,
+                        f"could not find a show matching the query: {query}",
+                        error=True,
+                    )
+                    return
+            else:
+                potential = self.sonarr.lookup_user_library(
+                    query, ctx.message.author.id
+                )[:50]
+
+                if not potential:
+                    await reply(
+                        ctx.message,
+                        f"you haven't added a show matching the query: {query}",
+                        error=True,
+                    )
+                    return
 
         resp, to_delete = await select_from_list(
             self.bot, ctx.message, "delshow", potential
