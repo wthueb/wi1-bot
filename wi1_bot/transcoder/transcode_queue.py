@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from mongoengine import Document, connect
 from mongoengine.fields import BooleanField, IntField, StringField
@@ -50,7 +50,7 @@ class TranscodeQueue:
         ).save()
 
     def get_one(self) -> TranscodeItem | None:
-        return TranscodeItem.objects.first()
+        return cast(TranscodeItem | None, TranscodeItem.objects.first())
 
     def remove(self, item: TranscodeItem) -> None:
         item.delete()
@@ -59,8 +59,8 @@ class TranscodeQueue:
         TranscodeItem.objects.delete()
 
     @property
-    def size(self):
-        return TranscodeItem.objects.count()
+    def size(self) -> int:
+        return cast(int, TranscodeItem.objects.count())
 
 
 queue = TranscodeQueue()

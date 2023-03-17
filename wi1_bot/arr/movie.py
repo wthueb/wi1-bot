@@ -1,5 +1,8 @@
+from typing import Any
+
+
 class Movie:
-    def __init__(self, movie_json: dict) -> None:
+    def __init__(self, movie_json: dict[str, Any]) -> None:
         self._json = movie_json
 
         self.title: str = movie_json["title"]

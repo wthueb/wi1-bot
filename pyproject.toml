@@ -50,6 +50,10 @@ packages = ["wi1_bot"]
 [tool.setuptools_scm]
 write_to = "wi1_bot/_version.py"
 
+[tool.mypy]
+packages = "wi1_bot"
+strict = true
+
 [[tool.mypy.overrides]]
 module = [
     "pushover",

@@ -1,9 +1,11 @@
+from typing import Any
+
 from .episode import Episode
 from .movie import Movie
 
 
 class Download:
-    def __init__(self, data: dict) -> None:
+    def __init__(self, data: dict[str, Any]) -> None:
         self.content: Movie | Episode | str
 
         if "movie" in data:

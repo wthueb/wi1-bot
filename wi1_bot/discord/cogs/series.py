@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Any
 
 from discord.ext import commands
 
@@ -18,7 +19,7 @@ class SeriesCog(commands.Cog):
 
     @commands.command(name="addshow", help="add a show to the plex")
     @commands.has_any_role("plex-admin", "plex-shows")
-    async def addshow_cmd(self, ctx: commands.Context, *, query: str = "") -> None:
+    async def addshow_cmd(self, ctx: commands.Context[Any], *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !addshow KEYWORDS...")
             return
@@ -29,8 +30,10 @@ class SeriesCog(commands.Cog):
             except SonarrError as e:
                 await reply(
                     ctx.message,
-                    "there was an error that isn't "
-                    f"<@!{config['discord']['admin_id']}>'s fault: {e}",
+                    (
+                        "there was an error that isn't "
+                        f"<@!{config['discord']['admin_id']}>'s fault: {e}"
+                    ),
                     error=True,
                 )
                 return
@@ -96,7 +99,9 @@ class SeriesCog(commands.Cog):
 
     @commands.command(name="delshow", help="delete a show from the plex")
     @commands.has_any_role("plex-admin", "plex-shows")
-    async def delshow_command(self, ctx: commands.Context, *, query: str = "") -> None:
+    async def delshow_command(
+        self, ctx: commands.Context[Any], *, query: str = ""
+    ) -> None:
         if not query:
             await reply(ctx.message, "usage: !delshow KEYWORDS...")
             return

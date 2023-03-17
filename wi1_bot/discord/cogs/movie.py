@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Any
 
 from discord.ext import commands
 
@@ -17,7 +18,9 @@ class MovieCog(commands.Cog):
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 
     @commands.command(name="addmovie", help="add a movie to the plex")
-    async def addmovie_cmd(self, ctx: commands.Context, *, query: str = "") -> None:
+    async def addmovie_cmd(
+        self, ctx: commands.Context[Any], *, query: str = ""
+    ) -> None:
         if not query:
             await reply(ctx.message, "usage: !addmovie KEYWORDS...")
             return
@@ -80,7 +83,9 @@ class MovieCog(commands.Cog):
             )
 
     @commands.command(name="delmovie", help="delete a movie from the plex")
-    async def delmovie_cmd(self, ctx: commands.Context, *, query: str = "") -> None:
+    async def delmovie_cmd(
+        self, ctx: commands.Context[Any], *, query: str = ""
+    ) -> None:
         if not query:
             await reply(ctx.message, "usage: !delmovie KEYWORDS...")
             return
