@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import shlex
 import shutil
 import subprocess
 import threading
@@ -87,7 +88,7 @@ class Transcoder:
 
         command = self._build_ffmpeg_command(item, transcode_to)
 
-        self.logger.debug(f"ffmpeg command: {' '.join(command)}")
+        self.logger.debug(f"ffmpeg command: {shlex.join(command)}")
 
         with subprocess.Popen(
             command,
