@@ -127,6 +127,11 @@ class Transcoder:
                 shutil.copy(tmp_log_path, perm_log_path)
                 self.logger.error(f"log file: {perm_log_path}")
 
+                push.send(
+                    f"{path.name} has failed to transcode, log: {perm_log_path}",
+                    title="transcoding error",
+                )
+
                 raise UnknownError
 
         new_path = path.parent / transcode_to.name
@@ -145,7 +150,7 @@ class Transcoder:
         self._rescan_content(item, str(new_path))
 
         self.logger.info(f"transcoded: {path.name} -> {new_path.name}")
-        push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
+        # push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
 
     def _rescan_content(self, item: TranscodeItem, new_path: str) -> None:
         # FIXME: don't hardcode library paths (config)
