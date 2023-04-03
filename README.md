@@ -19,8 +19,7 @@ Requires Python >=3.10.
 
 ### TODO
 
-- Use `mypy --strict`
-- Use Discord slash commands instead of normal text commands
+- Use Discord slash commands instead of normal text commands (difficult: can't have "conversation" with slash commands)
 - Web dashboard for seeing transcode queue, transcode progress, quotas
 - Enforce quotas
 - !linktmdb
