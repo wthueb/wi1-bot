@@ -16,9 +16,9 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
-    "discord.py==2.1.0",
-    "Flask==2.1.2",
-    "mongoengine==0.24.1",
+    "discord.py==2.2.2",
+    "Flask==2.2.3",
+    "mongoengine==0.27.0",
     "pyarr==3.1.3",
     "python-pushover==0.4",
     "PyYAML==6.0"
@@ -26,16 +26,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black==22.12.0",
+    "black==23.3.0",
     "flake8==6.0.0",
     "isort==5.12.0",
     "mongo-types==0.15.1",
-    "mypy==0.991",
-    "pre-commit==3.0.2",
+    "mypy==1.2.0",
+    "pre-commit==3.2.2",
     "requests==2.28.2",
-    "types-flask==1.1.6",
-    "types-PyYAML==6.0.12.3",
-    "types-requests==2.28.11.8"
+    "types-PyYAML==6.0.12.9",
 ]
 
 [project.urls]
