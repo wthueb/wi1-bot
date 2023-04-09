@@ -5,7 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wi1-bot"
 description = "Discord bot for Radarr/Sonarr integration"
-authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
+authors = [
+    "William Huebner <wilhueb@gmail.com>",
+]
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [
