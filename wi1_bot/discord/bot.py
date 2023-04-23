@@ -63,12 +63,12 @@ async def on_ready() -> None:
             )
         )
 
-    logger.debug("bot is ready")
+    logger.info("bot is ready")
 
 
 @bot.before_invoke
 async def before_invoke(ctx: commands.Context[Any]) -> None:
-    logger.debug(f"got command from {ctx.message.author}: {ctx.message.content}")
+    logger.info(f"got command from {ctx.message.author}: {ctx.message.content}")
 
 
 @commands.cooldown(1, 10)  # type: ignore
@@ -161,7 +161,7 @@ async def addtag_cmd(
 
 
 async def run() -> None:
-    logger.debug("starting bot")
+    logger.info("starting bot")
 
     async with bot:
         await bot.add_cog(MovieCog(bot))

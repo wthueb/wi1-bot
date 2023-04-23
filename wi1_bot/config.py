@@ -96,7 +96,16 @@ class TranscodingConfig(TranscodingConfigOptional):
     profiles: dict[str, TranscodingProfile]
 
 
+class GeneralConfigOptional(TypedDict, total=False):
+    log_dir: str
+
+
+class GeneralConfig(GeneralConfigOptional):
+    pass
+
+
 class ConfigOptional(TypedDict, total=False):
+    general: GeneralConfig  # optional
     pushover: PushoverConfig  # optional
     transcoding: TranscodingConfig  # optional
 

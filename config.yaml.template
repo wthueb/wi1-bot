@@ -1,4 +1,8 @@
 ---
+general:
+  # log file directory, optional
+  log_dir: /var/log/wi1-bot
+
 radarr:
   # radarr url you use to get to the dashboard
   url: http://localhost:7878
