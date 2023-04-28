@@ -1,29 +1,33 @@
-from pushover import Client
+import requests
 
 from wi1_bot.config import config
-
-_client = None
-
-try:
-    if config["pushover"]["user_key"] and config["pushover"]["api_key"]:
-        _client = Client(
-            config["pushover"]["user_key"], api_token=config["pushover"]["api_key"]
-        )
-except Exception:
-    pass
 
 
 def send(
     msg: str, title: str | None = None, url: str | None = None, priority: int = 0
 ) -> None:
-    try:
-        if _client:
-            _client.send_message(
-                msg,
-                title=title,
-                url=url,
-                priority=priority,
-                device=config["pushover"]["devices"],
-            )
-    except Exception:
+    if "pushover" not in config:
+        return
+
+    data = {
+        "token": config["pushover"]["api_key"],
+        "user": config["pushover"]["user_key"],
+        "message": msg,
+        "priority": priority,
+        "device": config["pushover"]["devices"],
+    }
+
+    if title is not None:
+        data["title"] = title
+
+    if url is not None:
+        data["url"] = url
+
+    r = requests.post("https://api.pushover.net/1/messages.json", data=data)
+
+    if not r.ok:
+        # TODO: output an error message, maybe use r.raise_for_status(),
+        # but would have to handle exceptions from calling code
         pass
+
+    return
