@@ -4,9 +4,9 @@ from typing import Any
 
 from discord.ext import commands
 
-from wi1_bot import push
-from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
-from wi1_bot.config import config
+from margot import push
+from margot.arr.sonarr import Series, Sonarr, SonarrError
+from margot.config import config
 
 from ..helpers import member_has_role, reply, select_from_list
 

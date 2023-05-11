@@ -1,7 +1,7 @@
 ---
 general:
   # log file directory, optional
-  log_dir: /var/log/wi1-bot
+  log_dir: /var/log/margot
 
 radarr:
   # radarr url you use to get to the dashboard

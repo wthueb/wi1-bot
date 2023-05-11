@@ -1,17 +1,17 @@
-# wi1-bot
+# margot
 
 A Discord bot to integrate [Radarr](https://radarr.video/) & [Sonarr](https://sonarr.tv/), allowing commands like !addmovie and !downloads.
 
 ### Usage
 
-1. Copy `config.yaml.template` to `$XDG_CONFIG_HOME/wi1-bot/config.yaml` and set the necessary values.
-2. `pip install wi1-bot` (or from source: `pip install git+https://github.com/wthueb/wi1-bot.git`)
-3. `wi1-bot`
+1. Copy `config.yaml.template` to `$XDG_CONFIG_HOME/margot/config.yaml` and set the necessary values.
+2. `pip install margot` (or from source: `pip install git+https://github.com/wthueb/margot.git`)
+3. `margot`
 
 ### Development
 
-1. `git clone https://github.com/wthueb/wi1-bot.git`
-2. `cd wi1-bot/`
+1. `git clone https://github.com/wthueb/margot.git`
+2. `cd margot/`
 3. `pip install -e .[dev]`
 4. `pre-commit install`
 

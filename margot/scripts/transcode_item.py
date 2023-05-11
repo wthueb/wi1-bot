@@ -2,8 +2,8 @@ import argparse
 import pathlib
 from typing import Any, Mapping
 
-from wi1_bot.config import config
-from wi1_bot.transcoder import queue
+from margot.config import config
+from margot.transcoder import queue
 
 
 def main() -> None:

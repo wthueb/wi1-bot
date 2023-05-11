@@ -4,10 +4,10 @@ import logging.config
 import pathlib
 from typing import Any
 
-from wi1_bot import webhook
-from wi1_bot.config import config
-from wi1_bot.discord import bot
-from wi1_bot.transcoder import Transcoder
+from margot import webhook
+from margot.config import config
+from margot.discord import bot
+from margot.transcoder import Transcoder
 
 
 def main() -> None:
@@ -38,7 +38,7 @@ def main() -> None:
         },
         "loggers": {
             "": {"level": "DEBUG", "handlers": ["console"]},
-            "wi1_bot": {"level": "DEBUG", "handlers": [], "propagate": True},
+            "margot": {"level": "DEBUG", "handlers": [], "propagate": True},
         },
     }
 
@@ -47,7 +47,7 @@ def main() -> None:
 
         logging_config["handlers"]["file"] = {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": str(log_dir / "wi1-bot.log"),
+            "filename": str(log_dir / "margot.log"),
             "maxBytes": 1024**2 * 10,  # 10 MB
             "backupCount": 20,
             "level": "INFO",
@@ -56,7 +56,7 @@ def main() -> None:
 
         logging_config["handlers"]["file_debug"] = {
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": str(log_dir / "wi1-bot.debug.log"),
+            "filename": str(log_dir / "margot.debug.log"),
             "maxBytes": 1024**2 * 10,  # 10 MB
             "backupCount": 20,
             "level": "DEBUG",

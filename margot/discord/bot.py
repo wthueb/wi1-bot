@@ -6,8 +6,8 @@ from typing import Any
 import discord
 from discord.ext import commands
 
-from wi1_bot.arr import Radarr, Sonarr
-from wi1_bot.config import config
+from margot.arr import Radarr, Sonarr
+from margot.config import config
 
 from .cogs import MovieCog, SeriesCog
 from .helpers import reply

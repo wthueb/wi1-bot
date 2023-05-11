@@ -5,9 +5,9 @@ from typing import Any, cast
 
 from flask import Flask, request
 
-from wi1_bot import push, transcoder
-from wi1_bot.arr import Radarr, Sonarr
-from wi1_bot.config import config
+from margot import push, transcoder
+from margot.arr import Radarr, Sonarr
+from margot.config import config
 
 app = Flask(__name__)
 

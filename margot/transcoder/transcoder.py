@@ -7,9 +7,9 @@ import threading
 from datetime import timedelta
 from time import sleep
 
-from wi1_bot import push
-from wi1_bot.arr import Radarr, Sonarr
-from wi1_bot.config import config
+from margot import push
+from margot.arr import Radarr, Sonarr
+from margot.config import config
 
 from .transcode_queue import TranscodeItem, queue
 
@@ -81,7 +81,7 @@ class Transcoder:
 
         # duration = _get_duration(item.path)
 
-        tmp_folder = pathlib.Path("/tmp/wi1-bot")
+        tmp_folder = pathlib.Path("/tmp/margot")
         tmp_folder.mkdir(exist_ok=True)
 
         transcode_to = tmp_folder / f"{path.stem}-TRANSCODED.mkv"
@@ -99,7 +99,7 @@ class Transcoder:
         ) as proc:
             last_output = ""
 
-            tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
+            tmp_log_path = tmp_folder / "margot.transcoder.log"
 
             with open(tmp_log_path, "w") as ffmpeg_log_file:
                 for line in proc.stdout:  # type: ignore

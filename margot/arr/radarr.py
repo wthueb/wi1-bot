@@ -173,7 +173,7 @@ __all__ = ["Movie"]
 
 
 if __name__ == "__main__":
-    from wi1_bot.config import config
+    from margot.config import config
 
     radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
     pyarr = radarr._radarr

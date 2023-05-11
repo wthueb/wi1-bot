@@ -1,6 +1,6 @@
 import requests
 
-from wi1_bot.config import config
+from margot.config import config
 
 
 def send(

@@ -22,7 +22,7 @@ class TranscodeItem(Document):
 
 class TranscodeQueue:
     def __init__(self) -> None:
-        connect("wi1_bot", connect=False)
+        connect("margot", connect=False)
 
     def add(
         self,

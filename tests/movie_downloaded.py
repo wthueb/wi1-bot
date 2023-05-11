@@ -3,7 +3,7 @@ import shutil
 
 import requests
 
-from wi1_bot.config import config
+from margot.config import config
 
 path = pathlib.Path("./tests/files/jellyfish-10-mbps-hd-h264.mkv")
 
