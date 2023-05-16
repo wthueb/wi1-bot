@@ -19,6 +19,7 @@ Requires Python >=3.10.
 
 ### TODO
 
+- have config.discord.users be a dict with 'quotas' and 'name' for *arr tags
 - Better pushover notifications
   - Failures for pretty much everything
   - Notifications for grabs/downloads of personal watchlist

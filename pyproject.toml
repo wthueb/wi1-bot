@@ -41,6 +41,7 @@ Homepage = "https://github.com/wthueb/wi1-bot"
 [project.scripts]
 wi1-bot = "wi1_bot.scripts.start:main"
 transcode-item = "wi1_bot.scripts.transcode_item:main"
+add-tag = "wi1_bot.scripts.add_tag:main"
 
 [tool.setuptools]
 packages = ["wi1_bot"]
