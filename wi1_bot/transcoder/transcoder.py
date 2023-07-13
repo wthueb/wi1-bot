@@ -124,6 +124,13 @@ class Transcoder:
                     raise SignalInterrupt
 
                 perm_log_path = tmp_folder / f"{path.stem}.log"
+
+                if "general" in config and "log_dir" in config["general"]:
+                    log_dir = pathlib.Path(config["general"]["log_dir"]).resolve()
+
+                    perm_log_path = log_dir / "transcoder-errors" / f"{path.stem}.log"
+                    perm_log_path.mkdir(parents=True, exist_ok=True)
+
                 shutil.copy(tmp_log_path, perm_log_path)
                 self.logger.error(f"log file: {perm_log_path}")
 
