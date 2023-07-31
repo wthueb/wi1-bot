@@ -1,15 +1,15 @@
 from shutil import rmtree
-from typing import Any, cast
+from typing import Any
 
 from pyarr import SonarrAPI
 
 from .download import Download
 
-json = dict[str, Any]
-
 
 class Series:
     def __init__(self, series_json: dict[str, Any]) -> None:
+        self._json = series_json
+
         self.title: str = series_json["title"]
         self.year: int = series_json["year"]
         self.tvdb_id: int = series_json["tvdbId"]
@@ -44,9 +44,7 @@ class Sonarr:
         self._sonarr = SonarrAPI(url, api_key)
 
     def lookup_series(self, query: str) -> list[Series]:
-        possible_series = cast(
-            list[json] | dict[str, Any], self._sonarr.lookup_series(query)
-        )
+        possible_series = self._sonarr.lookup_series(query)
 
         if isinstance(possible_series, dict):
             raise SonarrError(possible_series["message"])
@@ -54,7 +52,7 @@ class Sonarr:
         return [Series(s) for s in possible_series]
 
     def lookup_library(self, query: str) -> list[Series]:
-        possible_series = cast(list[json], self._sonarr.lookup_series(query))
+        possible_series = self._sonarr.lookup_series(query)
 
         return [Series(s) for s in possible_series if "id" in s]
 
@@ -64,7 +62,7 @@ class Sonarr:
         except ValueError:
             return []
 
-        possible_series = cast(list[json], self._sonarr.lookup_series(query))
+        possible_series = self._sonarr.lookup_series(query)
 
         # self._sonarr.get_tag_detail is broken/not supported in v1 sonarr API so have
         # to filter the tmdb lookup (probably slower but saves an API call)
@@ -77,17 +75,17 @@ class Sonarr:
             return False
 
         quality_profile_id = self._get_quality_profile_id(profile)
+        language_profile_id = self._sonarr.get_language_profile()[0]["id"]
+        root_folder = self._sonarr.get_root_folder()
+        assert isinstance(root_folder, list)
+        root_folder_path = root_folder[0]["path"]
 
-        root_folder = cast(list[json], self._sonarr.get_root_folder())[0]["path"]
-
-        series_json = cast(
-            json,
-            self._sonarr.add_series(
-                tvdb_id=series.tvdb_id,
-                quality_profile_id=quality_profile_id,
-                root_dir=root_folder,
-                search_for_missing_episodes=True,
-            ),
+        series_json = self._sonarr.add_series(
+            series._json,
+            quality_profile_id=quality_profile_id,
+            language_profile_id=language_profile_id,
+            root_dir=root_folder_path,
+            search_for_missing_episodes=True,
         )
 
         series.db_id = series_json["id"]
@@ -98,7 +96,8 @@ class Sonarr:
         if series.db_id is None:
             raise ValueError(f"{series} is not in the library")
 
-        series_json = cast(json, self._sonarr.get_series(series.db_id))
+        series_json = self._sonarr.get_series(series.db_id)
+        assert isinstance(series_json, dict)
 
         self._sonarr.del_series(series.db_id, delete_files=True)
 
@@ -129,7 +128,8 @@ class Sonarr:
 
             return False
 
-        series_json = cast(json, self._sonarr.get_series(series.db_id))
+        series_json = self._sonarr.get_series(series.db_id)
+        assert isinstance(series_json, dict)
 
         series_json["tags"].append(tag_id)
 
@@ -138,7 +138,7 @@ class Sonarr:
         return True
 
     def get_downloads(self) -> list[Download]:
-        queue = cast(list[json], self._sonarr.get_queue())
+        queue = self._sonarr.get_queue()["records"]
 
         downloads = [Download(d) for d in queue]
 
@@ -152,41 +152,46 @@ class Sonarr:
 
         total = 0
 
-        for series in cast(list[json], self._sonarr.get_series()):
+        for series in self._sonarr.get_series():
+            assert isinstance(series, dict)
             if tag_id in series["tags"]:
-                try:
-                    total += series["sizeOnDisk"]
-                except KeyError:
-                    continue
+                total += series["statistics"]["sizeOnDisk"]
 
         return total
 
     def get_quality_profile_name(self, profile_id: int) -> str:
-        profiles = cast(list[json], self._sonarr.get_quality_profile())
+        profiles = self._sonarr.get_quality_profile()
 
         for profile in profiles:
             if profile["id"] == profile_id:
-                return cast(str, profile["name"])
+                name = profile["name"]
+                assert isinstance(name, str)
+                return name
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
     def rescan_series(self, series_id: int) -> None:
-        self._sonarr.post_command("RescanSeries", seriesId=series_id)
+        self._sonarr.post_command("RescanSeries", seriesId=series_id)  # type: ignore
 
     def _get_quality_profile_id(self, name: str) -> int:
-        profiles = cast(list[json], self._sonarr.get_quality_profile())
+        profiles = self._sonarr.get_quality_profile()
 
         for profile in profiles:
             if profile["name"].lower() == name.lower():
-                return cast(int, profile["id"])
+                profile_id = profile["id"]
+                assert isinstance(profile_id, int)
+                return profile_id
 
         raise ValueError(f"no quality profile with the name {name}")
 
     def _get_tag_for_user_id(self, user_id: int) -> int:
-        tags = cast(list[json], self._sonarr.get_tag())
+        tags = self._sonarr.get_tag()
+        assert isinstance(tags, list)
 
         for tag in tags:
             if str(user_id) in tag["label"]:
-                return cast(int, tag["id"])
+                tag_id = tag["id"]
+                assert isinstance(tag_id, int)
+                return tag_id
 
         raise ValueError(f"no tag with the user id {user_id}")

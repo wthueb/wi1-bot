@@ -1,7 +1,8 @@
+import json
 import logging
 import os.path
 import threading
-from typing import Any, cast
+from typing import Any
 
 from flask import Flask, request
 
@@ -28,11 +29,11 @@ def on_grab(req: dict[str, Any]) -> None:
 def on_download(req: dict[str, Any]) -> None:
     if "movie" in req:
         content_id = req["movie"]["id"]
+        movie_json = radarr._radarr.get_movie(content_id)
+        assert isinstance(movie_json, dict)
 
         quality_profile = radarr.get_quality_profile_name(
-            cast(dict[str, Any], radarr._radarr.get_movie_by_movie_id(content_id))[
-                "qualityProfileId"
-            ]
+            movie_json["qualityProfileId"]
         )
 
         movie_folder = req["movie"]["folderPath"]
@@ -43,11 +44,11 @@ def on_download(req: dict[str, Any]) -> None:
         path = os.path.join(movie_folder, basename)
     elif "series" in req:
         content_id = req["series"]["id"]
+        series_json = sonarr._sonarr.get_series(content_id)
+        assert isinstance(series_json, dict)
 
         quality_profile = sonarr.get_quality_profile_name(
-            cast(dict[str, Any], sonarr._sonarr.get_series(content_id))[
-                "qualityProfileId"
-            ]
+            series_json["qualityProfileId"]
         )
 
         series_folder = req["series"]["path"]
@@ -97,7 +98,7 @@ def index() -> Any:
         if request.json is None or "eventType" not in request.json:
             return "", 400
 
-        logger.debug(f"got request: {request.json}")
+        logger.debug(f"got request: {json.dumps(request.json, indent=4)}")
 
         if request.json["eventType"] == "Grab":
             on_grab(request.json)
