@@ -213,12 +213,14 @@ class Transcoder:
         if item.copy_all_streams:
             command.extend(["-map", "0"])
 
+        command.extend(["-map", "0:s"])
+
         if item.video_codec:
             command.extend(
-                ["-c:v", item.video_codec, "-preset", "fast", "-profile:v", "main"]
+                ["-vcodec", item.video_codec, "-preset", "fast", "-profile:v", "main"]
             )
         else:
-            command.extend(["-c:v", "copy"])
+            command.extend(["-vcodec", "copy"])
 
         if item.video_bitrate:
             command.extend(
@@ -233,9 +235,9 @@ class Transcoder:
             )
 
         if item.audio_codec:
-            command.extend(["-c:a", item.audio_codec])
+            command.extend(["-acodec", item.audio_codec])
         else:
-            command.extend(["-c:a", "copy"])
+            command.extend(["-acodec", "copy"])
 
         if item.audio_channels:
             command.extend(["-ac", str(item.audio_channels)])
@@ -243,7 +245,7 @@ class Transcoder:
         if item.audio_bitrate:
             command.extend(["-b:a", str(item.audio_bitrate)])
 
-        command.extend(["-c:s", "copy", str(transcode_to)])
+        command.extend(["-scodec", "copy", str(transcode_to)])
 
         return command
 
