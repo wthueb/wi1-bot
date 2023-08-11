@@ -212,8 +212,8 @@ class Transcoder:
 
         if item.copy_all_streams:
             command.extend(["-map", "0"])
-
-        command.extend(["-map", "0:s"])
+        else:
+            command.extend(["-map", "0:v:0", "-map", "0:a:0", "-map", "0:s"])
 
         if item.video_codec:
             command.extend(
