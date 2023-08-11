@@ -9,6 +9,8 @@ from wi1_bot.config import config
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
 
+_logger = logging.getLogger(__name__)
+
 
 def main() -> None:
     logging_config: dict[str, Any] = {
@@ -42,6 +44,8 @@ def main() -> None:
         },
     }
 
+    log_dir: pathlib.Path | None = None
+
     if "general" in config and "log_dir" in config["general"]:
         log_dir = pathlib.Path(config["general"]["log_dir"]).resolve()
 
@@ -66,6 +70,8 @@ def main() -> None:
         logging_config["loggers"][""]["handlers"].extend(["file", "file_debug"])
 
     logging.config.dictConfig(logging_config)
+
+    _logger.info(f"logging to: {log_dir}")
 
     webhook.start()
 

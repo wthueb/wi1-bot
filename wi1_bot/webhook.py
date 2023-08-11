@@ -113,7 +113,7 @@ def index() -> Any:
 
 
 def start() -> None:
-    logger.debug("starting webhook listener")
+    logger.info("starting webhook listener")
 
     t = threading.Thread(target=app.run, kwargs={"host": "localhost", "port": 9000})
     t.daemon = True

@@ -30,7 +30,7 @@ class Transcoder:
         self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
     def start(self) -> None:
-        self.logger.debug("starting transcoder")
+        self.logger.info("starting transcoder")
 
         t = threading.Thread(target=self._worker)
         t.daemon = True
