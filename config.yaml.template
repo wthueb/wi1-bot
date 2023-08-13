@@ -53,8 +53,10 @@ transcoding:
   profiles:
     # name of profile must match name in radarr/sonarr
     good:
-      # -map 0 in ffmpeg, optional
-      copy_all_streams: true
+      # copy all video and audio streams (default is to copy only the first)
+      copy_all_streams: false
+      # comma separated ISO 639-2 codes, optional (default is to copy all subtitles)
+      subtitle_languages: eng,spa
       # -c:v in ffmpeg, optional
       video_codec: hevc_nvenc
       # -b:v in ffmpeg, optional

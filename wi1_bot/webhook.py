@@ -73,6 +73,7 @@ def on_download(req: dict[str, Any]) -> None:
             return None
 
     copy_all_streams = get_key(quality_options, "copy_all_streams")
+    subtitle_languages = get_key(quality_options, "subtitle_languages")
 
     video_codec = get_key(quality_options, "video_codec")
     video_bitrate = get_key(quality_options, "video_bitrate")
@@ -83,6 +84,7 @@ def on_download(req: dict[str, Any]) -> None:
     transcoder.queue.add(
         path=path,
         copy_all_streams=copy_all_streams,
+        subtitle_languages=subtitle_languages,
         video_codec=video_codec,
         video_bitrate=video_bitrate,
         audio_codec=audio_codec,

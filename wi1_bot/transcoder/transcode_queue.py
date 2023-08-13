@@ -9,7 +9,8 @@ class TranscodeItem(Document):
 
     path = StringField(required=True)
 
-    copy_all_streams = BooleanField(required=True)
+    copy_all_streams = BooleanField(required=False)
+    subtitle_languages = StringField(required=False)
 
     video_codec = StringField(required=False)
     video_bitrate = IntField(required=False)
@@ -28,6 +29,7 @@ class TranscodeQueue:
         self,
         path: str,
         copy_all_streams: bool | None = None,
+        subtitle_languages: str | None = None,
         video_codec: str | None = None,
         video_bitrate: int | None = None,
         audio_codec: str | None = None,
@@ -35,12 +37,10 @@ class TranscodeQueue:
         audio_bitrate: str | None = None,
         content_id: int | None = None,
     ) -> None:
-        if copy_all_streams is None:
-            copy_all_streams = False
-
         TranscodeItem(
             path=path,
             copy_all_streams=copy_all_streams,
+            subtitle_languages=subtitle_languages,
             video_codec=video_codec,
             video_bitrate=video_bitrate,
             audio_codec=audio_codec,

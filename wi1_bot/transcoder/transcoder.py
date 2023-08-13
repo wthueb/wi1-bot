@@ -213,7 +213,17 @@ class Transcoder:
         if item.copy_all_streams:
             command.extend(["-map", "0"])
         else:
-            command.extend(["-map", "0:v:0", "-map", "0:a:0", "-map", "0:s?"])
+            command.extend(["-map", "0:v:0", "-map", "0:a:0?"])
+
+        if item.subtitle_languages:
+            subs_map = [
+                f"0:s:m:language:{lang}?" for lang in item.subtitle_languages.split(",")
+            ]
+        else:
+            subs_map = ["0:s?"]
+
+        for sub_map in subs_map:
+            command.extend(["-map", sub_map])
 
         if item.video_codec:
             command.extend(
