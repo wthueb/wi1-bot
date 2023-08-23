@@ -208,41 +208,38 @@ class Transcoder:
         except KeyError:
             pass
 
+        command.extend(["-probesize", "100M"])
+        command.extend(["-analyzeduration", "250M"])
+
         command.extend(["-i", item.path])
 
         if item.copy_all_streams:
             command.extend(["-map", "0"])
         else:
-            command.extend(["-map", "0:v:0", "-map", "0:a:0?"])
+            command.extend(["-map", "0:v:0"])
+            command.extend(["-map", "0:a:0?"])
+
+        subs_map = ["0:s?"]
 
         if item.subtitle_languages:
             subs_map = [
                 f"0:s:m:language:{lang}?" for lang in item.subtitle_languages.split(",")
             ]
-        else:
-            subs_map = ["0:s?"]
 
         for sub_map in subs_map:
             command.extend(["-map", sub_map])
 
         if item.video_codec:
-            command.extend(
-                ["-vcodec", item.video_codec, "-preset", "fast", "-profile:v", "main"]
-            )
+            command.extend(["-vcodec", item.video_codec])
+            command.extend(["-preset", "fast"])
+            command.extend(["-profile:v", "main"])
         else:
             command.extend(["-vcodec", "copy"])
 
         if item.video_bitrate:
-            command.extend(
-                [
-                    "-b:v",
-                    str(item.video_bitrate),
-                    "-maxrate",
-                    str(item.video_bitrate * 2),
-                    "-bufsize",
-                    str(item.video_bitrate * 2),
-                ]
-            )
+            command.extend(["-b:v", str(item.video_bitrate)])
+            command.extend(["-maxrate", str(item.video_bitrate * 2)])
+            command.extend(["-bufsize", str(item.video_bitrate * 2)])
 
         if item.audio_codec:
             command.extend(["-acodec", item.audio_codec])
