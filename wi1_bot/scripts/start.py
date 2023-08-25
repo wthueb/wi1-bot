@@ -53,7 +53,7 @@ def main() -> None:
             "class": "logging.handlers.RotatingFileHandler",
             "filename": str(log_dir / "wi1-bot.log"),
             "maxBytes": 1024**2 * 10,  # 10 MB
-            "backupCount": 20,
+            "backupCount": 100,
             "level": "INFO",
             "formatter": "basic",
         }
