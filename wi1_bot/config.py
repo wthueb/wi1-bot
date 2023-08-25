@@ -1,20 +1,23 @@
 import os
+import pathlib
 from typing import TypedDict
 
 import yaml
 
 _config_path: str | None = None
 
-if os.path.isfile("config.yaml"):
-    _config_path = "config.yaml"
-
-if dir := os.getenv("XDG_CONFIG_HOME"):
-    if os.path.isfile(os.path.join(dir, "wi1-bot", "config.yaml")):
-        _config_path = os.path.join(dir, "wi1-bot", "config.yaml")
-
 if home := os.getenv("HOME"):
-    if os.path.isfile(os.path.join(home, ".config", "wi1-bot", "config.yaml")):
-        _config_path = os.path.join(home, ".config", "wi1-bot", "config.yaml")
+    _path = pathlib.Path(home) / ".config" / "wi1-bot" / "config.yaml"
+    if _path.is_file():
+        _config_path = str(_path.resolve())
+
+if xdg_config_home := os.getenv("XDG_CONFIG_HOME"):
+    _path = pathlib.Path(xdg_config_home) / "wi1-bot" / "config.yaml"
+    if _path.is_file():
+        _config_path = str(_path.resolve())
+
+if pathlib.Path("config.yaml").is_file():
+    _config_path = "config.yaml"
 
 if _config_path is None:
     raise FileNotFoundError(
