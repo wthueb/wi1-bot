@@ -1,6 +1,6 @@
 import json
 import logging
-import os.path
+import pathlib
 import threading
 from typing import Any
 
@@ -27,6 +27,9 @@ def on_grab(req: dict[str, Any]) -> None:
 
 
 def on_download(req: dict[str, Any]) -> None:
+    path: pathlib.Path
+    content_id: int
+
     if "movie" in req:
         content_id = req["movie"]["id"]
         movie_json = radarr._radarr.get_movie(content_id)
@@ -37,11 +40,12 @@ def on_download(req: dict[str, Any]) -> None:
         )
 
         movie_folder = req["movie"]["folderPath"]
-        basename = req["movieFile"]["relativePath"]
+        relative_path = req["movieFile"]["relativePath"]
 
-        push.send(basename, title="movie downloaded")
+        path = pathlib.Path(movie_folder) / relative_path
 
-        path = os.path.join(movie_folder, basename)
+        if not req["isUpgrade"]:
+            push.send(path.name, title="new movie downloaded")
     elif "series" in req:
         content_id = req["series"]["id"]
         series_json = sonarr._sonarr.get_series(content_id)
@@ -54,9 +58,10 @@ def on_download(req: dict[str, Any]) -> None:
         series_folder = req["series"]["path"]
         relative_path = req["episodeFile"]["relativePath"]
 
-        push.send(relative_path.split("/")[-1], title="episode downloaded")
+        path = pathlib.Path(series_folder) / relative_path
 
-        path = os.path.join(series_folder, relative_path)
+        if not req["isUpgrade"]:
+            push.send(path.name, title="new episode downloaded")
     else:
         raise ValueError("unknown download request")
 
@@ -74,7 +79,6 @@ def on_download(req: dict[str, Any]) -> None:
 
     copy_all_streams = get_key(quality_options, "copy_all_streams")
     subtitle_languages = get_key(quality_options, "subtitle_languages")
-
     video_codec = get_key(quality_options, "video_codec")
     video_bitrate = get_key(quality_options, "video_bitrate")
     audio_codec = get_key(quality_options, "audio_codec")
@@ -82,7 +86,8 @@ def on_download(req: dict[str, Any]) -> None:
     audio_bitrate = get_key(quality_options, "audio_bitrate")
 
     transcoder.queue.add(
-        path=path,
+        path=str(path),
+        content_id=content_id,
         copy_all_streams=copy_all_streams,
         subtitle_languages=subtitle_languages,
         video_codec=video_codec,
@@ -90,7 +95,6 @@ def on_download(req: dict[str, Any]) -> None:
         audio_codec=audio_codec,
         audio_channels=audio_channels,
         audio_bitrate=audio_bitrate,
-        content_id=content_id,
     )
 
 
