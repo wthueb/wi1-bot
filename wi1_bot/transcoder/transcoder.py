@@ -6,6 +6,7 @@ import subprocess
 import threading
 from datetime import timedelta
 from time import sleep
+from typing import Any
 
 from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr
@@ -196,7 +197,7 @@ class Transcoder:
     def _build_ffmpeg_command(
         self, item: TranscodeItem, transcode_to: pathlib.Path
     ) -> list[str]:
-        command = [
+        command: list[Any] = [
             "ffmpeg",
             "-hide_banner",
             "-y",
@@ -213,21 +214,21 @@ class Transcoder:
 
         command.extend(["-i", item.path])
 
+        langs: list[str] = []
+
+        if item.languages:
+            langs = item.languages.split(",")
+
         if item.copy_all_streams:
             command.extend(["-map", "0"])
         else:
             command.extend(["-map", "0:v:0"])
+
             command.extend(["-map", "0:a:0?"])
+            command.extend(["-map", f"0:a:m:language:{lang}?"] for lang in langs)
 
-        subs_map = ["0:s?"]
-
-        if item.subtitle_languages:
-            subs_map = [
-                f"0:s:m:language:{lang}?" for lang in item.subtitle_languages.split(",")
-            ]
-
-        for sub_map in subs_map:
-            command.extend(["-map", sub_map])
+            command.extend(["-map", "0:s?"])
+            command.extend(["-map", f"0:s:m:language:{lang}?"] for lang in langs)
 
         if item.video_codec:
             command.extend(["-vcodec", item.video_codec])
@@ -237,9 +238,9 @@ class Transcoder:
             command.extend(["-vcodec", "copy"])
 
         if item.video_bitrate:
-            command.extend(["-b:v", str(item.video_bitrate)])
-            command.extend(["-maxrate", str(item.video_bitrate * 2)])
-            command.extend(["-bufsize", str(item.video_bitrate * 2)])
+            command.extend(["-b:v", item.video_bitrate])
+            command.extend(["-maxrate", item.video_bitrate * 2])
+            command.extend(["-bufsize", item.video_bitrate * 2])
 
         if item.audio_codec:
             command.extend(["-acodec", item.audio_codec])
@@ -247,14 +248,18 @@ class Transcoder:
             command.extend(["-acodec", "copy"])
 
         if item.audio_channels:
-            command.extend(["-ac", str(item.audio_channels)])
+            command.extend(["-ac", item.audio_channels])
 
         if item.audio_bitrate:
-            command.extend(["-b:a", str(item.audio_bitrate)])
+            command.extend(["-b:a", item.audio_bitrate])
 
-        command.extend(["-scodec", "copy", str(transcode_to)])
+        # TODO: use ffprobe to figure out if we can copy subs,
+        # or implement some form of retry functionality if ffmpeg errors out
+        command.extend(["-scodec", "copy"])
 
-        return command
+        command.extend([transcode_to])
+
+        return [str(arg) for arg in command]
 
 
 if __name__ == "__main__":

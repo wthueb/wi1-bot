@@ -29,7 +29,7 @@ def main() -> None:
     queue.add(
         path=str(path),
         copy_all_streams=get_key(qp, "copy_all_streams"),
-        subtitle_languages=get_key(qp, "subtitle_languages"),
+        languages=get_key(qp, "languages"),
         video_codec=get_key(qp, "video_codec"),
         video_bitrate=get_key(qp, "video_bitrate"),
         audio_codec=get_key(qp, "audio_codec"),
