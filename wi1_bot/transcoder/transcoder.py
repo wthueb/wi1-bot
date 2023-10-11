@@ -219,16 +219,24 @@ class Transcoder:
         if item.languages:
             langs = item.languages.split(",")
 
+        # TODO: use ffprobe to figure out what streams we should copy
+        # always copy first video stream
+        # always copy first audio stream
+        # always copy all subtitle streams
+        # if languages is specified in the config:
+        #     copy all audio streams in one of those languages
+        # ffprobe -show_streams -print_format json {input_file} 2>/dev/null
         if item.copy_all_streams:
             command.extend(["-map", "0"])
         else:
             command.extend(["-map", "0:v:0"])
 
             command.extend(["-map", "0:a:0?"])
-            command.extend(["-map", f"0:a:m:language:{lang}?"] for lang in langs)
 
-            command.extend(["-map", "0:s?"])
-            command.extend(["-map", f"0:s:m:language:{lang}?"] for lang in langs)
+            if langs:
+                command.extend([["-map", f"0:s:m:language:{lang}?"] for lang in langs])
+            else:
+                command.extend(["-map", "0:s?"])
 
         if item.video_codec:
             command.extend(["-vcodec", item.video_codec])
@@ -253,8 +261,6 @@ class Transcoder:
         if item.audio_bitrate:
             command.extend(["-b:a", item.audio_bitrate])
 
-        # TODO: use ffprobe to figure out if we can copy subs,
-        # or implement some form of retry functionality if ffmpeg errors out
         command.extend(["-scodec", "copy"])
 
         command.extend([transcode_to])
