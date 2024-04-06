@@ -1,0 +1,8 @@
+config.yaml
+tests/files/
+log/
+
+build/
+dist/
+*.egg-info/
+_version.py

@@ -1,0 +1,16 @@
+services:
+  wi1-bot:
+    container_name: wi1-bot
+    image: wthueb/wi1-bot
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities:
+                - gpu
+    environment:
+      - WB_CONFIG_PATH=/data/config.yaml
+      - WB_LOG_PATH=/data/logs
+    volumes:
+      - .:/data
