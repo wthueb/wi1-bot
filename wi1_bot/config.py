@@ -4,20 +4,21 @@ from typing import TypedDict
 
 import yaml
 
-_config_path: str | None = None
+_config_path = os.getenv("WB_CONFIG_PATH")
 
-if home := os.getenv("HOME"):
-    _path = pathlib.Path(home) / ".config" / "wi1-bot" / "config.yaml"
-    if _path.is_file():
-        _config_path = str(_path.resolve())
+if _config_path is None:
+    if home := os.getenv("HOME"):
+        _path = pathlib.Path(home) / ".config" / "wi1-bot" / "config.yaml"
+        if _path.is_file():
+            _config_path = str(_path.resolve())
 
-if xdg_config_home := os.getenv("XDG_CONFIG_HOME"):
-    _path = pathlib.Path(xdg_config_home) / "wi1-bot" / "config.yaml"
-    if _path.is_file():
-        _config_path = str(_path.resolve())
+    if xdg_config_home := os.getenv("XDG_CONFIG_HOME"):
+        _path = pathlib.Path(xdg_config_home) / "wi1-bot" / "config.yaml"
+        if _path.is_file():
+            _config_path = str(_path.resolve())
 
-if pathlib.Path("config.yaml").is_file():
-    _config_path = "config.yaml"
+    if pathlib.Path("config.yaml").is_file():
+        _config_path = "config.yaml"
 
 if _config_path is None:
     raise FileNotFoundError(
@@ -127,3 +128,9 @@ class Config(ConfigOptional):
 
 with open(_config_path, "r") as f:
     config: Config = yaml.load(f, Loader=yaml.SafeLoader)
+
+if log_dir := os.getenv("WB_LOG_DIR"):
+    if "general" not in config:
+        config["general"] = {}
+
+    config["general"]["log_dir"] = log_dir
