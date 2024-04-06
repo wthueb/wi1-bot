@@ -8,7 +8,7 @@ from flask import Flask, request
 
 from wi1_bot import push, transcoder
 from wi1_bot.arr import Radarr, Sonarr
-from wi1_bot.config import config
+from wi1_bot.config import RemotePathMapping, config
 
 app = Flask(__name__)
 
@@ -24,6 +24,37 @@ def on_grab(req: dict[str, Any]) -> None:
     push.send(
         req["release"]["releaseTitle"], title=f"file grabbed ({req['downloadClient']})"
     )
+
+
+def replace_remote_paths(path: pathlib.Path) -> pathlib.Path:
+    if "general" not in config or "remote_path_mappings" not in config["general"]:
+        return path
+
+    mappings = config["general"]["remote_path_mappings"]
+
+    most_specific: RemotePathMapping | None = None
+
+    for mapping in mappings:
+        if path.is_relative_to(mapping["remote"]):
+            mapping_len = len(pathlib.Path(mapping["remote"]).parts)
+            most_specific_len = (
+                len(pathlib.Path(most_specific["remote"]).parts)
+                if most_specific is not None
+                else 0
+            )
+
+            if mapping_len > most_specific_len:
+                most_specific = mapping
+
+    if most_specific is not None:
+        remote_path = path
+        path = pathlib.Path(most_specific["local"]) / path.relative_to(
+            most_specific["remote"]
+        )
+
+        logger.debug(f"replaced remote path mapping: {remote_path} -> {path}")
+
+    return path
 
 
 def on_download(req: dict[str, Any]) -> None:
@@ -64,6 +95,8 @@ def on_download(req: dict[str, Any]) -> None:
             push.send(path.name, title="new episode downloaded")
     else:
         raise ValueError("unknown download request")
+
+    path = replace_remote_paths(path)
 
     try:
         quality_options = config["transcoding"]["profiles"][quality_profile]
@@ -119,10 +152,10 @@ def index() -> Any:
 def start() -> None:
     logger.info("starting webhook listener")
 
-    t = threading.Thread(target=app.run, kwargs={"host": "localhost", "port": 9000})
+    t = threading.Thread(target=app.run, kwargs={"host": "0.0.0.0", "port": 9000})
     t.daemon = True
     t.start()
 
 
 if __name__ == "__main__":
-    app.run(host="localhost", port=9000)
+    app.run(host="0.0.0.0", port=9000)

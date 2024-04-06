@@ -99,8 +99,14 @@ class TranscodingConfig(TranscodingConfigOptional):
     profiles: dict[str, TranscodingProfile]
 
 
+class RemotePathMapping(TypedDict):
+    remote: str
+    local: str
+
+
 class GeneralConfigOptional(TypedDict, total=False):
     log_dir: str
+    remote_path_mappings: list[RemotePathMapping]
 
 
 class GeneralConfig(GeneralConfigOptional):
