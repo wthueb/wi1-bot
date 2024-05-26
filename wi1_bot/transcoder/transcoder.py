@@ -112,7 +112,10 @@ class Transcoder:
             if status != 0:
                 self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
 
-                if "No such file or directory" in last_output:
+                if (
+                    "No such file or directory" in last_output
+                    and "shared object file" not in last_output
+                ):
                     self.logger.debug(
                         f"file does not exist: {path}, skipping transcoding"
                     )
