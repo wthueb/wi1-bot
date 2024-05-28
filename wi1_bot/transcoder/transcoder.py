@@ -46,17 +46,10 @@ class Transcoder:
                 continue
 
             try:
-                self._do_transcode(item)
-                queue.remove(item)
-            except SignalInterrupt:
-                # retry when restarted
-                pass
-            except FileNotFoundError:
-                # don't retry
-                queue.remove(item)
-            except UnknownError:
-                # don't retry
-                queue.remove(item)
+                remove = self._do_transcode(item)
+
+                if remove:
+                    queue.remove(item)
             except Exception:
                 self.logger.warning(
                     "got exception when trying to transcode", exc_info=True
@@ -64,14 +57,14 @@ class Transcoder:
 
             sleep(3)
 
-    def _do_transcode(self, item: TranscodeItem) -> None:
+    def _do_transcode(self, item: TranscodeItem) -> bool:
         path = pathlib.Path(item.path)
 
-        self.logger.debug(f"attempting to transcode {path.name}")
+        self.logger.info(f"attempting to transcode {path.name}")
 
         if path.suffix == ".avi":
-            self.logger.debug(f"cannot transcode {path.name}: .avi not supported")
-            return
+            self.logger.info(f"cannot transcode {path.name}: .avi not supported")
+            return True
 
         # push.send(f"{basename}", title="starting transcode")
 
@@ -103,29 +96,32 @@ class Transcoder:
             tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
 
             with open(tmp_log_path, "w") as ffmpeg_log_file:
-                for line in proc.stdout:  # type: ignore
+                assert proc.stdout is not None
+                for line in proc.stdout:
                     ffmpeg_log_file.write(line)
                     last_output = line.strip()
 
             status = proc.wait()
 
             if status != 0:
-                self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
-
-                if (
-                    "No such file or directory" in last_output
-                    and "shared object file" not in last_output
-                ):
-                    self.logger.debug(
+                if "Error opening input files" in last_output:
+                    self.logger.info(
                         f"file does not exist: {path}, skipping transcoding"
                     )
-                    raise FileNotFoundError
+                    return True
 
                 if "received signal 15" in last_output:
-                    self.logger.debug(
+                    self.logger.info(
                         f"transcoding interrupted by signal: {path}, will retry"
                     )
-                    raise SignalInterrupt
+                    return False
+
+                if "cannot open shared object file" in last_output:
+                    self.logger.error(
+                        "ffmpeg error: missing shared object file, will retry"
+                    )
+                    push.send(f"ffmpeg error: {last_output}", title="ffmpeg error")
+                    return False
 
                 perm_log_path = tmp_folder / f"{path.stem}.log"
 
@@ -136,6 +132,8 @@ class Transcoder:
                     perm_log_path.parent.mkdir(parents=True, exist_ok=True)
 
                 shutil.copy(tmp_log_path, perm_log_path)
+
+                self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
                 self.logger.error(f"log file: {perm_log_path}")
 
                 push.send(
@@ -143,7 +141,7 @@ class Transcoder:
                     title="transcoding error",
                 )
 
-                raise UnknownError
+                return True
 
         new_path = path.parent / transcode_to.name
 
@@ -153,7 +151,7 @@ class Transcoder:
             )
 
             transcode_to.unlink()
-            return
+            return True
 
         shutil.move(transcode_to, new_path)
         path.unlink()
@@ -163,8 +161,9 @@ class Transcoder:
         self.logger.info(f"transcoded: {path.name} -> {new_path.name}")
         # push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
 
+        return True
+
     def _rescan_content(self, item: TranscodeItem, new_path: str) -> None:
-        # FIXME: don't hardcode library paths (config)
         if item.content_id is not None:
             if new_path.startswith(config["radarr"]["root_folder"]):
                 self.radarr.rescan_movie(item.content_id)
