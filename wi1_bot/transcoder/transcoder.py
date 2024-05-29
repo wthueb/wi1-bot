@@ -104,6 +104,8 @@ class Transcoder:
             status = proc.wait()
 
             if status != 0:
+                transcode_to.unlink()
+
                 if "Error opening input files" in last_output:
                     self.logger.info(
                         f"file does not exist: {path}, skipping transcoding"
@@ -143,8 +145,6 @@ class Transcoder:
 
                 return True
 
-        new_path = path.parent / transcode_to.name
-
         if not path.exists():
             self.logger.debug(
                 f"file doesn't exist: {item.path}, deleting transcoded file"
@@ -153,6 +153,7 @@ class Transcoder:
             transcode_to.unlink()
             return True
 
+        new_path = path.parent / transcode_to.name
         shutil.move(transcode_to, new_path)
         path.unlink()
 
