@@ -104,7 +104,7 @@ class Transcoder:
             status = proc.wait()
 
             if status != 0:
-                transcode_to.unlink()
+                transcode_to.unlink(missing_ok=True)
 
                 if "Error opening input files" in last_output:
                     self.logger.info(
