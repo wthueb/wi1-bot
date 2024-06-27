@@ -107,11 +107,14 @@ class Transcoder:
                 try:
                     transcode_to.unlink(missing_ok=True)
                 except Exception:
-                    self.logger.warning(
+                    self.logger.debug(
                         f"failed to delete transcoded file: {transcode_to}"
                     )
 
-                if "Error opening input files" in last_output:
+                if (
+                    "Error opening input files" in last_output
+                    or "No such file or directory" in last_output
+                ):
                     self.logger.info(
                         f"file does not exist: {path}, skipping transcoding"
                     )
@@ -161,7 +164,7 @@ class Transcoder:
                 f"file doesn't exist: {item.path}, deleting transcoded file"
             )
 
-            transcode_to.unlink()
+            transcode_to.unlink(missing_ok=True)
             return True
 
         new_path = path.parent / transcode_to.name
