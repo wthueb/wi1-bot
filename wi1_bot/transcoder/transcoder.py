@@ -104,11 +104,22 @@ class Transcoder:
             status = proc.wait()
 
             if status != 0:
-                transcode_to.unlink(missing_ok=True)
+                try:
+                    transcode_to.unlink(missing_ok=True)
+                except Exception:
+                    self.logger.warning(
+                        f"failed to delete transcoded file: {transcode_to}"
+                    )
 
                 if "Error opening input files" in last_output:
                     self.logger.info(
                         f"file does not exist: {path}, skipping transcoding"
+                    )
+                    return True
+
+                if "File name too long" in last_output:
+                    self.logger.info(
+                        f"file name is too long: {path}, skipping transcoding"
                     )
                     return True
 
