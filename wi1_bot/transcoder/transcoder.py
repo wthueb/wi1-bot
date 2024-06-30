@@ -96,6 +96,7 @@ class Transcoder:
             tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
 
             with open(tmp_log_path, "w") as ffmpeg_log_file:
+                ffmpeg_log_file.write(f"ffmpeg command: {shlex.join(command)}\n")
                 assert proc.stdout is not None
                 for line in proc.stdout:
                     ffmpeg_log_file.write(line)
