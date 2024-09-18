@@ -71,7 +71,7 @@ async def before_invoke(ctx: commands.Context[Any]) -> None:
     logger.info(f"got command from {ctx.message.author}: {ctx.message.content}")
 
 
-@commands.cooldown(1, 10)  # type: ignore
+@commands.cooldown(1, 10)
 @bot.command(
     name="downloads", aliases=["queue", "q"], help="see the status of movie downloads"
 )
@@ -88,7 +88,7 @@ async def downloads_cmd(ctx: commands.Context[Any]) -> None:
     await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
-@commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
+@commands.cooldown(1, 60, commands.BucketType.user)
 @bot.command(name="quota", help="see your used space on the plex")
 async def quota_cmd(ctx: commands.Context[Any]) -> None:
     async with ctx.typing():
@@ -99,10 +99,8 @@ async def quota_cmd(ctx: commands.Context[Any]) -> None:
 
         maximum: float = 0
 
-        try:
+        if "quotas" in config["discord"]:
             maximum = config["discord"]["quotas"][ctx.message.author.id]
-        except KeyError:
-            pass
 
         pct = used / maximum * 100 if maximum != 0 else 100
 
@@ -114,14 +112,14 @@ async def quota_cmd(ctx: commands.Context[Any]) -> None:
     await reply(ctx.message, msg)
 
 
-@commands.cooldown(1, 60)  # type: ignore
+@commands.cooldown(1, 60)
 @bot.command(name="quotas", help="see everyone's used space on the plex")
 async def quotas_cmd(ctx: commands.Context[Any]) -> None:
-    try:
-        quotas = config["discord"]["quotas"]
-    except ValueError:
+    if "quotas" not in config["discord"]:
         await reply(ctx.message, "quotas are not implemented here")
         return
+
+    quotas = config["discord"]["quotas"]
 
     if not quotas:
         await reply(ctx.message, "quotas are not implemented here")
@@ -147,7 +145,7 @@ async def quotas_cmd(ctx: commands.Context[Any]) -> None:
     )
 
 
-@bot.command(name="addtag", help="add a user tag")  # type: ignore
+@bot.command(name="addtag", help="add a user tag")
 @commands.has_role("plex-admin")
 async def addtag_cmd(
     ctx: commands.Context[Any], name: str, user: discord.Member
