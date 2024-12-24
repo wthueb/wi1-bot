@@ -38,9 +38,7 @@ def rescan_sonarr() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Rescan all movies/shows")
 
-    parser.add_argument(
-        "service", nargs="?", choices=["radarr", "sonarr"], help="radarr or sonarr"
-    )
+    parser.add_argument("service", nargs="?", choices=["radarr", "sonarr"], help="radarr or sonarr")
 
     args = parser.parse_args()
 

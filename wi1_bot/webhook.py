@@ -21,9 +21,7 @@ sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
 
 
 def on_grab(req: dict[str, Any]) -> None:
-    push.send(
-        req["release"]["releaseTitle"], title=f"file grabbed ({req['downloadClient']})"
-    )
+    push.send(req["release"]["releaseTitle"], title=f"file grabbed ({req['downloadClient']})")
 
 
 def on_download(req: dict[str, Any]) -> None:
@@ -35,9 +33,7 @@ def on_download(req: dict[str, Any]) -> None:
         movie_json = radarr._radarr.get_movie(content_id)
         assert isinstance(movie_json, dict)
 
-        quality_profile = radarr.get_quality_profile_name(
-            movie_json["qualityProfileId"]
-        )
+        quality_profile = radarr.get_quality_profile_name(movie_json["qualityProfileId"])
 
         movie_folder = req["movie"]["folderPath"]
         relative_path = req["movieFile"]["relativePath"]
@@ -51,9 +47,7 @@ def on_download(req: dict[str, Any]) -> None:
         series_json = sonarr._sonarr.get_series(content_id)
         assert isinstance(series_json, dict)
 
-        quality_profile = sonarr.get_quality_profile_name(
-            series_json["qualityProfileId"]
-        )
+        quality_profile = sonarr.get_quality_profile_name(series_json["qualityProfileId"])
 
         series_folder = req["series"]["path"]
         relative_path = req["episodeFile"]["relativePath"]
@@ -111,9 +105,7 @@ def index() -> Any:
         if request.json["eventType"] == "Download":
             on_download(request.json)
     except Exception:
-        logger.warning(
-            f"error handling request: {request.data.decode()}", exc_info=True
-        )
+        logger.warning(f"error handling request: {request.data.decode()}", exc_info=True)
 
     return "", 200
 

@@ -48,6 +48,9 @@ packages = ["wi1_bot"]
 [tool.setuptools_scm]
 write_to = "wi1_bot/_version.py"
 
+[tool.ruff]
+line-length = 100
+
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 

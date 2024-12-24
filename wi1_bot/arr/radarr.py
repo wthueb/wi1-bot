@@ -33,9 +33,7 @@ class Radarr:
 
         user_movie_ids = tag_detail["movieIds"]
 
-        return [
-            Movie(m) for m in possible_movies if "id" in m and m["id"] in user_movie_ids
-        ]
+        return [Movie(m) for m in possible_movies if "id" in m and m["id"] in user_movie_ids]
 
     def add_movie(self, movie: Movie, profile: str = "good") -> bool:
         if self._radarr.get_movie(movie.tmdb_id, tmdb=True):

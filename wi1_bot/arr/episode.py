@@ -21,8 +21,7 @@ class Episode:
         self.imdb_id: str = series_imdb_id
 
         self.full_title: str = (
-            f"{self.series_title} S{self.season_num:02d}E{self.ep_num:02d} -"
-            f" {self.ep_title}"
+            f"{self.series_title} S{self.season_num:02d}E{self.ep_num:02d} - {self.ep_title}"
         )
 
         if self.imdb_id:

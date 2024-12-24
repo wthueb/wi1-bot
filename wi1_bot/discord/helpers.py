@@ -13,9 +13,7 @@ async def member_has_role(member: discord.Member | discord.User, role: str) -> b
     return False
 
 
-async def reply(
-    msg: discord.Message, content: str, title: str = "", error: bool = False
-) -> None:
+async def reply(msg: discord.Message, content: str, title: str = "", error: bool = False) -> None:
     if len(content) > 2048:
         while len(content) > 2048 - len("\n..."):
             content = content[: content.rfind("\n")].rstrip()

@@ -3,9 +3,7 @@ import requests
 from wi1_bot.config import config
 
 
-def send(
-    msg: str, title: str | None = None, url: str | None = None, priority: int = 0
-) -> None:
+def send(msg: str, title: str | None = None, url: str | None = None, priority: int = 0) -> None:
     if "pushover" not in config:
         return
 

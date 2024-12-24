@@ -46,9 +46,7 @@ class SeriesCog(commands.Cog):
                 )
                 return
 
-        resp, to_add = await select_from_list(
-            self.bot, ctx.message, "addshow", potential
-        )
+        resp, to_add = await select_from_list(self.bot, ctx.message, "addshow", potential)
 
         if not to_add:
             return
@@ -58,16 +56,12 @@ class SeriesCog(commands.Cog):
         for series in to_add:
             if not self.sonarr.add_series(series):
                 if self.sonarr.series_downloaded(series):
-                    await reply(
-                        resp, f"{series} is already DOWNLOADED on the plex (idiot)"
-                    )
+                    await reply(resp, f"{series} is already DOWNLOADED on the plex (idiot)")
                 else:
                     await reply(resp, f"{series} is already on the plex (idiot)")
                 continue
 
-            self.logger.info(
-                f"{ctx.message.author.name} has added the show {series.full_title}"
-            )
+            self.logger.info(f"{ctx.message.author.name} has added the show {series.full_title}")
 
             push.send(
                 f"{ctx.message.author.name} has added the show {series.full_title}",
@@ -91,17 +85,13 @@ class SeriesCog(commands.Cog):
                     priority=1,
                 )
 
-                await ctx.send(
-                    f"hey <@!{config['discord']['admin_id']}> get this guy a tag"
-                )
+                await ctx.send(f"hey <@!{config['discord']['admin_id']}> get this guy a tag")
 
                 return
 
     @commands.command(name="delshow", help="delete a show from the plex")
     @commands.has_any_role("plex-admin", "plex-shows")
-    async def delshow_command(
-        self, ctx: commands.Context[Any], *, query: str = ""
-    ) -> None:
+    async def delshow_command(self, ctx: commands.Context[Any], *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !delshow KEYWORDS...")
             return
@@ -118,9 +108,7 @@ class SeriesCog(commands.Cog):
                     )
                     return
             else:
-                potential = self.sonarr.lookup_user_library(
-                    query, ctx.message.author.id
-                )[:50]
+                potential = self.sonarr.lookup_user_library(query, ctx.message.author.id)[:50]
 
                 if not potential:
                     await reply(
@@ -130,9 +118,7 @@ class SeriesCog(commands.Cog):
                     )
                     return
 
-        resp, to_delete = await select_from_list(
-            self.bot, ctx.message, "delshow", potential
-        )
+        resp, to_delete = await select_from_list(self.bot, ctx.message, "delshow", potential)
 
         if not to_delete:
             return
@@ -140,9 +126,7 @@ class SeriesCog(commands.Cog):
         for series in to_delete:
             self.sonarr.del_series(series)
 
-            self.logger.info(
-                f"{ctx.message.author.name} has deleted the show {series.full_title}"
-            )
+            self.logger.info(f"{ctx.message.author.name} has deleted the show {series.full_title}")
 
             push.send(
                 f"{ctx.message.author.name} has deleted the show {series.full_title}",

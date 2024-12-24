@@ -18,9 +18,7 @@ class MovieCog(commands.Cog):
         self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
 
     @commands.command(name="addmovie", help="add a movie to the plex")
-    async def addmovie_cmd(
-        self, ctx: commands.Context[Any], *, query: str = ""
-    ) -> None:
+    async def addmovie_cmd(self, ctx: commands.Context[Any], *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !addmovie KEYWORDS...")
             return
@@ -36,9 +34,7 @@ class MovieCog(commands.Cog):
                 )
                 return
 
-        resp, to_add = await select_from_list(
-            self.bot, ctx.message, "addmovie", potential
-        )
+        resp, to_add = await select_from_list(self.bot, ctx.message, "addmovie", potential)
 
         if not to_add:
             return
@@ -48,16 +44,12 @@ class MovieCog(commands.Cog):
         for movie in to_add:
             if not self.radarr.add_movie(movie):
                 if self.radarr.movie_downloaded(movie):
-                    await reply(
-                        resp, f"{movie} is already DOWNLOADED on the plex (idiot)"
-                    )
+                    await reply(resp, f"{movie} is already DOWNLOADED on the plex (idiot)")
                 else:
                     await reply(resp, f"{movie} is already on the plex (idiot)")
                 continue
 
-            self.logger.info(
-                f"{ctx.message.author.name} has added the movie {movie.full_title}"
-            )
+            self.logger.info(f"{ctx.message.author.name} has added the movie {movie.full_title}")
 
             push.send(
                 f"{ctx.message.author.name} has added the movie {movie.full_title}",
@@ -74,18 +66,12 @@ class MovieCog(commands.Cog):
         await asyncio.sleep(10)
 
         if not self.radarr.add_tag(added, ctx.message.author.id):
-            push.send(
-                f"get {ctx.message.author.name} a tag", title="tag needed", priority=1
-            )
+            push.send(f"get {ctx.message.author.name} a tag", title="tag needed", priority=1)
 
-            await ctx.send(
-                f"hey <@!{config['discord']['admin_id']}> get this guy a tag"
-            )
+            await ctx.send(f"hey <@!{config['discord']['admin_id']}> get this guy a tag")
 
     @commands.command(name="delmovie", help="delete a movie from the plex")
-    async def delmovie_cmd(
-        self, ctx: commands.Context[Any], *, query: str = ""
-    ) -> None:
+    async def delmovie_cmd(self, ctx: commands.Context[Any], *, query: str = "") -> None:
         if not query:
             await reply(ctx.message, "usage: !delmovie KEYWORDS...")
             return
@@ -102,9 +88,7 @@ class MovieCog(commands.Cog):
                     )
                     return
             else:
-                potential = self.radarr.lookup_user_library(
-                    query, ctx.message.author.id
-                )[:50]
+                potential = self.radarr.lookup_user_library(query, ctx.message.author.id)[:50]
 
                 if not potential:
                     await reply(
@@ -114,9 +98,7 @@ class MovieCog(commands.Cog):
                     )
                     return
 
-        resp, to_delete = await select_from_list(
-            self.bot, ctx.message, "delmovie", potential
-        )
+        resp, to_delete = await select_from_list(self.bot, ctx.message, "delmovie", potential)
 
         if not to_delete:
             return
@@ -124,9 +106,7 @@ class MovieCog(commands.Cog):
         for movie in to_delete:
             self.radarr.del_movie(movie)
 
-            self.logger.info(
-                f"{ctx.message.author.name} has deleted the movie {movie.full_title}"
-            )
+            self.logger.info(f"{ctx.message.author.name} has deleted the movie {movie.full_title}")
 
             push.send(
                 f"{ctx.message.author.name} has deleted the movie {movie.full_title}",

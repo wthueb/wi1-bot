@@ -16,9 +16,7 @@ def replace_remote_paths(path: pathlib.Path) -> pathlib.Path:
         if path.is_relative_to(mapping["remote"]):
             mapping_len = len(pathlib.Path(mapping["remote"]).parts)
             most_specific_len = (
-                len(pathlib.Path(most_specific["remote"]).parts)
-                if most_specific is not None
-                else 0
+                len(pathlib.Path(most_specific["remote"]).parts) if most_specific is not None else 0
             )
 
             if mapping_len > most_specific_len:
@@ -26,12 +24,8 @@ def replace_remote_paths(path: pathlib.Path) -> pathlib.Path:
 
     if most_specific is not None:
         remote_path = path
-        path = pathlib.Path(most_specific["local"]) / path.relative_to(
-            most_specific["remote"]
-        )
+        path = pathlib.Path(most_specific["local"]) / path.relative_to(most_specific["remote"])
 
-        logging.getLogger(__name__).debug(
-            f"replaced remote path mapping: {remote_path} -> {path}"
-        )
+        logging.getLogger(__name__).debug(f"replaced remote path mapping: {remote_path} -> {path}")
 
     return path

@@ -51,9 +51,7 @@ class Transcoder:
                 if remove:
                     queue.remove(item)
             except Exception:
-                self.logger.warning(
-                    "got exception when trying to transcode", exc_info=True
-                )
+                self.logger.warning("got exception when trying to transcode", exc_info=True)
 
             sleep(3)
 
@@ -108,35 +106,25 @@ class Transcoder:
                 try:
                     transcode_to.unlink(missing_ok=True)
                 except Exception:
-                    self.logger.debug(
-                        f"failed to delete transcoded file: {transcode_to}"
-                    )
+                    self.logger.debug(f"failed to delete transcoded file: {transcode_to}")
 
                 if (
                     "Error opening input files" in last_output
                     or "No such file or directory" in last_output
                 ):
-                    self.logger.info(
-                        f"file does not exist: {path}, skipping transcoding"
-                    )
+                    self.logger.info(f"file does not exist: {path}, skipping transcoding")
                     return True
 
                 if "File name too long" in last_output:
-                    self.logger.info(
-                        f"file name is too long: {path}, skipping transcoding"
-                    )
+                    self.logger.info(f"file name is too long: {path}, skipping transcoding")
                     return True
 
                 if "received signal 15" in last_output:
-                    self.logger.info(
-                        f"transcoding interrupted by signal: {path}, will retry"
-                    )
+                    self.logger.info(f"transcoding interrupted by signal: {path}, will retry")
                     return False
 
                 if "cannot open shared object file" in last_output:
-                    self.logger.error(
-                        "ffmpeg error: missing shared object file, will retry"
-                    )
+                    self.logger.error("ffmpeg error: missing shared object file, will retry")
                     push.send(f"ffmpeg error: {last_output}", title="ffmpeg error")
                     return False
 
@@ -161,9 +149,7 @@ class Transcoder:
                 return True
 
         if not path.exists():
-            self.logger.debug(
-                f"file doesn't exist: {item.path}, deleting transcoded file"
-            )
+            self.logger.debug(f"file doesn't exist: {item.path}, deleting transcoded file")
 
             transcode_to.unlink(missing_ok=True)
             return True
@@ -214,9 +200,7 @@ class Transcoder:
 
         return duration
 
-    def _build_ffmpeg_command(
-        self, item: TranscodeItem, transcode_to: pathlib.Path
-    ) -> list[str]:
+    def _build_ffmpeg_command(self, item: TranscodeItem, transcode_to: pathlib.Path) -> list[str]:
         command: list[Any] = [
             "ffmpeg",
             "-hide_banner",

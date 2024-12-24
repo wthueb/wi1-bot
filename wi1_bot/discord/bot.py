@@ -26,9 +26,7 @@ async def check_channel(ctx: commands.Context[Any]) -> bool:
 
 
 @bot.event
-async def on_command_error(
-    ctx: commands.Context[Any], error: commands.CommandError
-) -> None:
+async def on_command_error(ctx: commands.Context[Any], error: commands.CommandError) -> None:
     match error:
         case commands.CommandNotFound() | commands.CheckFailure():
             pass
@@ -42,9 +40,7 @@ async def on_command_error(
             await reply(ctx.message, str(error))
         case _:
             logger.error(
-                "".join(
-                    traceback.format_exception(type(error), error, error.__traceback__)
-                )
+                "".join(traceback.format_exception(type(error), error, error.__traceback__))
             )
 
             await reply(
@@ -128,9 +124,7 @@ async def quotas_cmd(ctx: commands.Context[Any]) -> None:
         msg = []
 
         for user_id, total in quotas.items():
-            used = (
-                radarr.get_quota_amount(user_id) + sonarr.get_quota_amount(user_id)
-            ) / 1024**3
+            used = (radarr.get_quota_amount(user_id) + sonarr.get_quota_amount(user_id)) / 1024**3
 
             pct = used / total * 100 if total != 0 else 100
 
@@ -147,9 +141,7 @@ async def quotas_cmd(ctx: commands.Context[Any]) -> None:
 
 @bot.command(name="addtag", help="add a user tag")  # type: ignore[arg-type]
 @commands.has_role("plex-admin")
-async def addtag_cmd(
-    ctx: commands.Context[Any], name: str, user: discord.Member
-) -> None:
+async def addtag_cmd(ctx: commands.Context[Any], name: str, user: discord.Member) -> None:
     tag = f"{name}: {user.id}"
 
     radarr.create_tag(tag)
