@@ -9,7 +9,7 @@ from time import sleep
 from typing import Any
 
 from wi1_bot import push
-from wi1_bot.arr import Radarr, Sonarr
+from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
@@ -172,24 +172,26 @@ class Transcoder:
         shutil.move(transcode_to, new_path)
         path.unlink()
 
-        self._rescan_content(item, str(new_path))
+        self._rescan_content(item, new_path)
 
         self.logger.info(f"transcoded: {path.name} -> {new_path.name}")
         # push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
 
         return True
 
-    def _rescan_content(self, item: TranscodeItem, new_path: str) -> None:
+    def _rescan_content(self, item: TranscodeItem, new_path: pathlib.Path) -> None:
         if item.content_id is not None:
-            if new_path.startswith(config["radarr"]["root_folder"]):
+            if new_path.is_relative_to(
+                replace_remote_paths(pathlib.Path(config["radarr"]["root_folder"]))
+            ):
+                # have to rescan the movie twice: Radarr/Radarr#7668
+                # TODO: create function that waits for comand to finish
                 self.radarr.rescan_movie(item.content_id)
-                # radarr bug that it doesn't see the deleted file and the new file
-                # in one rescan?
-                # have to sleep in between to ensure initial command finishes
-                # or use pyarr.get_command() to see command status
                 sleep(5)
                 self.radarr.rescan_movie(item.content_id)
-            elif new_path.startswith(config["sonarr"]["root_folder"]):
+            elif new_path.is_relative_to(
+                replace_remote_paths(pathlib.Path(config["sonarr"]["root_folder"]))
+            ):
                 self.sonarr.rescan_series(item.content_id)
 
     def _get_duration(self, path: str) -> timedelta:
