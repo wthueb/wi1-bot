@@ -8,7 +8,7 @@ services:
         reservations:
           devices:
             - capabilities:
-                - gpu
+              - gpu
     environment:
       - WB_CONFIG_PATH=/data/config.yaml
       - WB_LOG_PATH=/data/logs

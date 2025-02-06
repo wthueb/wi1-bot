@@ -19,12 +19,14 @@ Requires Python >=3.10.
 
 ### TODO
 
+- use sqlite
+- https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
+- link discord user to overseerr user
 - https://github.com/kkroening/ffmpeg-python
   - `ffmpeg -codecs`, `ffmpeg -hwaccels`
 - ffmpeg filters for deinterlacing, scaling
   - https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html#hwaccel-transcode-with-scaling
 - ffmpeg remove bad subtitle streams
-- use sqlite
 - have config.discord.users be a dict with 'quotas' and 'name' for *arr tags
 - Better pushover notifications
   - Failures for pretty much everything
