@@ -14,3 +14,9 @@ services:
       - WB_LOG_PATH=/data/logs
     volumes:
       - .:/data
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:8.0
+    ports:
+      - 27017:27017
