@@ -67,9 +67,7 @@ async def before_invoke(ctx: commands.Context[Any]) -> None:
     logger.info(f"got command from {ctx.message.author}: {ctx.message.content}")
 
 
-@bot.command(  # type: ignore[arg-type]
-    name="downloads", aliases=["queue", "q"], help="see the status of movie downloads"
-)
+@bot.command(name="downloads", aliases=["queue", "q"], help="see the status of movie downloads")
 @commands.cooldown(1, 10)
 async def downloads_cmd(ctx: commands.Context[Any]) -> None:
     async with ctx.typing():
@@ -84,7 +82,7 @@ async def downloads_cmd(ctx: commands.Context[Any]) -> None:
     await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
-@bot.command(name="quota", help="see your used space on the plex")  # type: ignore[arg-type]
+@bot.command(name="quota", help="see your used space on the plex")
 @commands.cooldown(1, 60, commands.BucketType.user)
 async def quota_cmd(ctx: commands.Context[Any]) -> None:
     async with ctx.typing():
@@ -108,7 +106,7 @@ async def quota_cmd(ctx: commands.Context[Any]) -> None:
     await reply(ctx.message, msg)
 
 
-@bot.command(name="quotas", help="see everyone's used space on the plex")  # type: ignore[arg-type]
+@bot.command(name="quotas", help="see everyone's used space on the plex")
 @commands.cooldown(1, 60)
 async def quotas_cmd(ctx: commands.Context[Any]) -> None:
     if "quotas" not in config["discord"]:
@@ -139,7 +137,7 @@ async def quotas_cmd(ctx: commands.Context[Any]) -> None:
     )
 
 
-@bot.command(name="addtag", help="add a user tag")  # type: ignore[arg-type]
+@bot.command(name="addtag", help="add a user tag")
 @commands.has_role("plex-admin")
 async def addtag_cmd(ctx: commands.Context[Any], name: str, user: discord.Member) -> None:
     tag = f"{name}: {user.id}"

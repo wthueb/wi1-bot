@@ -20,6 +20,8 @@ Requires Python >=3.10.
 ### TODO
 
 - use sqlite
+- dynamically copy streams
+  - i.e. if mov_text in input, -c:s srt
 - https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 - link discord user to overseerr user
 - https://github.com/kkroening/ffmpeg-python
