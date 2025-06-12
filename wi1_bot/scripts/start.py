@@ -4,7 +4,7 @@ import logging.config
 import pathlib
 from typing import Any
 
-from wi1_bot import webhook
+from wi1_bot import __version__, webhook
 from wi1_bot.config import config
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
@@ -70,6 +70,7 @@ def main() -> None:
 
     logging.config.dictConfig(logging_config)
 
+    _logger.info(f"starting wi1-bot version {__version__}")
     _logger.info(f"logging to: {log_dir}")
 
     webhook.start()
