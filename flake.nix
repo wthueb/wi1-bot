@@ -17,7 +17,7 @@
             system:
             f rec {
               pkgs = nixpkgs.legacyPackages.${system};
-              python = pkgs.python310;
+              python = pkgs.python311;
             }
           );
     in

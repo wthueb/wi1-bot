@@ -15,13 +15,14 @@ A Discord bot to integrate [Radarr](https://radarr.video/) & [Sonarr](https://so
 3. `pip install -e .[dev]`
 4. `pre-commit install`
 
-Requires Python >=3.10.
+Requires Python >=3.11.
 
 ### TODO
 
 - use sqlite
 - dynamically copy streams
   - i.e. if mov_text in input, -c:s srt
+  - https://github.com/HaveAGitGat/Tdarr_Plugins/blob/aef12f3c65905f5fc7d045b1a96ddc6a58dc55e7/FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetContainer/1.0.0/index.ts#L77
 - https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 - link discord user to overseerr user
 - https://github.com/kkroening/ffmpeg-python
