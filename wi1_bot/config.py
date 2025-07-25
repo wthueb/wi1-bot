@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 import yaml
 
@@ -39,65 +39,26 @@ class PushoverConfig(TypedDict):
     devices: str
 
 
-# FIXME: python 3.11 supports typing.NotRequired (PEP 655)
-
-# from typing import NotRequired
-
-# class DiscordConfig(TypedDict):
-#     bot_token: str
-#     channel_id: int
-#     admin_id: int
-#     bot_presence: NotRequired[str]
-#     quotas: NotRequired[dict[int, float]]
-
-
-# class TranscodingProfile(TypedDict):
-#     video_codec: NotRequired[str]
-#     video_bitrate: NotRequired[int]
-#     audio_codec: NotRequired[str]
-#     audio_channels: NotRequired[int]
-#     audio_bitrate: NotRequired[str]
-
-
-# class TranscodingConfig(TypedDict):
-#     profiles: dict[str, TranscodingProfile]
-#     hwaccel: NotRequired[str]
-
-
-# class Config(TypedDict):
-#     radarr: ArrConfig
-#     sonarr: ArrConfig
-#     discord: DiscordConfig
-#     pushover: NotRequired[PushoverConfig]
-#     transcoding: NotRequired[TranscodingConfig]
-
-
-class DiscordConfigOptional(TypedDict, total=False):
-    bot_presence: str
-    quotas: dict[int, float]
-
-
-class DiscordConfig(DiscordConfigOptional):
+class DiscordConfig(TypedDict):
     bot_token: str
     channel_id: int
     admin_id: int
+    bot_presence: NotRequired[str]
+    quotas: NotRequired[dict[int, float]]
 
 
-class TranscodingProfile(TypedDict, total=False):
+class TranscodingProfile(TypedDict):
     copy_all_streams: bool
-    video_codec: str
-    video_bitrate: int
-    audio_codec: str
-    audio_channels: int
-    audio_bitrate: str
+    video_codec: NotRequired[str]
+    video_bitrate: NotRequired[int]
+    audio_codec: NotRequired[str]
+    audio_channels: NotRequired[int]
+    audio_bitrate: NotRequired[str]
 
 
-class TranscodingConfigOptional(TypedDict, total=False):
-    hwaccel: str  # optional
-
-
-class TranscodingConfig(TranscodingConfigOptional):
+class TranscodingConfig(TypedDict):
     profiles: dict[str, TranscodingProfile]
+    hwaccel: NotRequired[str]
 
 
 class RemotePathMapping(TypedDict):
@@ -105,25 +66,18 @@ class RemotePathMapping(TypedDict):
     local: str
 
 
-class GeneralConfigOptional(TypedDict, total=False):
-    log_dir: str
-    remote_path_mappings: list[RemotePathMapping]
+class GeneralConfig(TypedDict):
+    log_dir: NotRequired[str]
+    remote_path_mappings: NotRequired[list[RemotePathMapping]]
 
 
-class GeneralConfig(GeneralConfigOptional):
-    pass
-
-
-class ConfigOptional(TypedDict, total=False):
-    general: GeneralConfig  # optional
-    pushover: PushoverConfig  # optional
-    transcoding: TranscodingConfig  # optional
-
-
-class Config(ConfigOptional):
+class Config(TypedDict):
+    general: NotRequired[GeneralConfig]  # optional
     radarr: ArrConfig
     sonarr: ArrConfig
     discord: DiscordConfig
+    pushover: NotRequired[PushoverConfig]
+    transcoding: NotRequired[TranscodingConfig]
 
 
 with open(_config_path, "r") as f:
