@@ -66,20 +66,13 @@ def on_download(req: dict[str, Any]) -> None:
 
     quality_options = config["transcoding"]["profiles"][quality_profile]
 
-    # python 3.11: TranscodingProfile and typing.LiteralString
-    def get_key(d: Any, k: str) -> Any:
-        try:
-            return d[k]
-        except KeyError:
-            return None
-
-    copy_all_streams = get_key(quality_options, "copy_all_streams")
-    languages = get_key(quality_options, "languages")
-    video_codec = get_key(quality_options, "video_codec")
-    video_bitrate = get_key(quality_options, "video_bitrate")
-    audio_codec = get_key(quality_options, "audio_codec")
-    audio_channels = get_key(quality_options, "audio_channels")
-    audio_bitrate = get_key(quality_options, "audio_bitrate")
+    copy_all_streams = quality_options.get("copy_all_streams", None)
+    languages = quality_options.get("languages", None)
+    video_codec = quality_options.get("video_codec", None)
+    video_bitrate = quality_options.get("video_bitrate", None)
+    audio_codec = quality_options.get("audio_codec", None)
+    audio_channels = quality_options.get("audio_channels", None)
+    audio_bitrate = quality_options.get("audio_bitrate", None)
 
     transcoder.queue.add(
         path=str(path),

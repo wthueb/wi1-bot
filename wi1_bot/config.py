@@ -48,12 +48,13 @@ class DiscordConfig(TypedDict):
 
 
 class TranscodingProfile(TypedDict):
-    copy_all_streams: bool
     video_codec: NotRequired[str]
     video_bitrate: NotRequired[int]
     audio_codec: NotRequired[str]
     audio_channels: NotRequired[int]
     audio_bitrate: NotRequired[str]
+    copy_all_streams: NotRequired[bool]
+    languages: NotRequired[str]
 
 
 class TranscodingConfig(TypedDict):
