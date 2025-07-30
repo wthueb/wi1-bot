@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import re
 import shlex
 import shutil
 import subprocess
@@ -13,6 +14,14 @@ from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 
 from .transcode_queue import TranscodeItem, queue
+
+# https://github.com/Radarr/Radarr/blob/e29be26fc9a5570bdf37a1b9504b3c0162be7715/src/NzbDrone.Core/Parser/Parser.cs#L134
+CLEAN_RELEASE_GROUP_REGEX = re.compile(
+    r"(-(RP|1|NZBGeek|Obfuscated|Obfuscation|Scrambled|sample|Pre|postbot|xpost|Rakuv[a-z0-9]*|WhiteRev|BUYMORE|AsRequested|AlternativeToRequested|GEROV|Z0iDS3N|Chamele0n|4P|4Planet|AlteZachen|RePACKPOST))+",
+    re.IGNORECASE,
+)
+# https://github.com/Radarr/Radarr/blob/e29be26fc9a5570bdf37a1b9504b3c0162be7715/src/NzbDrone.Core/Parser/Parser.cs#L138
+CLEAN_TORRENT_SUFFIX_REGEX = re.compile(r"\[(?:ettv|rartv|rarbg|cttv|publichd)\]", re.IGNORECASE)
 
 
 class SignalInterrupt(Exception):
@@ -76,7 +85,10 @@ class Transcoder:
         tmp_folder = pathlib.Path("/tmp/wi1-bot")
         tmp_folder.mkdir(exist_ok=True)
 
-        transcode_to = tmp_folder / f"{path.stem}-TRANSCODED.mkv"
+        filename = path.stem
+        filename = CLEAN_RELEASE_GROUP_REGEX.sub("", filename)
+        filename = CLEAN_TORRENT_SUFFIX_REGEX.sub("", filename)
+        transcode_to = tmp_folder / f"{filename}-TRANSCODED.mkv"
 
         command = self._build_ffmpeg_command(item, transcode_to)
 
@@ -273,4 +285,4 @@ class Transcoder:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     t = Transcoder()
-    t._worker()
+    t._worker()  # pyright: ignore[reportPrivateUsage]

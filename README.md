@@ -19,6 +19,7 @@ Requires Python >=3.11.
 
 ### TODO
 
+- use overseerr for search/requests
 - use sqlite
 - dynamically copy streams
   - i.e. if mov_text in input, -c:s srt
