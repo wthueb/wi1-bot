@@ -1,22 +1,26 @@
-FROM jrottenberg/ffmpeg:7.1-nvidia2404 AS base
+FROM linuxserver/ffmpeg:latest AS base
 
 RUN apt-get update && apt-get install -yqq --no-install-recommends python3
 
-FROM base AS compiler
+FROM base AS builder
 
-RUN apt-get install -yqq --no-install-recommends python3-venv git
-
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+ENV UV_PYTHON_DOWNLOADS=0 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 WORKDIR /app
+
+COPY pyproject.toml uv.lock .
+
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-install-project --no-dev
+
 COPY . .
-RUN pip install .
+
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev
 
 FROM base
 
-COPY --from=compiler /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=builder --chown=app:app /app /app
+ENV PATH="/app/.venv/bin:$PATH"
 
 LABEL org.opencontainers.image.source="https://github.com/wthueb/wi1-bot"
 LABEL org.opencontainers.image.maintainer="wilhueb@gmail.com"
