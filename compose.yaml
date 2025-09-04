@@ -2,13 +2,13 @@ services:
   wi1-bot:
     container_name: wi1-bot
     image: wthueb/wi1-bot
-    runtime: nvidia
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities:
-              - gpu
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     devices:
       - /dev/dri:/dev/dri
     environment:
