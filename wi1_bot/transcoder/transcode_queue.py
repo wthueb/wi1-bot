@@ -1,3 +1,4 @@
+import os
 from typing import Any, cast
 
 from mongoengine import Document, connect
@@ -23,7 +24,7 @@ class TranscodeItem(Document):
 
 class TranscodeQueue:
     def __init__(self) -> None:
-        connect("wi1_bot", connect=False)
+        connect("wi1_bot", connect=True, host=os.environ.get("MONGODB_CONNECTION_STRING", None))
 
     def add(
         self,
