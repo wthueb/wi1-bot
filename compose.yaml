@@ -13,7 +13,7 @@ services:
       - /dev/dri:/dev/dri
     environment:
       - WB_CONFIG_PATH=/data/config.yaml
-      - WB_LOG_PATH=/data/logs
+      - WB_LOG_DIR=/data/logs
       - MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
     volumes:
       - .:/data
