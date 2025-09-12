@@ -103,6 +103,11 @@ def index() -> Any:
     return "", 200
 
 
+@app.route("/health", methods=["GET"])
+def health() -> Any:
+    return "OK", 200
+
+
 def start() -> None:
     logger.info("starting webhook listener")
 
