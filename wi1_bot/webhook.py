@@ -6,9 +6,10 @@ from typing import Any
 
 from flask import Flask, request
 
-from wi1_bot import push, transcoder
+from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
+from wi1_bot.transcoder.transcode_queue import queue
 
 app = Flask(__name__)
 
@@ -74,7 +75,7 @@ def on_download(req: dict[str, Any]) -> None:
     audio_channels = quality_options.get("audio_channels", None)
     audio_bitrate = quality_options.get("audio_bitrate", None)
 
-    transcoder.queue.add(
+    queue.add(
         path=str(path),
         content_id=content_id,
         copy_all_streams=copy_all_streams,

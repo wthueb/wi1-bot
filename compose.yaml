@@ -17,7 +17,11 @@ services:
       - MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
     volumes:
       - .:/data
+    depends_on:
+      - mongodb
 
   mongodb:
     container_name: mongodb
     image: mongo:8.0
+    ports:
+      - 27017:27017

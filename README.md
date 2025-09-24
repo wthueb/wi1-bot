@@ -19,10 +19,17 @@ Requires Python >=3.11.
 
 ### TODO
 
+- replace mongo with sqlite
+- multiple transcode workers
+  - main server instance (as part of the existing webhook server)
+  - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
+- figure out qsv codecs, especially useful if above is done
 - use overseerr for search/requests
-- use sqlite
+- web dashboard? django i guess?
+  - reactivity would be nice, maybe htmx?
 - dynamically copy streams
   - i.e. if mov_text in input, -c:s srt
+  - mjpeg streams
   - https://github.com/HaveAGitGat/Tdarr_Plugins/blob/aef12f3c65905f5fc7d045b1a96ddc6a58dc55e7/FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetContainer/1.0.0/index.ts#L77
 - https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 - link discord user to overseerr user
