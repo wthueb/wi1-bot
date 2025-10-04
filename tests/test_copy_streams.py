@@ -25,7 +25,7 @@ def setup_files():
 
 
 def test_copy_mjpeg():
-    path = FILES_PATH / "We.Bought.A.Zoo.2011.1080p.BluRay.DD+5.1.x264-TayTO.mkv"
+    path = FILES_PATH / "h264_eac3_pgssub_mjpeg.mkv"
 
     item = TranscodeItem(
         path=str(path),
