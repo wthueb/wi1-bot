@@ -18,7 +18,6 @@ dependencies = [
     "pyarr==5.2.0",
     "pyyaml==6.0.1",
     "requests>=2.32.4",
-    "typed-ffmpeg>=3.6",
 ]
 
 [project.urls]

@@ -1,10 +1,9 @@
 import pathlib
 import shutil
 
-import ffmpeg
 import pytest
 
-from wi1_bot.transcoder import Transcoder
+from wi1_bot.transcoder import Transcoder, ffprobe
 from wi1_bot.transcoder.transcode_queue import TranscodeItem
 
 FILES_PATH = pathlib.Path("./tests/files")
@@ -43,7 +42,7 @@ def test_copy_mjpeg():
     transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
     assert transcoded.exists()
 
-    output = ffmpeg.probe(transcoded)
+    output = ffprobe(transcoded)
     streams = output["streams"]
     assert isinstance(streams, list)
     assert any(s["codec_type"] == "video" and s["codec_name"] == "mjpeg" for s in streams)

@@ -861,15 +861,6 @@ wheels = [
 ]
 
 [[package]]
-name = "typed-ffmpeg"
-version = "3.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/bf/22/c110e7c2b6eb7a8f1c4b868b0d58db0ce2a9145d639adf6825abc1c72a15/typed_ffmpeg-3.6.tar.gz", hash = "sha256:60fb29abf96a23f8f1ffd142427b6640fc3896b3c8b1dc6d1d3520d05d106eb3", size = 641819, upload-time = "2025-07-01T06:58:15.084Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/54/668ec2f87bbbb17387787fc946bf994e6eef47c85604741ef20b918a90a3/typed_ffmpeg-3.6-py3-none-any.whl", hash = "sha256:a13f8ff575764c37e30b1488000ae67c461862e4f2856ab0a7dbe31814ac7298", size = 694112, upload-time = "2025-07-01T06:58:13.545Z" },
-]
-
-[[package]]
 name = "types-pyyaml"
 version = "6.0.12.20250516"
 source = { registry = "https://pypi.org/simple" }
@@ -944,7 +935,6 @@ dependencies = [
     { name = "pyarr" },
     { name = "pyyaml" },
     { name = "requests" },
-    { name = "typed-ffmpeg" },
 ]
 
 [package.dev-dependencies]
@@ -965,7 +955,6 @@ requires-dist = [
     { name = "pyarr", specifier = "==5.2.0" },
     { name = "pyyaml", specifier = "==6.0.1" },
     { name = "requests", specifier = ">=2.32.4" },
-    { name = "typed-ffmpeg", specifier = ">=3.6" },
 ]
 
 [package.metadata.requires-dev]

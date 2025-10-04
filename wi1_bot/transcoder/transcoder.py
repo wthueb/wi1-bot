@@ -6,9 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
-from datetime import timedelta
 from time import sleep
-from typing import Any
 
 from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
@@ -31,6 +29,76 @@ class SignalInterrupt(Exception):
 
 class UnknownError(Exception):
     pass
+
+
+def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path) -> list[str]:
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-y",
+    ]
+
+    if "transcoding" in config and "hwaccel" in config["transcoding"]:
+        command.extend(["-hwaccel", config["transcoding"]["hwaccel"]])
+        command.extend(["-hwaccel_output_format", config["transcoding"]["hwaccel"]])
+
+    command.extend(["-probesize", "100M"])
+    command.extend(["-analyzeduration", "250M"])
+
+    command.extend(["-i", item.path])
+
+    langs: list[str] = []
+
+    if item.languages:
+        langs = item.languages.split(",")
+
+    # TODO: use ffprobe to figure out what streams we should copy
+    # always copy first video stream
+    # always copy first audio stream
+    # always copy all subtitle streams
+    # if languages is specified in the config:
+    #     copy all audio streams in one of those languages
+    # ffprobe -show_streams -print_format json {input_file} 2>/dev/null
+    if item.copy_all_streams:
+        command.extend(["-map", "0"])
+    else:
+        command.extend(["-map", "0:v:0"])
+
+        command.extend(["-map", "0:a:0?"])
+
+        if langs:
+            command.extend(*[["-map", f"0:s:m:language:{lang}?"] for lang in langs])
+        else:
+            command.extend(["-map", "0:s?"])
+
+    if item.video_codec:
+        command.extend(["-vcodec", item.video_codec])
+        command.extend(["-preset", "fast"])
+        command.extend(["-profile:v", "main"])
+    else:
+        command.extend(["-vcodec", "copy"])
+
+    if item.video_bitrate:
+        command.extend(["-b:v", str(item.video_bitrate)])
+        command.extend(["-maxrate", str(item.video_bitrate * 2)])
+        command.extend(["-bufsize", str(item.video_bitrate * 2)])
+
+    if item.audio_codec:
+        command.extend(["-acodec", item.audio_codec])
+    else:
+        command.extend(["-acodec", "copy"])
+
+    if item.audio_channels:
+        command.extend(["-ac", str(item.audio_channels)])
+
+    if item.audio_bitrate:
+        command.extend(["-b:a", item.audio_bitrate])
+
+    command.extend(["-scodec", "copy"])
+
+    command.extend([str(transcode_to)])
+
+    return command
 
 
 class Transcoder:
@@ -91,7 +159,7 @@ class Transcoder:
         filename = CLEAN_TORRENT_SUFFIX_REGEX.sub("", filename)
         transcode_to = tmp_folder / f"{filename}-TRANSCODED.mkv"
 
-        command = self._build_ffmpeg_command(item, transcode_to)
+        command = build_ffmpeg_command(item, transcode_to)
 
         self.logger.debug(f"ffmpeg command: {shlex.join(command)}")
 
@@ -192,95 +260,6 @@ class Transcoder:
                 replace_remote_paths(pathlib.Path(config["sonarr"]["root_folder"]))
             ):
                 self.sonarr.rescan_series(item.content_id)
-
-    def _get_duration(self, path: str) -> timedelta:
-        probe_command = [
-            "ffprobe",
-            "-hide_banner",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            path,
-        ]
-
-        probe_result = subprocess.run(probe_command, capture_output=True, text=True)
-
-        try:
-            duration = timedelta(seconds=float(probe_result.stdout.strip()))
-        except ValueError:
-            raise FileNotFoundError
-
-        return duration
-
-    def _build_ffmpeg_command(self, item: TranscodeItem, transcode_to: pathlib.Path) -> list[str]:
-        command: list[Any] = [
-            "ffmpeg",
-            "-hide_banner",
-            "-y",
-        ]
-
-        if "transcoding" in config and "hwaccel" in config["transcoding"]:
-            command.extend(["-hwaccel", config["transcoding"]["hwaccel"]])
-            command.extend(["-hwaccel_output_format", config["transcoding"]["hwaccel"]])
-
-        command.extend(["-probesize", "100M"])
-        command.extend(["-analyzeduration", "250M"])
-
-        command.extend(["-i", item.path])
-
-        langs: list[str] = []
-
-        if item.languages:
-            langs = item.languages.split(",")
-
-        # TODO: use ffprobe to figure out what streams we should copy
-        # always copy first video stream
-        # always copy first audio stream
-        # always copy all subtitle streams
-        # if languages is specified in the config:
-        #     copy all audio streams in one of those languages
-        # ffprobe -show_streams -print_format json {input_file} 2>/dev/null
-        if item.copy_all_streams:
-            command.extend(["-map", "0"])
-        else:
-            command.extend(["-map", "0:v:0"])
-
-            command.extend(["-map", "0:a:0?"])
-
-            if langs:
-                command.extend([["-map", f"0:s:m:language:{lang}?"] for lang in langs])
-            else:
-                command.extend(["-map", "0:s?"])
-
-        if item.video_codec:
-            command.extend(["-vcodec", item.video_codec])
-            command.extend(["-preset", "fast"])
-            command.extend(["-profile:v", "main"])
-        else:
-            command.extend(["-vcodec", "copy"])
-
-        if item.video_bitrate:
-            command.extend(["-b:v", item.video_bitrate])
-            command.extend(["-maxrate", item.video_bitrate * 2])
-            command.extend(["-bufsize", item.video_bitrate * 2])
-
-        if item.audio_codec:
-            command.extend(["-acodec", item.audio_codec])
-        else:
-            command.extend(["-acodec", "copy"])
-
-        if item.audio_channels:
-            command.extend(["-ac", item.audio_channels])
-
-        if item.audio_bitrate:
-            command.extend(["-b:a", item.audio_bitrate])
-
-        command.extend(["-scodec", "copy"])
-
-        command.extend([transcode_to])
-
-        return [str(arg) for arg in command]
 
 
 if __name__ == "__main__":
