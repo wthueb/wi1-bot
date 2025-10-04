@@ -4,6 +4,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import tempfile
 import threading
 from datetime import timedelta
 from time import sleep
@@ -82,7 +83,7 @@ class Transcoder:
 
         # duration = _get_duration(item.path)
 
-        tmp_folder = pathlib.Path("/tmp/wi1-bot")
+        tmp_folder = pathlib.Path(tempfile.gettempdir()) / "wi1-bot"
         tmp_folder.mkdir(exist_ok=True)
 
         filename = path.stem
