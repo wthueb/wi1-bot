@@ -19,25 +19,32 @@ Requires Python >=3.11.
 
 ### TODO
 
+- create blank test files https://stackoverflow.com/questions/46366150/create-muted-video-and-black-screen-video-with-ffmpeg
+- better config situation
+  - allow no config file for testing purposes
+    - remove WB_CONFIG_PATH from Dockerfile test target
+- dynamically copy streams
+  - i.e. if mov_text in input, -c:s srt
+  - copy mjpeg streams instead of trying to transcode them
+  - https://github.com/HaveAGitGat/Tdarr_Plugins/blob/aef12f3c65905f5fc7d045b1a96ddc6a58dc55e7/FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetContainer/1.0.0/index.ts#L77
+- github action to run tests
+- figure out qsv codecs
 - replace mongo with sqlite
 - multiple transcode workers
   - main server instance (as part of the existing webhook server)
   - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
-- figure out qsv codecs, especially useful if above is done
+- integration testing
+  - https://pypi.org/project/pytest-docker/
 - use overseerr for search/requests
 - web dashboard? django i guess?
+  - transcode queue, transcode progress, quotas
   - reactivity would be nice, maybe htmx?
-- dynamically copy streams
-  - i.e. if mov_text in input, -c:s srt
-  - mjpeg streams
-  - https://github.com/HaveAGitGat/Tdarr_Plugins/blob/aef12f3c65905f5fc7d045b1a96ddc6a58dc55e7/FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetContainer/1.0.0/index.ts#L77
 - https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 - link discord user to overseerr user
-- https://github.com/kkroening/ffmpeg-python
+- https://pypi.org/project/typed-ffmpeg/
   - `ffmpeg -codecs`, `ffmpeg -hwaccels`
 - ffmpeg filters for deinterlacing, scaling
   - https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html#hwaccel-transcode-with-scaling
-- ffmpeg remove bad subtitle streams
 - have config.discord.users be a dict with 'quotas' and 'name' for *arr tags
 - Better pushover notifications
   - Failures for pretty much everything
@@ -53,9 +60,6 @@ Requires Python >=3.11.
 - Use Discord slash commands instead of normal text commands
   - This is difficult/impossible currently, can't have "conversation" with slash commands
 - Enforce quotas
-- Testing
-  - docker(-compose) for spinning up Sonarr and Radarr instances to test API interactions
-- Web dashboard for seeing transcode queue, transcode progress, quotas
 - !linktmdb
   - !rate / !ratings (https://developers.themoviedb.org/3/movies/rate-movie)
   - !movierec based off of ratings and similar-to-user ratings?

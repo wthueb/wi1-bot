@@ -17,6 +17,14 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev
 
+FROM builder AS test
+
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked
+
+ENV WB_CONFIG_PATH=/config/config.yaml
+
+ENTRYPOINT ["uv", "run", "pytest"]
+
 FROM base
 
 COPY --from=builder --chown=app:app /app /app
