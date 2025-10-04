@@ -24,7 +24,12 @@ class TranscodeItem(Document):
 
 class TranscodeQueue:
     def __init__(self) -> None:
-        connect("wi1_bot", connect=True, host=os.environ.get("MONGODB_CONNECTION_STRING", None))
+        connect(
+            "wi1_bot",
+            connect=True,
+            host=os.environ.get("MONGODB_CONNECTION_STRING", None),
+            uuidrepresentation="standard",
+        )
 
     def add(
         self,
