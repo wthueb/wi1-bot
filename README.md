@@ -19,7 +19,6 @@ Requires Python >=3.11.
 
 ### TODO
 
-- create blank test files https://stackoverflow.com/questions/46366150/create-muted-video-and-black-screen-video-with-ffmpeg
 - better config situation
   - allow no config file for testing purposes
     - remove WB_CONFIG_PATH from Dockerfile test target
