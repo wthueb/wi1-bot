@@ -94,7 +94,7 @@ async def quota_cmd(ctx: commands.Context[commands.Bot]) -> None:
 
         maximum: float = 0
 
-        if "quotas" in config["discord"]:
+        if "quotas" in config["discord"] and ctx.message.author.id in config["discord"]["quotas"]:
             maximum = config["discord"]["quotas"][ctx.message.author.id]
 
         pct = used / maximum * 100 if maximum != 0 else 100
