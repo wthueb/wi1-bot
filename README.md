@@ -19,7 +19,6 @@ Requires Python >=3.11.
 
 ### TODO
 
-- convert mov_text to srt (?) when copying subs
 - better config situation
   - allow no config file for testing purposes
     - remove WB_CONFIG_PATH from Dockerfile test target

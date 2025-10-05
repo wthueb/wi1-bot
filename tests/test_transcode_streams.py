@@ -13,8 +13,9 @@ FILES_PATH = pathlib.Path("./tests/files")
 
 @pytest.fixture(autouse=True)
 def setup_files():
-    for file in FILES_PATH.glob("*.mkv"):
-        shutil.copy(file, file.with_name(f"{file.name}.bak"))
+    for file in FILES_PATH.iterdir():
+        if file.is_file() and file.suffix in [".mkv", ".mp4"]:
+            shutil.copy(file, file.with_name(f"{file.name}.bak"))
 
     yield
 
@@ -45,3 +46,21 @@ def test_copy_mjpeg():
     streams = output["streams"]
     assert isinstance(streams, list)
     assert any(s["codec_type"] == "video" and s["codec_name"] == "mjpeg" for s in streams)
+
+
+def test_convert_movtext():
+    path = FILES_PATH / "h264_eac3_movtext.mp4"
+
+    item = TranscodeItem(path=str(path))
+
+    t = Transcoder()
+    print(shlex.join(build_ffmpeg_command(item, "output.mkv")))
+    t.transcode(item)
+
+    transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
+    assert transcoded.exists()
+
+    output = ffprobe(transcoded)
+    streams = output["streams"]
+    assert isinstance(streams, list)
+    assert any(s["codec_type"] == "subtitle" and s["codec_name"] == "subrip" for s in streams)

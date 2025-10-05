@@ -84,6 +84,7 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
 
     first_video = True
     vindex = 1
+    sindex = 0
 
     for stream in streams:
         if stream["codec_type"] == "video":
@@ -95,16 +96,19 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
             command.extend([f"-c:v:{vindex}", "copy"])
             vindex += 1
         elif stream["codec_type"] == "subtitle":
-            if langs:
-                if "language" in stream["tags"]:
-                    lang = stream["tags"]["language"]
+            if langs and (
+                "language" not in stream["tags"] or stream["tags"]["language"] not in langs
+            ):
+                continue
 
-                    if lang in langs:
-                        command.extend(["-map", f"0:{stream['index']}"])
-            else:
-                command.extend(["-map", f"0:{stream['index']}"])
+            command.extend(["-map", f"0:{stream['index']}"])
 
-    command.extend(["-c:s", "copy"])
+            codec = "copy"
+            if stream["codec_name"] == "mov_text":
+                codec = "subrip"
+            command.extend([f"-c:s:{sindex}", codec])
+
+            sindex += 1
 
     command.extend([str(transcode_to)])
 
