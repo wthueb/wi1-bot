@@ -104,7 +104,7 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
             command.extend(["-map", f"0:{stream['index']}"])
 
             codec = "copy"
-            if stream["codec_name"] == "mov_text":
+            if "codec_name" in stream and stream["codec_name"] == "mov_text":
                 codec = "subrip"
             command.extend([f"-c:s:{sindex}", codec])
 

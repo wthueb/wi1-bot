@@ -43,7 +43,7 @@ class Disposition(TypedDict):
 
 class Stream(TypedDict):
     index: int
-    codec_name: str
+    codec_name: NotRequired[str]
     codec_long_name: str
     profile: NotRequired[str]
     codec_type: (
