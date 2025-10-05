@@ -101,6 +101,10 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
             ):
                 continue
 
+            # no codec specified, happens with some release groups
+            if "codec_name" not in stream:
+                continue
+
             command.extend(["-map", f"0:{stream['index']}"])
 
             codec = "copy"
