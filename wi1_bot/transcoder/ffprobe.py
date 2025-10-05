@@ -1,7 +1,7 @@
 import json
 import pathlib
 import subprocess
-from typing import NotRequired, TypedDict, cast
+from typing import Literal, NotRequired, TypedDict, cast
 
 
 class StreamTags(TypedDict):
@@ -46,7 +46,14 @@ class Stream(TypedDict):
     codec_name: str
     codec_long_name: str
     profile: NotRequired[str]
-    codec_type: str
+    codec_type: (
+        Literal["video"]
+        | Literal["audio"]
+        | Literal["subtitle"]
+        | Literal["data"]
+        | Literal["attachment"]
+        | Literal["nb"]
+    )
     codec_tag_string: str
     codec_tag: str
     width: NotRequired[int]

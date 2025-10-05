@@ -12,6 +12,7 @@ from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 
+from .ffprobe import ffprobe
 from .transcode_queue import TranscodeItem, queue
 
 # https://github.com/Radarr/Radarr/blob/e29be26fc9a5570bdf37a1b9504b3c0162be7715/src/NzbDrone.Core/Parser/Parser.cs#L134
@@ -31,7 +32,7 @@ class UnknownError(Exception):
     pass
 
 
-def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path) -> list[str]:
+def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) -> list[str]:
     command = [
         "ffmpeg",
         "-hide_banner",
@@ -50,51 +51,59 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path) -> lis
     langs: list[str] = []
 
     if item.languages:
-        langs = item.languages.split(",")
+        langs = [lang.strip() for lang in item.languages.split(",")]
 
-    # TODO: use ffprobe to figure out what streams we should copy
-    # always copy first video stream
-    # always copy first audio stream
-    # always copy all subtitle streams
-    # if languages is specified in the config:
-    #     copy all audio streams in one of those languages
-    # ffprobe -show_streams -print_format json {input_file} 2>/dev/null
-    if item.copy_all_streams:
-        command.extend(["-map", "0"])
+    info = ffprobe(item.path)
+    streams = info["streams"]
+
+    command.extend(["-map", "0:v:0"])
+
+    if item.video_params:
+        params = shlex.split(item.video_params)
+
+        for param in params:
+            if param.startswith("-"):
+                command.append(f"{param}:v:0")
+            else:
+                command.append(param)
     else:
-        command.extend(["-map", "0:v:0"])
+        command.extend(["-c:v:0", "copy"])
 
-        command.extend(["-map", "0:a:0?"])
+    command.extend(["-map", "0:a:0?"])
 
-        if langs:
-            command.extend(*[["-map", f"0:s:m:language:{lang}?"] for lang in langs])
-        else:
-            command.extend(["-map", "0:s?"])
+    if item.audio_params:
+        params = shlex.split(item.audio_params)
 
-    if item.video_codec:
-        command.extend(["-vcodec", item.video_codec])
-        command.extend(["-preset", "fast"])
-        command.extend(["-profile:v", "main"])
+        for param in params:
+            if param.startswith("-"):
+                command.append(f"{param}:a:0")
+            else:
+                command.append(param)
     else:
-        command.extend(["-vcodec", "copy"])
+        command.extend(["-c:a:0", "copy"])
 
-    if item.video_bitrate:
-        command.extend(["-b:v", str(item.video_bitrate)])
-        command.extend(["-maxrate", str(item.video_bitrate * 2)])
-        command.extend(["-bufsize", str(item.video_bitrate * 2)])
+    first_video = True
+    vindex = 1
 
-    if item.audio_codec:
-        command.extend(["-acodec", item.audio_codec])
-    else:
-        command.extend(["-acodec", "copy"])
+    for stream in streams:
+        if stream["codec_type"] == "video":
+            if first_video:
+                first_video = False
+                continue
 
-    if item.audio_channels:
-        command.extend(["-ac", str(item.audio_channels)])
+            command.extend(["-map", f"0:{stream['index']}"])
+            command.extend([f"-c:v:{vindex}", "copy"])
+            vindex += 1
+        elif stream["codec_type"] == "subtitle":
+            if "language" in stream["tags"]:
+                lang = stream["tags"]["language"]
 
-    if item.audio_bitrate:
-        command.extend(["-b:a", item.audio_bitrate])
+                if lang in langs:
+                    command.extend(["-map", f"0:{stream['index']}"])
+            else:
+                command.extend(["-map", f"0:{stream['index']}"])
 
-    command.extend(["-scodec", "copy"])
+    command.extend(["-c:s", "copy"])
 
     command.extend([str(transcode_to)])
 
@@ -124,7 +133,7 @@ class Transcoder:
                 continue
 
             try:
-                remove = self._do_transcode(item)
+                remove = self.transcode(item)
 
                 if remove:
                     queue.remove(item)
@@ -133,7 +142,7 @@ class Transcoder:
 
             sleep(3)
 
-    def _do_transcode(self, item: TranscodeItem) -> bool:
+    def transcode(self, item: TranscodeItem) -> bool:
         path = pathlib.Path(item.path)
 
         self.logger.info(f"attempting to transcode {path.name}")

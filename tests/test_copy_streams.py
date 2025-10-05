@@ -1,10 +1,12 @@
 import pathlib
+import shlex
 import shutil
 
 import pytest
 
 from wi1_bot.transcoder import Transcoder, ffprobe
 from wi1_bot.transcoder.transcode_queue import TranscodeItem
+from wi1_bot.transcoder.transcoder import build_ffmpeg_command
 
 FILES_PATH = pathlib.Path("./tests/files")
 
@@ -28,16 +30,13 @@ def test_copy_mjpeg():
 
     item = TranscodeItem(
         path=str(path),
-        copy_all_streams=True,
-        video_codec="libx264",
-        video_bitrate=2000000,
-        audio_codec="aac",
-        audio_channels=2,
-        audio_bitrate="128k",
+        video_params="-c libx264 -b 2000k",
+        audio_params="-c aac -b 128k -ac 2",
     )
 
     t = Transcoder()
-    t._do_transcode(item)  # pyright: ignore[reportPrivateUsage]
+    print(shlex.join(build_ffmpeg_command(item, "output.mkv")))
+    t.transcode(item)
 
     transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
     assert transcoded.exists()

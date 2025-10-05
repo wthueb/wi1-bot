@@ -61,18 +61,10 @@ transcoding:
       # comma separated ISO 639-2 codes, optional
       # currently only applies to choosing which subtitle streams to copy
       languages: eng,spa
-      # -c:v in ffmpeg, optional
-      video_codec: hevc_nvenc
-      # -b:v in ffmpeg, optional
-      video_bitrate: 5_000_000
-      # -c:a in ffmpeg, optional
-      audio_codec: aac
-      # -ac in ffmpeg, optional
-      audio_channels: 2
-      # -b:a in ffmpeg, optional
-      audio_bitrate: 128k
+      # ffmpeg arguments for video streams, don't include stream specifiers, optional
+      video_params: -c hevc_nvenc -b 5000k
+      # ffmpeg arguments for audio streams, don't include stream specifiers, optional
+      audio_params: -c aac -ac 2 -b 128k
     great:
-      video_bitrate: 8_000_000
-      audio_codec: dca
-      audio_channels: 6
-      audio_bitrate: 384k
+      video_params: -c hevc_nvenc -b 8000k
+      audio_params: -c dca -ac 6 -b 384k
