@@ -95,11 +95,12 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
             command.extend([f"-c:v:{vindex}", "copy"])
             vindex += 1
         elif stream["codec_type"] == "subtitle":
-            if "language" in stream["tags"]:
-                lang = stream["tags"]["language"]
+            if langs:
+                if "language" in stream["tags"]:
+                    lang = stream["tags"]["language"]
 
-                if lang in langs:
-                    command.extend(["-map", f"0:{stream['index']}"])
+                    if lang in langs:
+                        command.extend(["-map", f"0:{stream['index']}"])
             else:
                 command.extend(["-map", f"0:{stream['index']}"])
 
