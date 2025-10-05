@@ -19,13 +19,10 @@ Requires Python >=3.11.
 
 ### TODO
 
+- convert mov_text to srt (?) when copying subs
 - better config situation
   - allow no config file for testing purposes
     - remove WB_CONFIG_PATH from Dockerfile test target
-- dynamically copy streams
-  - i.e. if mov_text in input, -c:s srt
-  - copy mjpeg streams instead of trying to transcode them
-  - https://github.com/HaveAGitGat/Tdarr_Plugins/blob/aef12f3c65905f5fc7d045b1a96ddc6a58dc55e7/FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetContainer/1.0.0/index.ts#L77
 - github action to run tests
 - figure out qsv codecs
 - replace mongo with sqlite
