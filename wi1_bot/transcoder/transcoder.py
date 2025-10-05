@@ -12,7 +12,7 @@ from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 
-from .ffprobe import ffprobe
+from .ffprobe import FfprobeException, ffprobe
 from .transcode_queue import TranscodeItem, queue
 
 # https://github.com/Radarr/Radarr/blob/e29be26fc9a5570bdf37a1b9504b3c0162be7715/src/NzbDrone.Core/Parser/Parser.cs#L134
@@ -137,13 +137,24 @@ class Transcoder:
                 sleep(3)
                 continue
 
+            remove = False
+
             try:
                 remove = self.transcode(item)
-
-                if remove:
-                    queue.remove(item)
+            except FfprobeException:
+                self.logger.warning("ffprobe failed, will not retry", exc_info=True)
+                push.send(
+                    f"{item.path} has failed to transcode due to ffprobe error",
+                    title="transcoding error",
+                )
+                remove = True
             except Exception:
-                self.logger.warning("got exception when trying to transcode", exc_info=True)
+                self.logger.warning(
+                    "got exception when trying to transcode, will retry", exc_info=True
+                )
+
+            if remove:
+                queue.remove(item)
 
             sleep(3)
 
