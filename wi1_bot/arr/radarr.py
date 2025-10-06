@@ -1,4 +1,5 @@
 from shutil import rmtree
+from typing import Any
 
 from pyarr import RadarrAPI
 
@@ -145,6 +146,11 @@ class Radarr:
                 return name
 
         raise ValueError(f"no quality profile with the id {profile_id}")
+
+    def get_movies(self) -> list[dict[str, Any]]:
+        movies = self._radarr.get_movie()
+        assert isinstance(movies, list)
+        return movies
 
     def rescan_movie(self, movie_id: int) -> None:
         self._radarr.post_command("RescanMovie", movieId=movie_id)  # type: ignore

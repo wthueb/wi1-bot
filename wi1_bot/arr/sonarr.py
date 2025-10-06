@@ -170,6 +170,11 @@ class Sonarr:
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
+    def get_series(self) -> list[dict[str, Any]]:
+        series = self._sonarr.get_series()
+        assert isinstance(series, list)
+        return series
+
     def rescan_series(self, series_id: int) -> None:
         self._sonarr.post_command("RescanSeries", seriesId=series_id)  # type: ignore
 

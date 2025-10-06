@@ -268,27 +268,33 @@ class Transcoder:
         shutil.move(transcode_to, new_path)
         path.unlink()
 
-        self._rescan_content(item, new_path)
+        self._rescan_content(new_path)
 
         self.logger.info(f"transcoded: {path.name} -> {new_path.name}")
         # push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
 
         return True
 
-    def _rescan_content(self, item: TranscodeItem, new_path: pathlib.Path) -> None:
-        if item.content_id is not None:
-            if new_path.is_relative_to(
-                replace_remote_paths(pathlib.Path(config["radarr"]["root_folder"]))
-            ):
-                # have to rescan the movie twice: Radarr/Radarr#7668
-                # TODO: create function that waits for comand to finish
-                self.radarr.rescan_movie(item.content_id)
-                sleep(5)
-                self.radarr.rescan_movie(item.content_id)
-            elif new_path.is_relative_to(
-                replace_remote_paths(pathlib.Path(config["sonarr"]["root_folder"]))
-            ):
-                self.sonarr.rescan_series(item.content_id)
+    def _rescan_content(self, new_path: pathlib.Path) -> None:
+        if new_path.is_relative_to(
+            replace_remote_paths(pathlib.Path(config["radarr"]["root_folder"]))
+        ):
+            for m in self.radarr.get_movies():
+                if new_path.is_relative_to(m["path"]):
+                    # have to rescan the movie twice: Radarr/Radarr#7668
+                    # TODO: create function that waits for comand to finish
+                    self.radarr.rescan_movie(m["id"])
+                    sleep(5)
+                    self.radarr.rescan_movie(m["id"])
+                    break
+
+        elif new_path.is_relative_to(
+            replace_remote_paths(pathlib.Path(config["sonarr"]["root_folder"]))
+        ):
+            for s in self.sonarr.get_series():
+                if new_path.is_relative_to(s["path"]):
+                    self.sonarr.rescan_series(s["id"])
+                    break
 
 
 if __name__ == "__main__":

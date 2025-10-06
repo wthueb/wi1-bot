@@ -27,11 +27,9 @@ def on_grab(req: dict[str, Any]) -> None:
 
 def on_download(req: dict[str, Any]) -> None:
     path: pathlib.Path
-    content_id: int
 
     if "movie" in req:
-        content_id = req["movie"]["id"]
-        movie_json = radarr._radarr.get_movie(content_id)
+        movie_json = radarr._radarr.get_movie(req["movie"]["id"])
         assert isinstance(movie_json, dict)
 
         quality_profile = radarr.get_quality_profile_name(movie_json["qualityProfileId"])
@@ -44,8 +42,7 @@ def on_download(req: dict[str, Any]) -> None:
         if not req["isUpgrade"]:
             push.send(path.name, title="new movie downloaded")
     elif "series" in req:
-        content_id = req["series"]["id"]
-        series_json = sonarr._sonarr.get_series(content_id)
+        series_json = sonarr._sonarr.get_series(req["series"]["id"])
         assert isinstance(series_json, dict)
 
         quality_profile = sonarr.get_quality_profile_name(series_json["qualityProfileId"])
@@ -73,7 +70,6 @@ def on_download(req: dict[str, Any]) -> None:
 
     queue.add(
         path=str(path),
-        content_id=content_id,
         languages=languages,
         video_params=video_params,
         audio_params=audio_params,
