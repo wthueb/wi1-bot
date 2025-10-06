@@ -171,6 +171,10 @@ class Transcoder:
             self.logger.info(f"cannot transcode {path.name}: .avi not supported")
             return True
 
+        if not path.exists():
+            self.logger.info(f"file does not exist: {item.path}, skipping transcoding")
+            return True
+
         # push.send(f"{basename}", title="starting transcode")
 
         # TODO: calculate compression amount
