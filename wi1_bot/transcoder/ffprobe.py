@@ -83,7 +83,7 @@ class Stream(TypedDict):
     bits_per_raw_sample: NotRequired[str]
     extradata_size: NotRequired[int]
     disposition: Disposition
-    tags: StreamTags
+    tags: NotRequired[StreamTags]
     sample_fmt: NotRequired[str]
     sample_rate: NotRequired[str]
     channels: NotRequired[int]

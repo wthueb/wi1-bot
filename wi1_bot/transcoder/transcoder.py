@@ -97,7 +97,9 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
             vindex += 1
         elif stream["codec_type"] == "subtitle":
             if langs and (
-                "language" not in stream["tags"] or stream["tags"]["language"] not in langs
+                "tags" not in stream
+                or "language" not in stream["tags"]
+                or stream["tags"]["language"] not in langs
             ):
                 continue
 
