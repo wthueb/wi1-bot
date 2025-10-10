@@ -8,7 +8,7 @@ import tempfile
 import threading
 from time import sleep
 
-from wi1_bot import push
+from wi1_bot import __version__, push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 
@@ -48,6 +48,8 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
 
     command.extend(["-i", item.path])
 
+    command.extend(["-metadata", f"wi1_bot_version={__version__}"])
+
     langs: list[str] = []
 
     if item.languages:
@@ -66,8 +68,11 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
                 command.append(f"{param}:v:0")
             else:
                 command.append(param)
+
+        command.extend(["-metadata:s:v:0", f"params={item.video_params}"])
     else:
         command.extend(["-c:v:0", "copy"])
+        command.extend(["-metadata:s:v:0", "params=-c copy"])
 
     command.extend(["-map", "0:a:0?"])
 
@@ -79,8 +84,11 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
                 command.append(f"{param}:a:0")
             else:
                 command.append(param)
+
+        command.extend(["-metadata:s:a:0", f"params={item.audio_params}"])
     else:
         command.extend(["-c:a:0", "copy"])
+        command.extend(["-metadata:s:a:0", "params=-c copy"])
 
     first_video = True
     vindex = 1
@@ -94,6 +102,8 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
 
             command.extend(["-map", f"0:{stream['index']}"])
             command.extend([f"-c:v:{vindex}", "copy"])
+
+            command.extend([f"-metadata:s:v:{vindex}", "params=-c copy"])
             vindex += 1
         elif stream["codec_type"] == "subtitle":
             if langs and (
@@ -114,6 +124,7 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
                 codec = "subrip"
             command.extend([f"-c:s:{sindex}", codec])
 
+            command.extend([f"-metadata:s:s:{sindex}", f"params=-c {codec}"])
             sindex += 1
 
     command.extend([str(transcode_to)])

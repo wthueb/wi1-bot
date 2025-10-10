@@ -45,7 +45,10 @@ def test_copy_mjpeg():
     output = ffprobe(transcoded)
     streams = output["streams"]
     assert isinstance(streams, list)
-    assert any(s["codec_type"] == "video" and s["codec_name"] == "mjpeg" for s in streams)
+    assert any(
+        s["codec_type"] == "video" and "codec_name" in s and s["codec_name"] == "mjpeg"
+        for s in streams
+    )
 
 
 def test_convert_movtext():
@@ -63,4 +66,7 @@ def test_convert_movtext():
     output = ffprobe(transcoded)
     streams = output["streams"]
     assert isinstance(streams, list)
-    assert any(s["codec_type"] == "subtitle" and s["codec_name"] == "subrip" for s in streams)
+    assert any(
+        s["codec_type"] == "subtitle" and "codec_name" in s and s["codec_name"] == "subrip"
+        for s in streams
+    )
