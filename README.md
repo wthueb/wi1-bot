@@ -19,8 +19,6 @@ Requires Python >=3.11.
 
 ### TODO
 
-- add metadata for wi1-bot version/params
-  - https://ffmpeg.org/ffmpeg.html#Main-options:~:text=1)%20manual.-,%2Dmetadata,-%5B%3Ametadata_specifier%5D%20key
 - transcode avis
 - better config situation
   - allow no config file for testing purposes

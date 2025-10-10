@@ -9,8 +9,6 @@ from wi1_bot.config import config
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
 
-_logger = logging.getLogger(__name__)
-
 
 def main() -> None:
     logging_config: dict[str, Any] = {
@@ -70,8 +68,10 @@ def main() -> None:
 
     logging.config.dictConfig(logging_config)
 
-    _logger.info(f"starting wi1-bot version {__version__}")
-    _logger.info(f"logging to: {log_dir}")
+    logger = logging.getLogger(__name__)
+
+    logger.info(f"starting wi1-bot version {__version__}")
+    logger.info(f"logging to: {log_dir}")
 
     webhook.start()
 
