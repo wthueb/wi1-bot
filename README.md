@@ -19,6 +19,8 @@ Requires Python >=3.11.
 
 ### TODO
 
+- add metadata for wi1-bot version/params
+  - https://ffmpeg.org/ffmpeg.html#Main-options:~:text=1)%20manual.-,%2Dmetadata,-%5B%3Ametadata_specifier%5D%20key
 - transcode avis
 - better config situation
   - allow no config file for testing purposes
@@ -34,11 +36,9 @@ Requires Python >=3.11.
 - use overseerr for search/requests
 - web dashboard? django i guess?
   - transcode queue, transcode progress, quotas
-  - reactivity would be nice, maybe htmx?
-- https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
+  - reactivity would be nice, maybe htmx/alpinejs?
+    - https://www.mattlayman.com/blog/2021/how-to-htmx-django/
 - link discord user to overseerr user
-- https://pypi.org/project/typed-ffmpeg/
-  - `ffmpeg -codecs`, `ffmpeg -hwaccels`
 - ffmpeg filters for deinterlacing, scaling
   - https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html#hwaccel-transcode-with-scaling
 - have config.discord.users be a dict with 'quotas' and 'name' for *arr tags
