@@ -138,7 +138,13 @@ class Sonarr:
         return True
 
     def get_downloads(self) -> list[Download]:
-        queue = self._sonarr.get_queue()["records"]
+        queue = self._sonarr.get_queue(
+            page=1,
+            page_size=10,
+            sort_key="timeleft",
+            sort_dir="ascending",
+            include_unknown_series_items=False,
+        )["records"]
 
         downloads = [Download(d) for d in queue]
 
