@@ -74,38 +74,35 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
         command.extend(["-c:v:0", "copy"])
         command.extend(["-metadata:s:v:0", "params=-c copy"])
 
-    command.extend(["-map", "0:a:0?"])
-
-    if item.audio_params:
-        params = shlex.split(item.audio_params)
-
-        for param in params:
-            if param.startswith("-"):
-                command.append(f"{param}:a:0")
-            else:
-                command.append(param)
-
-        command.extend(["-metadata:s:a:0", f"params={item.audio_params}"])
-    else:
-        command.extend(["-c:a:0", "copy"])
-        command.extend(["-metadata:s:a:0", "params=-c copy"])
-
-    first_video = True
-    vindex = 1
+    vindex = 0
+    aindex = 0
     sindex = 0
+
+    video_streams = []
+    audio_streams = []
+    subtitle_streams = []
 
     for stream in streams:
         if stream["codec_type"] == "video":
-            if first_video:
-                first_video = False
+            # already mapped main video stream above
+            if vindex == 0:
+                vindex += 1
                 continue
 
-            command.extend(["-map", f"0:{stream['index']}"])
-            command.extend([f"-c:v:{vindex}", "copy"])
+            video_streams.append(stream)
+        elif stream["codec_type"] == "audio":
+            # keep matching languages and streams with no language specified
+            if (
+                langs
+                and "tags" in stream
+                and "language" in stream["tags"]
+                and stream["tags"]["language"] not in langs
+            ):
+                continue
 
-            command.extend([f"-metadata:s:v:{vindex}", "params=-c copy"])
-            vindex += 1
+            audio_streams.append(stream)
         elif stream["codec_type"] == "subtitle":
+            # keep only streams that match specified languages
             if langs and (
                 "tags" not in stream
                 or "language" not in stream["tags"]
@@ -117,15 +114,50 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
             if "codec_name" not in stream:
                 continue
 
-            command.extend(["-map", f"0:{stream['index']}"])
+            subtitle_streams.append(stream)
 
-            codec = "copy"
-            if "codec_name" in stream and stream["codec_name"] == "mov_text":
-                codec = "subrip"
-            command.extend([f"-c:s:{sindex}", codec])
+    for stream in video_streams:
+        command.extend(["-map", f"0:{stream['index']}"])
+        command.extend([f"-c:v:{vindex}", "copy"])
 
-            command.extend([f"-metadata:s:s:{sindex}", f"params=-c {codec}"])
-            sindex += 1
+        command.extend([f"-metadata:s:v:{vindex}", "params=-c copy"])
+        vindex += 1
+
+    audio_streams.sort(
+        key=lambda s: 0
+        if "tags" in s and "language" in s["tags"] and s["tags"]["language"] in langs
+        else 1
+    )
+
+    for stream in audio_streams:
+        command.extend(["-map", f"0:{stream['index']}"])
+
+        if item.audio_params:
+            params = shlex.split(item.audio_params)
+
+            for param in params:
+                if param.startswith("-"):
+                    command.append(f"{param}:a:{aindex}")
+                else:
+                    command.append(param)
+
+            command.extend([f"-metadata:s:a:{aindex}", f"params={item.audio_params}"])
+        else:
+            command.extend([f"-c:a:{aindex}", "copy"])
+            command.extend([f"-metadata:s:a:{aindex}", "params=-c copy"])
+
+        aindex += 1
+
+    for stream in subtitle_streams:
+        command.extend(["-map", f"0:{stream['index']}"])
+
+        codec = "copy"
+        if "codec_name" in stream and stream["codec_name"] == "mov_text":
+            codec = "subrip"
+        command.extend([f"-c:s:{sindex}", codec])
+
+        command.extend([f"-metadata:s:s:{sindex}", f"params=-c {codec}"])
+        sindex += 1
 
     command.extend([str(transcode_to)])
 
