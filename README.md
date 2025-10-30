@@ -19,6 +19,7 @@ Requires Python >=3.11.
 
 ### TODO
 
+- maybe check languages and things on new downloads via webhook
 - transcode avis
 - better config situation
   - allow no config file for testing purposes

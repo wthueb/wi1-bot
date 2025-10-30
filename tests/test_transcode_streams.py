@@ -70,3 +70,29 @@ def test_convert_movtext():
         s["codec_type"] == "subtitle" and "codec_name" in s and s["codec_name"] == "subrip"
         for s in streams
     )
+
+
+def test_language_audio():
+    path = FILES_PATH / "ita_eng_none_audio.mkv"
+
+    item = TranscodeItem(path=str(path), languages="eng")
+
+    t = Transcoder()
+    print(shlex.join(build_ffmpeg_command(item, "output.mkv")))
+    t.transcode(item)
+
+    transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
+    assert transcoded.exists()
+
+    output = ffprobe(transcoded)
+    streams = output["streams"]
+    assert isinstance(streams, list)
+
+    audio_streams = [s for s in streams if s["codec_type"] == "audio"]
+    languages = [
+        s["tags"]["language"] if "tags" in s and "language" in s["tags"] else None
+        for s in audio_streams
+    ]
+    assert "eng" in languages
+    assert "ita" not in languages
+    assert None in languages
