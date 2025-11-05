@@ -91,15 +91,6 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
 
             video_streams.append(stream)
         elif stream["codec_type"] == "audio":
-            # keep matching languages and streams with no language specified
-            if (
-                langs
-                and "tags" in stream
-                and "language" in stream["tags"]
-                and stream["tags"]["language"] not in langs
-            ):
-                continue
-
             audio_streams.append(stream)
         elif stream["codec_type"] == "subtitle":
             # keep only streams that match specified languages
@@ -129,7 +120,22 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
         else 1
     )
 
+    audio_has_matching_lang = any(
+        "tags" not in s or "language" not in s["tags"] or s["tags"]["language"] in langs
+        for s in audio_streams
+    )
+
     for stream in audio_streams:
+        # keep matching languages and streams with no language specified
+        if (
+            audio_has_matching_lang
+            and langs
+            and "tags" in stream
+            and "language" in stream["tags"]
+            and stream["tags"]["language"] not in langs
+        ):
+            continue
+
         command.extend(["-map", f"0:{stream['index']}"])
 
         if item.audio_params:

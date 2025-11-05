@@ -101,3 +101,29 @@ def test_language_audio():
     ]
 
     assert languages == ["eng", None]
+
+
+def test_foreign_audio():
+    path = FILES_PATH / "ita_audio.mkv"
+
+    item = TranscodeItem(path=str(path), languages="eng")
+
+    t = Transcoder()
+    print(shlex.join(build_ffmpeg_command(item, "output.mkv")))
+    t.transcode(item)
+
+    transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
+    assert transcoded.exists()
+
+    output = ffprobe(transcoded)
+    streams = output["streams"]
+    assert isinstance(streams, list)
+    pprint.pp(streams)
+
+    audio_streams = [s for s in streams if s["codec_type"] == "audio"]
+    languages = [
+        s["tags"]["language"] if "tags" in s and "language" in s["tags"] else None
+        for s in audio_streams
+    ]
+
+    assert languages == ["ita"]
