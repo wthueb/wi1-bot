@@ -6,6 +6,7 @@ on:
       - main
     tags:
       - 'v*'
+  pull_request: {}
 
 permissions:
   packages: write
@@ -59,7 +60,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           tags: wthueb/wi1-bot
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ (github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request') && 'true' || 'false' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -80,6 +81,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: docker
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
 
     steps:
       - name: Download digests
