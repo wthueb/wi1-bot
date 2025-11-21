@@ -140,13 +140,27 @@ class Sonarr:
     def get_downloads(self) -> list[Download]:
         queue = self._sonarr.get_queue(
             page=1,
-            page_size=10,
+            page_size=100,
             sort_key="timeleft",
             sort_dir="ascending",
             include_unknown_series_items=False,
         )["records"]
 
-        downloads = [Download(d) for d in queue]
+        seen: set[str] = set()
+        downloads: list[Download] = []
+
+        for item in queue:
+            d = Download(item)
+
+            # dedupe in the case of season packs
+            if str(d.content) in seen:
+                continue
+
+            seen.add(str(d.content))
+            downloads.append(d)
+
+            if len(downloads) >= 10:
+                break
 
         return downloads
 
