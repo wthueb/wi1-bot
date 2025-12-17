@@ -5,8 +5,9 @@ import argparse
 import pathlib
 import sys
 
-from alembic import command
 from alembic.config import Config
+
+from alembic import command
 
 
 def main() -> None:

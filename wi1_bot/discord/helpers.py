@@ -35,7 +35,7 @@ T = TypeVar("T")
 async def select_from_list(
     bot: commands.Bot, msg: discord.Message, command: str, choices: list[T]
 ) -> tuple[discord.Message, list[T]]:
-    choices_text = "\n".join(f"{i+1}. {choice}" for i, choice in enumerate(choices))
+    choices_text = "\n".join(f"{i + 1}. {choice}" for i, choice in enumerate(choices))
 
     await reply(
         msg,

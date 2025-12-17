@@ -1,11 +1,11 @@
 import os
 import pathlib
 
+from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from alembic import command
-from alembic.config import Config
 
 from .models import TranscodeItem
 

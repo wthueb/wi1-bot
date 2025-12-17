@@ -13,10 +13,10 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.13.0",
-    "discord-py==2.3.2",
-    "flask==3.0.2",
-    "pyarr==5.2.0",
-    "pyyaml==6.0.1",
+    "discord-py>=2.3.2",
+    "flask>=3.0.2",
+    "pyarr>=5.2.0",
+    "pyyaml>=6.0.1",
     "requests>=2.32.4",
     "sqlalchemy>=2.0.0",
 ]
