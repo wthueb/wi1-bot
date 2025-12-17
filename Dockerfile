@@ -21,7 +21,7 @@ FROM builder AS test
 
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked
 
-ENV WB_CONFIG_PATH=/config/config.yaml
+ENV WB_CONFIG_PATH=/app/tests/config.yaml
 
 ENTRYPOINT ["uv", "run", "pytest"]
 
