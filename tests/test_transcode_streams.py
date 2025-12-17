@@ -5,8 +5,8 @@ import shutil
 
 import pytest
 
+from wi1_bot.models import TranscodeItem
 from wi1_bot.transcoder import Transcoder, ffprobe
-from wi1_bot.transcoder.transcode_queue import TranscodeItem
 from wi1_bot.transcoder.transcoder import build_ffmpeg_command
 
 FILES_PATH = pathlib.Path("./tests/files")

@@ -6,6 +6,7 @@ import pathlib
 from typing import Any
 
 from wi1_bot import __version__, webhook
+from wi1_bot.db import get_db_path, init_db
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
 
@@ -38,6 +39,7 @@ def main() -> None:
         "loggers": {
             "": {"level": "DEBUG", "handlers": ["console"]},
             "wi1_bot": {"level": "DEBUG", "handlers": [], "propagate": True},
+            "alembic": {"level": "DEBUG", "handlers": [], "propagate": True},
         },
     }
 
@@ -72,6 +74,11 @@ def main() -> None:
 
     logger.info(f"starting wi1-bot version {__version__}")
     logger.info(f"logging to: {log_dir}")
+
+    db_path = get_db_path()
+    logger.info(f"database path: {db_path}, running migrations if needed...")
+    init_db()
+    logger.info("database initialized and migrations complete")
 
     webhook.start()
 

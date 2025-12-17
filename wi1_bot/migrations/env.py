@@ -1,19 +1,20 @@
-import os
-import pathlib
+import logging
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from wi1_bot.transcoder.models import Base
+from wi1_bot.db import get_db_path
+from wi1_bot.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if config.config_file_name is not None:
+# Configure logging from alembic.ini only if logging hasn't been set up already.
+# When run via start.py, logging is already configured there.
+# When run directly via `alembic` CLI, we use the .ini file configuration.
+if config.config_file_name is not None and not logging.getLogger().hasHandlers():
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
@@ -22,19 +23,8 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
 
-# Get database path using the same logic as TranscodeQueue
-db_path = os.environ.get("WB_DB_PATH")
-
-if db_path is None:
-    if xdg_data_home := os.getenv("XDG_DATA_HOME"):
-        db_dir = pathlib.Path(xdg_data_home) / "wi1-bot"
-    elif home := os.getenv("HOME"):
-        db_dir = pathlib.Path(home) / ".local" / "share" / "wi1-bot"
-    else:
-        db_dir = pathlib.Path(".")
-
-    db_dir.mkdir(parents=True, exist_ok=True)
-    db_path = str(db_dir / "wi1_bot.db")
+# Get database path using shared utility function
+db_path = get_db_path()
 
 # Override the sqlalchemy.url with the actual database path
 config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")

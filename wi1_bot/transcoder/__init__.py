@@ -1,5 +1,6 @@
+from wi1_bot.models import Base, TranscodeItem
+
 from .ffprobe import ffprobe
-from .models import Base, TranscodeItem
 from .transcode_queue import queue
 from .transcoder import Transcoder
 

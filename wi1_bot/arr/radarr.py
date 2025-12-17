@@ -6,6 +6,8 @@ from pyarr import RadarrAPI
 from .download import Download
 from .movie import Movie
 
+__all__ = ["Movie", "Radarr"]
+
 
 class Radarr:
     def __init__(self, url: str, api_key: str) -> None:
@@ -183,9 +185,6 @@ class Radarr:
                 return tag_id
 
         raise ValueError(f"no tag with the user id {user_id}")
-
-
-__all__ = ["Movie"]
 
 
 if __name__ == "__main__":
