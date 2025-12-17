@@ -19,17 +19,18 @@ Requires Python >=3.11.
 
 ### TODO
 
+- multiple transcode workers
+  - main server instance (as part of the existing webhook server)
+  - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
+- figure out qsv codecs
+  - also maybe software encoders?
 - maybe check languages and things on new downloads via webhook
+- notify on manual import required?
 - transcode avis
 - better config situation
   - allow no config file for testing purposes
     - remove WB_CONFIG_PATH from Dockerfile test target
 - github action to run tests
-- figure out qsv codecs
-- replace mongo with sqlite
-- multiple transcode workers
-  - main server instance (as part of the existing webhook server)
-  - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
 - integration testing
   - https://pypi.org/project/pytest-docker/
 - use overseerr for search/requests

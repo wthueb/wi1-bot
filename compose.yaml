@@ -14,14 +14,6 @@ services:
     environment:
       - WB_CONFIG_PATH=/data/config.yaml
       - WB_LOG_DIR=/data/logs
-      - MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
+      - WB_DB_PATH=/data/wi1_bot.db
     volumes:
       - .:/data
-    depends_on:
-      - mongodb
-
-  mongodb:
-    container_name: mongodb
-    image: mongo:8.0
-    ports:
-      - 27017:27017

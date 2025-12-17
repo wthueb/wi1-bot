@@ -35,6 +35,7 @@ LABEL org.opencontainers.image.maintainer="wilhueb@gmail.com"
 
 ENV WB_CONFIG_PATH=/config/config.yaml
 ENV WB_LOG_DIR=/logs
+ENV WB_DB_PATH=/config/wi1_bot.db
 
 RUN mkdir -p /config
 RUN mkdir -p /logs
