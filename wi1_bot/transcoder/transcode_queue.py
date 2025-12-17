@@ -1,29 +1,15 @@
 import os
 import pathlib
 
-from sqlalchemy import String, create_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
+from alembic import command
+from alembic.config import Config
 
-class Base(DeclarativeBase):
-    pass
+from .models import TranscodeItem
 
-
-class TranscodeItem(Base):
-    __tablename__ = "transcode_queue"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    path: Mapped[str] = mapped_column(String, nullable=False)
-    languages: Mapped[str | None] = mapped_column(String, nullable=True)
-    video_params: Mapped[str | None] = mapped_column(String, nullable=True)
-    audio_params: Mapped[str | None] = mapped_column(String, nullable=True)
-
-    def __repr__(self) -> str:
-        return (
-            f"TranscodeItem(id={self.id}, path={self.path!r}, "
-            f"languages={self.languages!r}, video_params={self.video_params!r}, "
-            f"audio_params={self.audio_params!r})"
-        )
+__all__ = ["TranscodeItem", "TranscodeQueue", "queue"]
 
 
 class TranscodeQueue:
@@ -41,9 +27,26 @@ class TranscodeQueue:
             db_dir.mkdir(parents=True, exist_ok=True)
             db_path = str(db_dir / "wi1_bot.db")
 
+        self._db_path = db_path
         self._engine = create_engine(f"sqlite:///{db_path}")
+        self._migrations_run = False
 
-        Base.metadata.create_all(self._engine)
+    def _ensure_migrations(self) -> None:
+        """Ensure migrations have been run (called on first database access)."""
+        if not self._migrations_run:
+            self._run_migrations()
+            self._migrations_run = True
+
+    def _run_migrations(self) -> None:
+        """Run Alembic migrations to upgrade the database schema."""
+        # Find the project root by searching for alembic.ini
+        current = pathlib.Path(__file__).resolve()
+        for parent in [current, *current.parents]:
+            alembic_ini = parent / "alembic.ini"
+            if alembic_ini.exists():
+                alembic_cfg = Config(str(alembic_ini))
+                command.upgrade(alembic_cfg, "head")
+                return
 
     def add(
         self,
@@ -52,6 +55,7 @@ class TranscodeQueue:
         video_params: str | None = None,
         audio_params: str | None = None,
     ) -> None:
+        self._ensure_migrations()
         with Session(self._engine) as session:
             item = TranscodeItem(
                 path=path,
@@ -63,6 +67,7 @@ class TranscodeQueue:
             session.commit()
 
     def get_one(self) -> TranscodeItem | None:
+        self._ensure_migrations()
         with Session(self._engine) as session:
             item = session.query(TranscodeItem).order_by(TranscodeItem.id).first()
 
@@ -73,6 +78,7 @@ class TranscodeQueue:
             return item
 
     def remove(self, item: TranscodeItem) -> None:
+        self._ensure_migrations()
         if item.id is None:
             raise ValueError("Cannot remove item without an id")
 
@@ -82,12 +88,14 @@ class TranscodeQueue:
             session.commit()
 
     def clear(self) -> None:
+        self._ensure_migrations()
         with Session(self._engine) as session:
             session.query(TranscodeItem).delete()
             session.commit()
 
     @property
     def size(self) -> int:
+        self._ensure_migrations()
         with Session(self._engine) as session:
             return session.query(TranscodeItem).count()
 

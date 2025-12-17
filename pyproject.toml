@@ -12,6 +12,7 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.13.0",
     "discord-py==2.3.2",
     "flask==3.0.2",
     "pyarr==5.2.0",
@@ -28,6 +29,7 @@ wi1-bot = "wi1_bot.scripts.start:main"
 transcode-item = "wi1_bot.scripts.transcode_item:main"
 add-tag = "wi1_bot.scripts.add_tag:main"
 rescan = "wi1_bot.scripts.rescan:main"
+migrate = "wi1_bot.scripts.migrate:main"
 
 [dependency-groups]
 dev = [
