@@ -1,0 +1,16 @@
+---
+# Minimal test configuration for running tests
+radarr:
+  url: http://localhost:7878
+  api_key: test-api-key
+  root_folder: /tmp/movies
+
+sonarr:
+  url: http://localhost:8989
+  api_key: test-api-key
+  root_folder: /tmp/shows
+
+discord:
+  bot_token: test-token
+  channel_id: 123456789
+  admin_id: 987654321
