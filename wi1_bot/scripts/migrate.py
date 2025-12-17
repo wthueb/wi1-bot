@@ -5,9 +5,8 @@ import argparse
 import pathlib
 import sys
 
-from alembic.config import Config
-
 from alembic import command
+from alembic.config import Config
 
 
 def main() -> None:
@@ -37,17 +36,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Find alembic.ini by searching upward from this file
-    current = pathlib.Path(__file__).resolve()
-    alembic_ini = None
-    for parent in [current, *current.parents]:
-        candidate = parent / "alembic.ini"
-        if candidate.exists():
-            alembic_ini = candidate
-            break
+    # Find alembic.ini in the wi1_bot package
+    wi1_bot_dir = pathlib.Path(__file__).resolve().parent.parent
+    alembic_ini = wi1_bot_dir / "alembic.ini"
 
-    if alembic_ini is None:
-        print("Error: alembic.ini not found in any parent directory", file=sys.stderr)
+    if not alembic_ini.exists():
+        print(f"Error: alembic.ini not found at {alembic_ini}", file=sys.stderr)
         sys.exit(1)
 
     alembic_cfg = Config(str(alembic_ini))

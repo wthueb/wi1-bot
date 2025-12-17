@@ -1,11 +1,10 @@
 import os
 import pathlib
 
+from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-
-from alembic import command
 
 from .models import TranscodeItem
 
@@ -39,14 +38,16 @@ class TranscodeQueue:
 
     def _run_migrations(self) -> None:
         """Run Alembic migrations to upgrade the database schema."""
-        # Find the project root by searching for alembic.ini
-        current = pathlib.Path(__file__).resolve()
-        for parent in [current, *current.parents]:
-            alembic_ini = parent / "alembic.ini"
-            if alembic_ini.exists():
-                alembic_cfg = Config(str(alembic_ini))
-                command.upgrade(alembic_cfg, "head")
-                return
+        # Find alembic.ini in the wi1_bot package
+        wi1_bot_dir = pathlib.Path(__file__).resolve().parent.parent
+        alembic_ini = wi1_bot_dir / "alembic.ini"
+        if alembic_ini.exists():
+            alembic_cfg = Config(str(alembic_ini))
+            command.upgrade(alembic_cfg, "head")
+        else:
+            raise FileNotFoundError(
+                f"alembic.ini not found at {alembic_ini}. Database migrations cannot be run."
+            )
 
     def add(
         self,
