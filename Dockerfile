@@ -1,6 +1,6 @@
 FROM linuxserver/ffmpeg:latest AS base
 
-RUN apt-get update && apt-get install -yqq --no-install-recommends python3
+RUN apt-get update && apt-get install -yqq --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
 
 FROM base AS builder
 
@@ -15,11 +15,11 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-install-proj
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable
 
 FROM builder AS test
 
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-editable
 
 ENV WB_CONFIG_PATH=/app/tests/config.yaml
 
@@ -27,7 +27,9 @@ ENTRYPOINT ["uv", "run", "pytest"]
 
 FROM base
 
-COPY --from=builder --chown=app:app /app /app
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
+COPY --from=builder --chown=app:app /app/wi1_bot /app/wi1_bot
+COPY --from=builder --chown=app:app /app/pyproject.toml /app/uv.lock /app/
 ENV PATH="/app/.venv/bin:$PATH"
 
 LABEL org.opencontainers.image.source="https://github.com/wthueb/wi1-bot"
@@ -37,8 +39,7 @@ ENV WB_CONFIG_PATH=/config/config.yaml
 ENV WB_LOG_DIR=/logs
 ENV WB_DB_PATH=/config/wi1_bot.db
 
-RUN mkdir -p /config
-RUN mkdir -p /logs
+RUN mkdir -p /config /logs
 
 EXPOSE 9000
 
