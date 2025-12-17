@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import logging.config
+import os
 import pathlib
 from typing import Any
 
 from wi1_bot import __version__, webhook
-from wi1_bot.config import config
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
 
@@ -43,8 +43,8 @@ def main() -> None:
 
     log_dir: pathlib.Path | None = None
 
-    if "general" in config and "log_dir" in config["general"]:
-        log_dir = pathlib.Path(config["general"]["log_dir"]).resolve()
+    if log_dir_str := os.getenv("WB_LOG_DIR"):
+        log_dir = pathlib.Path(log_dir_str).resolve()
 
         logging_config["handlers"]["file"] = {
             "class": "logging.handlers.RotatingFileHandler",

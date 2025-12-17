@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 import re
 import shlex
@@ -295,8 +296,8 @@ class Transcoder:
 
                 perm_log_path = tmp_folder / f"{path.stem}.log"
 
-                if "general" in config and "log_dir" in config["general"]:
-                    log_dir = pathlib.Path(config["general"]["log_dir"]).resolve()
+                if log_dir_str := os.getenv("WB_LOG_DIR"):
+                    log_dir = pathlib.Path(log_dir_str).resolve()
 
                     perm_log_path = log_dir / "transcoder-errors" / f"{path.stem}.log"
                     perm_log_path.parent.mkdir(parents=True, exist_ok=True)

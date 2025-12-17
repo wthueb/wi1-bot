@@ -143,7 +143,6 @@ transcoding:
       audio_params: "-c:a aac"
       languages: "eng,ita"
 general:
-  log_dir: /var/log/wi1-bot
   remote_path_mappings:
     - remote: /mnt/remote
       local: /local
@@ -162,39 +161,4 @@ general:
             assert config["discord"]["quotas"][123456] == 100.5  # type: ignore
             assert config["pushover"]["user_key"] == "test-user-key"  # type: ignore
             assert config["transcoding"]["hwaccel"] == "cuda"  # type: ignore
-            assert config["general"]["log_dir"] == "/var/log/wi1-bot"  # type: ignore
             assert len(config["general"]["remote_path_mappings"]) == 1  # type: ignore
-
-    def test_log_dir_env_override(self, tmp_path):
-        config_file = tmp_path / "test_config.yaml"
-        config_file.write_text(
-            """
-radarr:
-  url: http://localhost:7878
-  api_key: test-radarr-key
-  root_folder: /movies
-sonarr:
-  url: http://localhost:8989
-  api_key: test-sonarr-key
-  root_folder: /tv
-discord:
-  bot_token: test-discord-token
-  channel_id: 123456789
-  admin_id: 987654321
-general:
-  log_dir: /original/log/dir
-"""
-        )
-
-        with patch.dict(
-            "os.environ",
-            {"WB_CONFIG_PATH": str(config_file), "WB_LOG_DIR": "/override/log/dir"},
-        ):
-            import importlib
-
-            import wi1_bot.config
-
-            importlib.reload(wi1_bot.config)
-            config = wi1_bot.config.config
-
-            assert config["general"]["log_dir"] == "/override/log/dir"  # type: ignore

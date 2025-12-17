@@ -1,7 +1,5 @@
 ---
 general:
-  # log file directory, optional, ignored if ran using docker
-  log_dir: /var/log/wi1-bot
   # remote path mappings, optional
   remote_path_mappings:
     - remote: /data

@@ -64,7 +64,6 @@ class RemotePathMapping(TypedDict):
 
 
 class GeneralConfig(TypedDict):
-    log_dir: NotRequired[str]
     remote_path_mappings: NotRequired[list[RemotePathMapping]]
 
 
@@ -79,9 +78,3 @@ class Config(TypedDict):
 
 with open(_config_path, "r") as f:
     config: Config = yaml.load(f, Loader=yaml.SafeLoader)
-
-if log_dir := os.getenv("WB_LOG_DIR"):
-    if "general" not in config:
-        config["general"] = {}
-
-    config["general"]["log_dir"] = log_dir
