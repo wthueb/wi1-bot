@@ -1,4 +1,5 @@
 import pathlib
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from wi1_bot.arr.util import replace_remote_paths
@@ -6,7 +7,7 @@ from wi1_bot.config import GeneralConfig, RemotePathMapping
 
 
 class TestReplaceRemotePaths:
-    def test_no_mappings(self):
+    def test_no_mappings(self) -> None:
         path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
 
         mock_config = MagicMock()
@@ -17,9 +18,11 @@ class TestReplaceRemotePaths:
 
         assert result == path
 
-    def test_single_mapping_match(self):
+    def test_single_mapping_match(self) -> None:
         path = pathlib.Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
-        mappings = [RemotePathMapping(remote="/mnt/remote", local="/local")]
+        mappings = [
+            RemotePathMapping(remote=pathlib.Path("/mnt/remote"), local=pathlib.Path("/local"))
+        ]
 
         mock_config = MagicMock()
         mock_config.general = GeneralConfig(remote_path_mappings=mappings)
@@ -29,9 +32,11 @@ class TestReplaceRemotePaths:
 
         assert result == pathlib.Path("/local/movies/The Matrix (1999)/movie.mkv")
 
-    def test_single_mapping_no_match(self):
+    def test_single_mapping_no_match(self) -> None:
         path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
-        mappings = [RemotePathMapping(remote="/mnt/remote", local="/local")]
+        mappings = [
+            RemotePathMapping(remote=pathlib.Path("/mnt/remote"), local=pathlib.Path("/local"))
+        ]
 
         mock_config = MagicMock()
         mock_config.general = GeneralConfig(remote_path_mappings=mappings)
@@ -41,12 +46,16 @@ class TestReplaceRemotePaths:
 
         assert result == path
 
-    def test_multiple_mappings_most_specific(self):
+    def test_multiple_mappings_most_specific(self) -> None:
         path = pathlib.Path("/mnt/remote/movies/action/The Matrix (1999)/movie.mkv")
         mappings = [
-            RemotePathMapping(remote="/mnt/remote", local="/local1"),
-            RemotePathMapping(remote="/mnt/remote/movies", local="/local2"),
-            RemotePathMapping(remote="/mnt/remote/movies/action", local="/local3"),
+            RemotePathMapping(remote=pathlib.Path("/mnt/remote"), local=pathlib.Path("/local1")),
+            RemotePathMapping(
+                remote=pathlib.Path("/mnt/remote/movies"), local=pathlib.Path("/local2")
+            ),
+            RemotePathMapping(
+                remote=pathlib.Path("/mnt/remote/movies/action"), local=pathlib.Path("/local3")
+            ),
         ]
 
         mock_config = MagicMock()
@@ -58,11 +67,13 @@ class TestReplaceRemotePaths:
         # Should use the most specific mapping
         assert result == pathlib.Path("/local3/The Matrix (1999)/movie.mkv")
 
-    def test_multiple_mappings_partial_match(self):
+    def test_multiple_mappings_partial_match(self) -> None:
         path = pathlib.Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
         mappings = [
-            RemotePathMapping(remote="/mnt/remote/tv", local="/local1"),
-            RemotePathMapping(remote="/mnt/remote/movies", local="/local2"),
+            RemotePathMapping(remote=pathlib.Path("/mnt/remote/tv"), local=pathlib.Path("/local1")),
+            RemotePathMapping(
+                remote=pathlib.Path("/mnt/remote/movies"), local=pathlib.Path("/local2")
+            ),
         ]
 
         mock_config = MagicMock()
@@ -73,11 +84,11 @@ class TestReplaceRemotePaths:
 
         assert result == pathlib.Path("/local2/The Matrix (1999)/movie.mkv")
 
-    def test_windows_to_linux_path(self):
+    def test_windows_to_linux_path(self) -> None:
         # Note: This test might behave differently on Windows vs Linux
         # In practice, pathlib handles platform-specific paths
         path = pathlib.Path("/mnt/Z/movies/The Matrix (1999)/movie.mkv")
-        mappings = [RemotePathMapping(remote="/mnt/Z", local="/data")]
+        mappings = [RemotePathMapping(remote=pathlib.Path("/mnt/Z"), local=pathlib.Path("/data"))]
 
         mock_config = MagicMock()
         mock_config.general = GeneralConfig(remote_path_mappings=mappings)
@@ -89,7 +100,7 @@ class TestReplaceRemotePaths:
 
 
 class TestConfigLoading:
-    def test_config_from_env_variable(self, tmp_path):
+    def test_config_from_env_variable(self, tmp_path: Any) -> None:
         config_file = tmp_path / "test_config.yaml"
         config_file.write_text(
             """
@@ -122,7 +133,7 @@ discord:
             assert str(config.sonarr.url) == "http://localhost:8989/"
             assert config.discord.channel_id == 123456789
 
-    def test_config_with_optional_fields(self, tmp_path):
+    def test_config_with_optional_fields(self, tmp_path: Any) -> None:
         config_file = tmp_path / "test_config.yaml"
         config_file.write_text(
             """

@@ -2,6 +2,7 @@ import pathlib
 import pprint
 import shlex
 import shutil
+from typing import Iterator
 
 import pytest
 
@@ -13,7 +14,7 @@ FILES_PATH = pathlib.Path("./tests/files")
 
 
 @pytest.fixture(autouse=True)
-def setup_files():
+def setup_files() -> Iterator[None]:
     for file in FILES_PATH.iterdir():
         if file.is_file() and file.suffix in [".mkv", ".mp4"]:
             shutil.copy(file, file.with_name(f"{file.name}.bak"))
@@ -27,7 +28,7 @@ def setup_files():
         file.rename(file.with_name(file.stem))
 
 
-def test_copy_mjpeg():
+def test_copy_mjpeg() -> None:
     path = FILES_PATH / "h264_eac3_pgssub_mjpeg.mkv"
 
     item = TranscodeItem(
@@ -54,7 +55,7 @@ def test_copy_mjpeg():
     )
 
 
-def test_convert_movtext():
+def test_convert_movtext() -> None:
     path = FILES_PATH / "h264_eac3_movtext.mp4"
 
     item = TranscodeItem(path=str(path))
@@ -77,7 +78,7 @@ def test_convert_movtext():
     )
 
 
-def test_language_audio():
+def test_language_audio() -> None:
     path = FILES_PATH / "none_ita_eng_audio.mkv"
 
     item = TranscodeItem(path=str(path), languages="eng")
@@ -103,7 +104,7 @@ def test_language_audio():
     assert languages == ["eng", None]
 
 
-def test_foreign_audio():
+def test_foreign_audio() -> None:
     path = FILES_PATH / "ita_audio.mkv"
 
     item = TranscodeItem(path=str(path), languages="eng")

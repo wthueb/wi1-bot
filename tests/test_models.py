@@ -4,7 +4,7 @@ from wi1_bot.arr.movie import Movie
 
 
 class TestMovie:
-    def test_movie_creation_with_imdb(self):
+    def test_movie_creation_with_imdb(self) -> None:
         movie_json = {
             "title": "The Matrix",
             "year": 1999,
@@ -20,7 +20,7 @@ class TestMovie:
         assert movie.full_title == "The Matrix (1999)"
         assert movie.url == "https://imdb.com/title/tt0133093"
 
-    def test_movie_creation_without_imdb(self):
+    def test_movie_creation_without_imdb(self) -> None:
         movie_json = {
             "title": "Inception",
             "year": 2010,
@@ -35,7 +35,7 @@ class TestMovie:
         assert movie.full_title == "Inception (2010)"
         assert movie.url == "https://themoviedb.org/movie/27205"
 
-    def test_movie_str_representation(self):
+    def test_movie_str_representation(self) -> None:
         movie_json = {
             "title": "The Matrix",
             "year": 1999,
@@ -48,7 +48,7 @@ class TestMovie:
 
 
 class TestEpisode:
-    def test_episode_creation_with_imdb(self):
+    def test_episode_creation_with_imdb(self) -> None:
         episode_json = {
             "title": "Winter Is Coming",
             "seasonNumber": 1,
@@ -70,7 +70,7 @@ class TestEpisode:
         assert episode.full_title == "Game of Thrones S01E01 - Winter Is Coming"
         assert episode.url == "https://www.imdb.com/title/tt0944947"
 
-    def test_episode_creation_without_imdb(self):
+    def test_episode_creation_without_imdb(self) -> None:
         episode_json = {
             "title": "Pilot",
             "seasonNumber": 1,
@@ -90,7 +90,7 @@ class TestEpisode:
         assert episode.full_title == "Breaking Bad S01E01 - Pilot"
         assert episode.url == "https://www.thetvdb.com/?id=81189"
 
-    def test_episode_str_representation(self):
+    def test_episode_str_representation(self) -> None:
         episode_json = {
             "title": "Winter Is Coming",
             "seasonNumber": 1,
@@ -111,7 +111,7 @@ class TestEpisode:
 
 
 class TestDownload:
-    def test_download_with_movie(self):
+    def test_download_with_movie(self) -> None:
         data = {
             "movie": {
                 "title": "The Matrix",
@@ -134,7 +134,7 @@ class TestDownload:
         assert download.status == "downloading"
         assert download.pct_done == 50.0
 
-    def test_download_with_episode(self):
+    def test_download_with_episode(self) -> None:
         data = {
             "episode": {
                 "title": "Winter Is Coming",
@@ -158,7 +158,7 @@ class TestDownload:
         assert download.content.series_title == "Game of Thrones"
         assert download.pct_done == 75.0
 
-    def test_download_with_unknown_content(self):
+    def test_download_with_unknown_content(self) -> None:
         data = {
             "title": "Unknown Release",
             "sizeleft": 100_000_000,
@@ -171,7 +171,7 @@ class TestDownload:
         assert download.timeleft == "unknown"
         assert download.pct_done == 90.0
 
-    def test_download_str_representation(self):
+    def test_download_str_representation(self) -> None:
         data = {
             "movie": {
                 "title": "The Matrix",

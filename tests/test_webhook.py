@@ -1,4 +1,5 @@
 import pathlib
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,7 +9,7 @@ from wi1_bot.webhook import on_download, on_grab
 
 class TestWebhook:
     @pytest.fixture
-    def mock_transcoding_config(self):
+    def mock_transcoding_config(self) -> MagicMock:
         # Create a Pydantic-like mock config object with transcoding
         config = MagicMock()
 
@@ -26,7 +27,7 @@ class TestWebhook:
         return config
 
     @pytest.fixture
-    def movie_download_request(self):
+    def movie_download_request(self) -> dict[str, Any]:
         return {
             "eventType": "Download",
             "movie": {
@@ -40,7 +41,7 @@ class TestWebhook:
         }
 
     @pytest.fixture
-    def series_download_request(self):
+    def series_download_request(self) -> dict[str, Any]:
         return {
             "eventType": "Download",
             "series": {
@@ -54,7 +55,7 @@ class TestWebhook:
         }
 
     @pytest.fixture
-    def grab_request(self):
+    def grab_request(self) -> dict[str, Any]:
         return {
             "eventType": "Grab",
             "release": {"releaseTitle": "The.Matrix.1999.1080p.BluRay.x265"},
@@ -62,7 +63,7 @@ class TestWebhook:
         }
 
     @patch("wi1_bot.webhook.push")
-    def test_on_grab(self, mock_push, grab_request):
+    def test_on_grab(self, mock_push: MagicMock, grab_request: dict[str, Any]) -> None:
         on_grab(grab_request)
 
         mock_push.send.assert_called_once_with(
@@ -76,12 +77,12 @@ class TestWebhook:
     @patch("wi1_bot.webhook.config")
     def test_on_download_movie_without_transcoding(
         self,
-        mock_config,
-        mock_queue,
-        mock_push,
-        mock_radarr,
-        movie_download_request,
-    ):
+        mock_config: MagicMock,
+        mock_queue: MagicMock,
+        mock_push: MagicMock,
+        mock_radarr: MagicMock,
+        movie_download_request: dict[str, Any],
+    ) -> None:
         # Mock config with no transcoding
         mock_config.transcoding = None
         mock_radarr._radarr.get_movie = MagicMock(return_value={"qualityProfileId": 1})
@@ -101,14 +102,14 @@ class TestWebhook:
     @patch("wi1_bot.webhook.replace_remote_paths")
     def test_on_download_movie_with_transcoding(
         self,
-        mock_replace_paths,
-        mock_config,
-        mock_queue,
-        mock_push,
-        mock_radarr,
-        movie_download_request,
-        mock_transcoding_config,
-    ):
+        mock_replace_paths: MagicMock,
+        mock_config: MagicMock,
+        mock_queue: MagicMock,
+        mock_push: MagicMock,
+        mock_radarr: MagicMock,
+        movie_download_request: dict[str, Any],
+        mock_transcoding_config: MagicMock,
+    ) -> None:
         # Use the fixture config with transcoding profiles
         mock_config.transcoding = mock_transcoding_config.transcoding
         mock_radarr._radarr.get_movie = MagicMock(return_value={"qualityProfileId": 1})
@@ -136,14 +137,14 @@ class TestWebhook:
     @patch("wi1_bot.webhook.replace_remote_paths")
     def test_on_download_series(
         self,
-        mock_replace_paths,
-        mock_config,
-        mock_queue,
-        mock_push,
-        mock_sonarr,
-        series_download_request,
-        mock_transcoding_config,
-    ):
+        mock_replace_paths: MagicMock,
+        mock_config: MagicMock,
+        mock_queue: MagicMock,
+        mock_push: MagicMock,
+        mock_sonarr: MagicMock,
+        series_download_request: dict[str, Any],
+        mock_transcoding_config: MagicMock,
+    ) -> None:
         # Use the fixture config with transcoding profiles
         mock_config.transcoding = mock_transcoding_config.transcoding
         mock_sonarr._sonarr.get_series = MagicMock(return_value={"qualityProfileId": 1})
@@ -160,11 +161,11 @@ class TestWebhook:
     @patch("wi1_bot.webhook.config")
     def test_on_download_upgrade_no_notification(
         self,
-        mock_config,
-        mock_push,
-        mock_radarr,
-        movie_download_request,
-    ):
+        mock_config: MagicMock,
+        mock_push: MagicMock,
+        mock_radarr: MagicMock,
+        movie_download_request: dict[str, Any],
+    ) -> None:
         movie_download_request["isUpgrade"] = True
         # Mock config with no transcoding
         mock_config.transcoding = None
@@ -175,7 +176,7 @@ class TestWebhook:
 
         mock_push.send.assert_not_called()
 
-    def test_on_download_unknown_request(self):
+    def test_on_download_unknown_request(self) -> None:
         unknown_request = {
             "eventType": "Download",
             "isUpgrade": False,

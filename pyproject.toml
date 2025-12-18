@@ -49,8 +49,12 @@ line-length = 100
 select = ["E", "F", "I"]
 
 [tool.mypy]
-packages = "wi1_bot"
 strict = true
+packages = ["wi1_bot", "tests"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disable_error_code = ["method-assign", "attr-defined"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]

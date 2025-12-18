@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,7 +9,7 @@ from wi1_bot.transcoder.transcoder import build_ffmpeg_command
 
 class TestBuildFfmpegCommand:
     @pytest.fixture
-    def basic_item(self):
+    def basic_item(self) -> TranscodeItem:
         return TranscodeItem(
             path="/movies/test.mkv",
             languages=None,
@@ -17,7 +18,7 @@ class TestBuildFfmpegCommand:
         )
 
     @pytest.fixture
-    def mock_ffprobe_output(self):
+    def mock_ffprobe_output(self) -> dict[str, Any]:
         return {
             "streams": [
                 {
@@ -49,8 +50,12 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_basic_command_copy_all(
-        self, mock_config, mock_ffprobe, basic_item, mock_ffprobe_output
-    ):
+        self,
+        mock_config: MagicMock,
+        mock_ffprobe: MagicMock,
+        basic_item: TranscodeItem,
+        mock_ffprobe_output: dict[str, Any],
+    ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = mock_ffprobe_output
 
@@ -69,7 +74,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_with_video_params(self, mock_config, mock_ffprobe, mock_ffprobe_output):
+    def test_command_with_video_params(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
         mock_config.transcoding = None
         item = TranscodeItem(
             path="/movies/test.mkv",
@@ -88,7 +95,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_with_audio_params(self, mock_config, mock_ffprobe, mock_ffprobe_output):
+    def test_command_with_audio_params(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
         mock_config.transcoding = None
         item = TranscodeItem(
             path="/movies/test.mkv",
@@ -108,8 +117,8 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_command_filters_audio_by_language(
-        self, mock_config, mock_ffprobe, mock_ffprobe_output
-    ):
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
         mock_config.transcoding = None
         item = TranscodeItem(
             path="/movies/test.mkv",
@@ -128,8 +137,8 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_command_filters_subtitle_by_language(
-        self, mock_config, mock_ffprobe, mock_ffprobe_output
-    ):
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
         mock_config.transcoding = None
         item = TranscodeItem(
             path="/movies/test.mkv",
@@ -162,7 +171,13 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_with_hwaccel(self, mock_config, mock_ffprobe, basic_item, mock_ffprobe_output):
+    def test_command_with_hwaccel(
+        self,
+        mock_config: MagicMock,
+        mock_ffprobe: MagicMock,
+        basic_item: TranscodeItem,
+        mock_ffprobe_output: dict[str, Any],
+    ) -> None:
         # Mock config with transcoding hwaccel
         mock_transcoding = MagicMock()
         mock_transcoding.hwaccel = "cuda"
@@ -177,7 +192,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_converts_movtext_to_subrip(self, mock_config, mock_ffprobe, basic_item):
+    def test_command_converts_movtext_to_subrip(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeItem
+    ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = {
             "streams": [
@@ -209,7 +226,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_skips_subtitle_without_codec(self, mock_config, mock_ffprobe, basic_item):
+    def test_command_skips_subtitle_without_codec(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeItem
+    ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = {
             "streams": [
@@ -234,7 +253,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_with_multiple_video_streams(self, mock_config, mock_ffprobe, basic_item):
+    def test_command_with_multiple_video_streams(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeItem
+    ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = {
             "streams": [
@@ -259,7 +280,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_metadata_includes_params(self, mock_config, mock_ffprobe, mock_ffprobe_output):
+    def test_command_metadata_includes_params(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
         mock_config.transcoding = None
         item = TranscodeItem(
             path="/movies/test.mkv",
@@ -277,7 +300,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_with_multiple_languages(self, mock_config, mock_ffprobe, mock_ffprobe_output):
+    def test_command_with_multiple_languages(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
         mock_config.transcoding = None
         item = TranscodeItem(
             path="/movies/test.mkv",
@@ -295,7 +320,9 @@ class TestBuildFfmpegCommand:
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
-    def test_command_audio_sorting_prefers_matching_language(self, mock_config, mock_ffprobe):
+    def test_command_audio_sorting_prefers_matching_language(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock
+    ) -> None:
         mock_config.transcoding = None
         # Italian audio is first in the file, but we want English
         mock_ffprobe.return_value = {
