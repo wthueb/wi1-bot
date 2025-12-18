@@ -40,9 +40,9 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
         "-y",
     ]
 
-    if "transcoding" in config and "hwaccel" in config["transcoding"]:
-        command.extend(["-hwaccel", config["transcoding"]["hwaccel"]])
-        command.extend(["-hwaccel_output_format", config["transcoding"]["hwaccel"]])
+    if config.transcoding is not None and config.transcoding.hwaccel is not None:
+        command.extend(["-hwaccel", config.transcoding.hwaccel])
+        command.extend(["-hwaccel_output_format", config.transcoding.hwaccel])
 
     command.extend(["-probesize", "100M"])
     command.extend(["-analyzeduration", "250M"])
@@ -175,8 +175,8 @@ class Transcoder:
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
 
-        self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
-        self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
+        self.radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
+        self.sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
     def start(self) -> None:
         self.logger.info("starting transcoder")
@@ -332,9 +332,7 @@ class Transcoder:
         return True
 
     def _rescan_content(self, new_path: pathlib.Path) -> None:
-        if new_path.is_relative_to(
-            replace_remote_paths(pathlib.Path(config["radarr"]["root_folder"]))
-        ):
+        if new_path.is_relative_to(replace_remote_paths(config.radarr.root_folder)):
             for m in self.radarr.get_movies():
                 if new_path.is_relative_to(m["path"]):
                     # have to rescan the movie twice: Radarr/Radarr#7668
@@ -344,9 +342,7 @@ class Transcoder:
                     self.radarr.rescan_movie(m["id"])
                     break
 
-        elif new_path.is_relative_to(
-            replace_remote_paths(pathlib.Path(config["sonarr"]["root_folder"]))
-        ):
+        elif new_path.is_relative_to(replace_remote_paths(config.sonarr.root_folder)):
             for s in self.sonarr.get_series():
                 if new_path.is_relative_to(s["path"]):
                     self.sonarr.rescan_series(s["id"])

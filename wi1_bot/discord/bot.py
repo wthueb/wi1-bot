@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=["!", "."])
 
-radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
-sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
+radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
+sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
 
 @bot.check
 async def check_channel(ctx: commands.Context[commands.Bot]) -> bool:
-    return ctx.channel.id == config["discord"]["channel_id"]
+    return ctx.channel.id == config.discord.channel_id
 
 
 @bot.event
@@ -46,17 +46,17 @@ async def on_command_error(
 
             await reply(
                 ctx.message,
-                f"something went wrong (<@!{config['discord']['admin_id']}>)",
+                f"something went wrong (<@!{config.discord.admin_id}>)",
             )
 
 
 @bot.event
 async def on_ready() -> None:
-    if "bot_presence" in config["discord"]:
+    if config.discord.bot_presence is not None:
         await bot.change_presence(
             activity=discord.Activity(
                 type=discord.ActivityType.watching,
-                name=config["discord"]["bot_presence"],
+                name=config.discord.bot_presence,
             )
         )
 
@@ -94,8 +94,8 @@ async def quota_cmd(ctx: commands.Context[commands.Bot]) -> None:
 
         maximum: float = 0
 
-        if "quotas" in config["discord"] and ctx.message.author.id in config["discord"]["quotas"]:
-            maximum = config["discord"]["quotas"][ctx.message.author.id]
+        if ctx.message.author.id in config.discord.quotas:
+            maximum = config.discord.quotas[ctx.message.author.id]
 
         pct = used / maximum * 100 if maximum != 0 else 100
 
@@ -107,17 +107,13 @@ async def quota_cmd(ctx: commands.Context[commands.Bot]) -> None:
 @bot.command(name="quotas", help="see everyone's used space on the plex")
 @commands.cooldown(1, 60)
 async def quotas_cmd(ctx: commands.Context[commands.Bot]) -> None:
-    if "quotas" not in config["discord"]:
-        await reply(ctx.message, "quotas are not implemented here")
-        return
-
-    quotas = config["discord"]["quotas"]
+    quotas = config.discord.quotas
 
     if not quotas:
         await reply(ctx.message, "quotas are not implemented here")
 
     async with ctx.typing():
-        msg = []
+        msg: list[str] = []
 
         for user_id, total in quotas.items():
             used = (radarr.get_quota_amount(user_id) + sonarr.get_quota_amount(user_id)) / 1024**3
@@ -153,7 +149,7 @@ async def run() -> None:
         await bot.add_cog(MovieCog(bot))
         await bot.add_cog(SeriesCog(bot))
 
-        await bot.start(config["discord"]["bot_token"])
+        await bot.start(config.discord.bot_token)
 
 
 if __name__ == "__main__":

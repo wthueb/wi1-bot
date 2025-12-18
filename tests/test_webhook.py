@@ -8,24 +8,22 @@ from wi1_bot.webhook import on_download, on_grab
 
 class TestWebhook:
     @pytest.fixture
-    def mock_config(self):
-        return {
-            "radarr": {
-                "url": "http://localhost:7878",
-                "api_key": "fake-key",
-                "root_folder": "/movies",
-            },
-            "sonarr": {"url": "http://localhost:8989", "api_key": "fake-key", "root_folder": "/tv"},
-            "transcoding": {
-                "profiles": {
-                    "good": {
-                        "languages": "eng",
-                        "video_params": "-c:v libx265",
-                        "audio_params": "-c:a aac",
-                    }
-                }
-            },
-        }
+    def mock_transcoding_config(self):
+        # Create a Pydantic-like mock config object with transcoding
+        config = MagicMock()
+
+        # Create transcoding profile mock
+        profile = MagicMock()
+        profile.languages = "eng"
+        profile.video_params = "-c:v libx265"
+        profile.audio_params = "-c:a aac"
+
+        # Create transcoding config mock
+        transcoding = MagicMock()
+        transcoding.profiles = {"good": profile}
+
+        config.transcoding = transcoding
+        return config
 
     @pytest.fixture
     def movie_download_request(self):
@@ -84,7 +82,8 @@ class TestWebhook:
         mock_radarr,
         movie_download_request,
     ):
-        mock_config.__getitem__.side_effect = lambda _: {}
+        # Mock config with no transcoding
+        mock_config.transcoding = None
         mock_radarr._radarr.get_movie = MagicMock(return_value={"qualityProfileId": 1})
         mock_radarr.get_quality_profile_name = MagicMock(return_value="good")
 
@@ -103,15 +102,15 @@ class TestWebhook:
     def test_on_download_movie_with_transcoding(
         self,
         mock_replace_paths,
-        mock_config_dict,
+        mock_config,
         mock_queue,
         mock_push,
         mock_radarr,
         movie_download_request,
-        mock_config,
+        mock_transcoding_config,
     ):
-        mock_config_dict.__getitem__.side_effect = mock_config.__getitem__
-        mock_config_dict.__contains__.return_value = True
+        # Use the fixture config with transcoding profiles
+        mock_config.transcoding = mock_transcoding_config.transcoding
         mock_radarr._radarr.get_movie = MagicMock(return_value={"qualityProfileId": 1})
         mock_radarr.get_quality_profile_name = MagicMock(return_value="good")
         mock_replace_paths.return_value = pathlib.Path(
@@ -138,15 +137,15 @@ class TestWebhook:
     def test_on_download_series(
         self,
         mock_replace_paths,
-        mock_config_dict,
+        mock_config,
         mock_queue,
         mock_push,
         mock_sonarr,
         series_download_request,
-        mock_config,
+        mock_transcoding_config,
     ):
-        mock_config_dict.__getitem__.side_effect = mock_config.__getitem__
-        mock_config_dict.__contains__.return_value = True
+        # Use the fixture config with transcoding profiles
+        mock_config.transcoding = mock_transcoding_config.transcoding
         mock_sonarr._sonarr.get_series = MagicMock(return_value={"qualityProfileId": 1})
         mock_sonarr.get_quality_profile_name = MagicMock(return_value="good")
         mock_replace_paths.return_value = pathlib.Path("/tv/Game of Thrones/Season 01/S01E01.mkv")
@@ -167,7 +166,8 @@ class TestWebhook:
         movie_download_request,
     ):
         movie_download_request["isUpgrade"] = True
-        mock_config.__getitem__.side_effect = lambda _: {}
+        # Mock config with no transcoding
+        mock_config.transcoding = None
         mock_radarr._radarr.get_movie = MagicMock(return_value={"qualityProfileId": 1})
         mock_radarr.get_quality_profile_name = MagicMock(return_value="good")
 

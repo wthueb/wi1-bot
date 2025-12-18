@@ -14,7 +14,7 @@ class SeriesCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger(__name__)
-        self.sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
+        self.sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
     @commands.command(name="addshow", help="add a show to the plex")
     @commands.has_any_role("plex-admin", "plex-shows")
@@ -29,10 +29,7 @@ class SeriesCog(commands.Cog):
             except SonarrError as e:
                 await reply(
                     ctx.message,
-                    (
-                        "there was an error that isn't "
-                        f"<@!{config['discord']['admin_id']}>'s fault: {e}"
-                    ),
+                    (f"there was an error that isn't <@!{config.discord.admin_id}>'s fault: {e}"),
                     error=True,
                 )
                 return
@@ -84,7 +81,7 @@ class SeriesCog(commands.Cog):
                     priority=1,
                 )
 
-                await ctx.send(f"hey <@!{config['discord']['admin_id']}> get this guy a tag")
+                await ctx.send(f"hey <@!{config.discord.admin_id}> get this guy a tag")
 
                 return
 

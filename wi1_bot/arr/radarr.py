@@ -190,5 +190,5 @@ class Radarr:
 if __name__ == "__main__":
     from wi1_bot.config import config
 
-    radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
+    radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
     pyarr = radarr._radarr

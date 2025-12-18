@@ -20,8 +20,11 @@ Requires Python >=3.11.
 ### TODO
 
 - multiple transcode workers
-  - main server instance (as part of the existing webhook server)
+  - main server instance (as part of the existing webhook server, rename to api?). core app wouldn't be running transcoder anymore
   - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
+    - separate docker image
+    - configure transcoding settings for each profile on each instance
+    - if job fails, retry once on every instance before error notification
 - figure out qsv codecs
   - also maybe software encoders?
 - maybe check languages and things on new downloads via webhook

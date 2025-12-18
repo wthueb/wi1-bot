@@ -1,40 +1,42 @@
 import pathlib
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from wi1_bot.arr.util import replace_remote_paths
+from wi1_bot.config import GeneralConfig, RemotePathMapping
 
 
 class TestReplaceRemotePaths:
-    def test_no_config(self):
-        path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
-
-        with patch("wi1_bot.arr.util.config", {}):
-            result = replace_remote_paths(path)
-
-        assert result == path
-
     def test_no_mappings(self):
         path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
 
-        with patch("wi1_bot.arr.util.config", {"general": {}}):
+        mock_config = MagicMock()
+        mock_config.general.remote_path_mappings = []
+
+        with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
         assert result == path
 
     def test_single_mapping_match(self):
         path = pathlib.Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
-        mappings = [{"remote": "/mnt/remote", "local": "/local"}]
+        mappings = [RemotePathMapping(remote="/mnt/remote", local="/local")]
 
-        with patch("wi1_bot.arr.util.config", {"general": {"remote_path_mappings": mappings}}):
+        mock_config = MagicMock()
+        mock_config.general = GeneralConfig(remote_path_mappings=mappings)
+
+        with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
         assert result == pathlib.Path("/local/movies/The Matrix (1999)/movie.mkv")
 
     def test_single_mapping_no_match(self):
         path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
-        mappings = [{"remote": "/mnt/remote", "local": "/local"}]
+        mappings = [RemotePathMapping(remote="/mnt/remote", local="/local")]
 
-        with patch("wi1_bot.arr.util.config", {"general": {"remote_path_mappings": mappings}}):
+        mock_config = MagicMock()
+        mock_config.general = GeneralConfig(remote_path_mappings=mappings)
+
+        with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
         assert result == path
@@ -42,12 +44,15 @@ class TestReplaceRemotePaths:
     def test_multiple_mappings_most_specific(self):
         path = pathlib.Path("/mnt/remote/movies/action/The Matrix (1999)/movie.mkv")
         mappings = [
-            {"remote": "/mnt/remote", "local": "/local1"},
-            {"remote": "/mnt/remote/movies", "local": "/local2"},
-            {"remote": "/mnt/remote/movies/action", "local": "/local3"},
+            RemotePathMapping(remote="/mnt/remote", local="/local1"),
+            RemotePathMapping(remote="/mnt/remote/movies", local="/local2"),
+            RemotePathMapping(remote="/mnt/remote/movies/action", local="/local3"),
         ]
 
-        with patch("wi1_bot.arr.util.config", {"general": {"remote_path_mappings": mappings}}):
+        mock_config = MagicMock()
+        mock_config.general = GeneralConfig(remote_path_mappings=mappings)
+
+        with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
         # Should use the most specific mapping
@@ -56,11 +61,14 @@ class TestReplaceRemotePaths:
     def test_multiple_mappings_partial_match(self):
         path = pathlib.Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
         mappings = [
-            {"remote": "/mnt/remote/tv", "local": "/local1"},
-            {"remote": "/mnt/remote/movies", "local": "/local2"},
+            RemotePathMapping(remote="/mnt/remote/tv", local="/local1"),
+            RemotePathMapping(remote="/mnt/remote/movies", local="/local2"),
         ]
 
-        with patch("wi1_bot.arr.util.config", {"general": {"remote_path_mappings": mappings}}):
+        mock_config = MagicMock()
+        mock_config.general = GeneralConfig(remote_path_mappings=mappings)
+
+        with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
         assert result == pathlib.Path("/local2/The Matrix (1999)/movie.mkv")
@@ -69,9 +77,12 @@ class TestReplaceRemotePaths:
         # Note: This test might behave differently on Windows vs Linux
         # In practice, pathlib handles platform-specific paths
         path = pathlib.Path("/mnt/Z/movies/The Matrix (1999)/movie.mkv")
-        mappings = [{"remote": "/mnt/Z", "local": "/data"}]
+        mappings = [RemotePathMapping(remote="/mnt/Z", local="/data")]
 
-        with patch("wi1_bot.arr.util.config", {"general": {"remote_path_mappings": mappings}}):
+        mock_config = MagicMock()
+        mock_config.general = GeneralConfig(remote_path_mappings=mappings)
+
+        with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
         assert result == pathlib.Path("/data/movies/The Matrix (1999)/movie.mkv")
@@ -106,10 +117,10 @@ discord:
             importlib.reload(wi1_bot.config)
             config = wi1_bot.config.config
 
-            assert config["radarr"]["url"] == "http://localhost:7878"
-            assert config["radarr"]["api_key"] == "test-radarr-key"
-            assert config["sonarr"]["url"] == "http://localhost:8989"
-            assert config["discord"]["channel_id"] == 123456789
+            assert str(config.radarr.url) == "http://localhost:7878/"
+            assert config.radarr.api_key == "test-radarr-key"
+            assert str(config.sonarr.url) == "http://localhost:8989/"
+            assert config.discord.channel_id == 123456789
 
     def test_config_with_optional_fields(self, tmp_path):
         config_file = tmp_path / "test_config.yaml"
@@ -157,8 +168,10 @@ general:
             importlib.reload(wi1_bot.config)
             config = wi1_bot.config.config
 
-            assert config["discord"]["bot_presence"] == "Watching movies"  # type: ignore
-            assert config["discord"]["quotas"][123456] == 100.5  # type: ignore
-            assert config["pushover"]["user_key"] == "test-user-key"  # type: ignore
-            assert config["transcoding"]["hwaccel"] == "cuda"  # type: ignore
-            assert len(config["general"]["remote_path_mappings"]) == 1  # type: ignore
+            assert config.discord.bot_presence == "Watching movies"
+            assert config.discord.quotas[123456] == 100.5
+            assert config.pushover is not None
+            assert config.pushover.user_key == "test-user-key"
+            assert config.transcoding is not None
+            assert config.transcoding.hwaccel == "cuda"
+            assert len(config.general.remote_path_mappings) == 1

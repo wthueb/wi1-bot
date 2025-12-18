@@ -17,8 +17,8 @@ logging.getLogger("werkzeug").disabled = True
 
 logger = logging.getLogger(__name__)
 
-radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
-sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
+radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
+sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
 
 def on_grab(req: dict[str, Any]) -> None:
@@ -57,16 +57,16 @@ def on_download(req: dict[str, Any]) -> None:
     else:
         raise ValueError("unknown download request")
 
-    if "transcoding" not in config:
+    if config.transcoding is None:
         return
 
     path = replace_remote_paths(path)
 
-    quality_options = config["transcoding"]["profiles"][quality_profile]
+    quality_options = config.transcoding.profiles[quality_profile]
 
-    languages = quality_options.get("languages", None)
-    video_params = quality_options.get("video_params", None)
-    audio_params = quality_options.get("audio_params", None)
+    languages = quality_options.languages
+    video_params = quality_options.video_params
+    audio_params = quality_options.audio_params
 
     queue.add(
         path=str(path),

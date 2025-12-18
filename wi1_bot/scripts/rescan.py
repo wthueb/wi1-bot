@@ -8,7 +8,7 @@ from wi1_bot.config import config
 
 
 def rescan_radarr() -> None:
-    radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
+    radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
 
     all_movies = radarr._radarr.get_movie()
     assert isinstance(all_movies, list)
@@ -22,7 +22,7 @@ def rescan_radarr() -> None:
 
 
 def rescan_sonarr() -> None:
-    sonarr = Sonarr(config["sonarr"]["url"], config["sonarr"]["api_key"])
+    sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
     all_series = sonarr._sonarr.get_series()
     assert isinstance(all_series, list)

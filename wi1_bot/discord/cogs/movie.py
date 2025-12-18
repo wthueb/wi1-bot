@@ -14,7 +14,7 @@ class MovieCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger(__name__)
-        self.radarr = Radarr(config["radarr"]["url"], config["radarr"]["api_key"])
+        self.radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
 
     @commands.command(name="addmovie", help="add a movie to the plex")
     async def addmovie_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:
@@ -67,7 +67,7 @@ class MovieCog(commands.Cog):
         if not self.radarr.add_tag(added, ctx.message.author.id):
             push.send(f"get {ctx.message.author.name} a tag", title="tag needed", priority=1)
 
-            await ctx.send(f"hey <@!{config['discord']['admin_id']}> get this guy a tag")
+            await ctx.send(f"hey <@!{config.discord.admin_id}> get this guy a tag")
 
     @commands.command(name="delmovie", help="delete a movie from the plex")
     async def delmovie_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:

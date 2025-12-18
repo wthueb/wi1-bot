@@ -4,15 +4,15 @@ from wi1_bot.config import config
 
 
 def send(msg: str, title: str | None = None, url: str | None = None, priority: int = 0) -> None:
-    if "pushover" not in config:
+    if config.pushover is None:
         return
 
     data = {
-        "token": config["pushover"]["api_key"],
-        "user": config["pushover"]["user_key"],
+        "token": config.pushover.api_key,
+        "user": config.pushover.user_key,
         "message": msg,
         "priority": priority,
-        "device": config["pushover"]["devices"],
+        "device": config.pushover.devices,
     }
 
     if title is not None:
