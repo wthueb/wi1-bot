@@ -1,6 +1,3 @@
-import logging
-from logging.config import fileConfig
-
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
@@ -10,12 +7,6 @@ from wi1_bot.models import Base
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
-# Configure logging from alembic.ini only if logging hasn't been set up already.
-# When run via start.py, logging is already configured there.
-# When run directly via `alembic` CLI, we use the .ini file configuration.
-if config.config_file_name is not None and not logging.getLogger().hasHandlers():
-    fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

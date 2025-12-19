@@ -2,6 +2,7 @@ import argparse
 import pathlib
 
 from wi1_bot.config import config
+from wi1_bot.db import init_db
 from wi1_bot.transcoder import queue
 
 
@@ -14,6 +15,8 @@ def main() -> None:
 
     if config.transcoding is None:
         raise ValueError("transcoding not configured")
+
+    init_db()
 
     path = pathlib.Path(args.path).resolve()
 
