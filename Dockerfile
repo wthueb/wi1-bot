@@ -1,17 +1,20 @@
 FROM linuxserver/ffmpeg:latest AS base
 
+RUN apt-get update && apt-get install -yqq --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
+
 FROM base AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
-RUN uv python install 3.11
+ENV UV_PYTHON_DOWNLOADS=0 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 WORKDIR /app
 
 COPY pyproject.toml uv.lock .
+
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-install-project --no-dev
 
 COPY . .
+
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable
 
 FROM builder AS test

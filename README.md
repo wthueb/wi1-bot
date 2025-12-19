@@ -34,7 +34,6 @@ Requires Python >=3.11.
 - integration testing
   - https://pypi.org/project/pytest-docker/
 - use overseerr for search/requests
-  - requires linking users
 - web dashboard? django i guess?
   - transcode queue, transcode progress, quotas
   - reactivity would be nice, maybe htmx/alpinejs?
