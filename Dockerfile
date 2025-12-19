@@ -1,10 +1,10 @@
 FROM linuxserver/ffmpeg:latest AS base
 
-FROM base AS builder
-
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 RUN uv python install 3.11
+
+FROM base AS builder
 
 WORKDIR /app
 
@@ -40,4 +40,4 @@ RUN mkdir -p /config /logs
 
 EXPOSE 9000
 
-ENTRYPOINT ["python", "-m", "wi1_bot.scripts.start"]
+ENTRYPOINT ["uv", "run", "wi1-bot"]
