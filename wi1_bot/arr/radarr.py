@@ -49,7 +49,7 @@ class Radarr:
         root_folder_path = root_folder[0]["path"]
 
         self._radarr.add_movie(
-            movie._json,
+            movie.json,
             root_dir=root_folder_path,
             quality_profile_id=quality_profile_id,
         )
@@ -191,4 +191,3 @@ if __name__ == "__main__":
     from wi1_bot.config import config
 
     radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
-    pyarr = radarr._radarr

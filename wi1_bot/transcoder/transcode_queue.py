@@ -37,9 +37,6 @@ class TranscodeQueue:
             return item
 
     def remove(self, item: TranscodeItem) -> None:
-        if item.id is None:
-            raise ValueError("Cannot remove item without an id")
-
         engine = get_engine()
         with Session(engine) as session:
             merged_item = session.merge(item)

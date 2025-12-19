@@ -357,7 +357,7 @@ class TestBuildFfmpegCommand:
         command = build_ffmpeg_command(item, "/tmp/output.mkv")
 
         # Find the order of audio stream mappings
-        audio_maps = []
+        audio_maps: list[str] = []
         for i, arg in enumerate(command):
             if arg == "-map" and i + 1 < len(command):
                 next_arg = command[i + 1]

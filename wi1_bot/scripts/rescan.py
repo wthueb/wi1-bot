@@ -10,28 +10,28 @@ from wi1_bot.config import config
 def rescan_radarr() -> None:
     radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
 
-    all_movies = radarr._radarr.get_movie()
+    all_movies = radarr._radarr.get_movie()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportPrivateUsage]
     assert isinstance(all_movies, list)
-    all_movies.sort(key=lambda m: cast(str, m["title"]))
+    all_movies.sort(key=lambda m: cast(str, m["title"]))  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
 
-    for movie in all_movies:
+    for movie in all_movies:  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(movie, dict)
         print(f"Rescanning {movie['title']}...")
-        radarr.refresh_movie(movie["id"])
+        radarr.refresh_movie(movie["id"])  # pyright: ignore[reportUnknownArgumentType]
         sleep(3)
 
 
 def rescan_sonarr() -> None:
     sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
-    all_series = sonarr._sonarr.get_series()
+    all_series = sonarr._sonarr.get_series()  # pyright: ignore[reportPrivateUsage]
     assert isinstance(all_series, list)
-    all_series.sort(key=lambda s: cast(str, s["title"]))
+    all_series.sort(key=lambda s: cast(str, s["title"]))  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
 
-    for series in all_series:
+    for series in all_series:  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(series, dict)
         print(f"Rescanning {series['title']}...")
-        sonarr.rescan_series(series["id"])
+        sonarr.rescan_series(series["id"])  # pyright: ignore[reportUnknownArgumentType]
         sleep(5)
 
 

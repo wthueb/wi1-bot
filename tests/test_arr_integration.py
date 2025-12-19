@@ -68,7 +68,7 @@ class TestRadarr:
         movies = radarr.lookup_user_library("The Matrix", 123456)
 
         assert len(movies) == 1
-        assert movies[0]._json["id"] == 1
+        assert movies[0].json["id"] == 1
 
     def test_add_movie_already_exists(
         self, radarr: Radarr, sample_movie_json: dict[str, Any]
@@ -79,7 +79,7 @@ class TestRadarr:
         result = radarr.add_movie(movie)
 
         assert result is False
-        radarr._radarr.add_movie.assert_not_called()
+        radarr._radarr.add_movie.assert_not_called()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
 
     def test_add_movie_success(self, radarr: Radarr, sample_movie_json: dict[str, Any]) -> None:
         movie = Movie(sample_movie_json)

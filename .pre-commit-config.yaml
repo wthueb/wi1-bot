@@ -1,18 +1,23 @@
 fail_fast: false
 
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.9
-    hooks:
-      - id: ruff-check
-        args: [ --fix ]
-      - id: ruff-format
-
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
+      - id: ruff-check
+        name: ruff-check
         language: system
-        entry: mypy
+        entry: ruff check --fix
+        pass_filenames: false
+        types: [python]
+      - id: ruff-format
+        name: ruff-format
+        language: system
+        entry: ruff format
+        pass_filenames: false
+        types: [python]
+      - id: basedpyright
+        name: basedpyright
+        language: system
+        entry: basedpyright
         pass_filenames: false
         types: [python]

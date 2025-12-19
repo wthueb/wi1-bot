@@ -73,7 +73,7 @@ async def select_from_list(
 
     idxs = [int(i) for i in resp.content.strip().split(",") if i.isdigit()]
 
-    selected = []
+    selected: list[T] = []
 
     for idx in idxs:
         if idx < 1 or idx > len(choices):

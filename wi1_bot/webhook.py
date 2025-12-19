@@ -29,10 +29,10 @@ def on_download(req: dict[str, Any]) -> None:
     path: pathlib.Path
 
     if "movie" in req:
-        movie_json = radarr._radarr.get_movie(req["movie"]["id"])
+        movie_json = radarr._radarr.get_movie(req["movie"]["id"])  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportPrivateUsage]
         assert isinstance(movie_json, dict)
 
-        quality_profile = radarr.get_quality_profile_name(movie_json["qualityProfileId"])
+        quality_profile = radarr.get_quality_profile_name(movie_json["qualityProfileId"])  # pyright: ignore[reportUnknownArgumentType]
 
         movie_folder = req["movie"]["folderPath"]
         relative_path = req["movieFile"]["relativePath"]
@@ -42,10 +42,10 @@ def on_download(req: dict[str, Any]) -> None:
         if not req["isUpgrade"]:
             push.send(path.name, title="new movie downloaded")
     elif "series" in req:
-        series_json = sonarr._sonarr.get_series(req["series"]["id"])
+        series_json = sonarr._sonarr.get_series(req["series"]["id"])  # pyright: ignore[reportPrivateUsage]
         assert isinstance(series_json, dict)
 
-        quality_profile = sonarr.get_quality_profile_name(series_json["qualityProfileId"])
+        quality_profile = sonarr.get_quality_profile_name(series_json["qualityProfileId"])  # pyright: ignore[reportUnknownArgumentType]
 
         series_folder = req["series"]["path"]
         relative_path = req["episodeFile"]["relativePath"]

@@ -13,7 +13,7 @@ from wi1_bot import __version__, push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 
-from .ffprobe import FfprobeException, ffprobe
+from .ffprobe import FfprobeException, Stream, ffprobe
 from .transcode_queue import TranscodeItem, queue
 
 # https://github.com/Radarr/Radarr/blob/e29be26fc9a5570bdf37a1b9504b3c0162be7715/src/NzbDrone.Core/Parser/Parser.cs#L134
@@ -79,9 +79,9 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) 
     aindex = 0
     sindex = 0
 
-    video_streams = []
-    audio_streams = []
-    subtitle_streams = []
+    video_streams: list[Stream] = []
+    audio_streams: list[Stream] = []
+    subtitle_streams: list[Stream] = []
 
     for stream in streams:
         if stream["codec_type"] == "video":

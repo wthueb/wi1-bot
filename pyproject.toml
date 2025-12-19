@@ -35,26 +35,30 @@ migrate = "wi1_bot.scripts.migrate:main"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.16.0",
+    "basedpyright>=1.21.0",
     "pre-commit>=4.2.0",
     "pytest>=8.4.2",
     "ruff>=0.11.13",
-    "types-pyyaml>=6.0.12.20250516",
 ]
+
+[tool.basedpyright]
+typeCheckingMode = "strict"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "tests"
+reportPrivateUsage = false
+
+[[tool.basedpyright.executionEnvironments]]
+root = "wi1_bot/arr"
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
 
 [tool.ruff]
 line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-
-[tool.mypy]
-strict = true
-packages = ["wi1_bot", "tests"]
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disable_error_code = ["method-assign", "attr-defined"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]

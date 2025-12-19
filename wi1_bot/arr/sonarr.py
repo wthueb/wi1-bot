@@ -8,7 +8,7 @@ from .download import Download
 
 class Series:
     def __init__(self, series_json: dict[str, Any]) -> None:
-        self._json = series_json
+        self.json = series_json
 
         self.title: str = series_json["title"]
         self.year: int = series_json["year"]
@@ -81,7 +81,7 @@ class Sonarr:
         root_folder_path = root_folder[0]["path"]
 
         series_json = self._sonarr.add_series(
-            series._json,
+            series.json,
             quality_profile_id=quality_profile_id,
             language_profile_id=language_profile_id,
             root_dir=root_folder_path,

@@ -19,6 +19,7 @@ Requires Python >=3.11.
 
 ### TODO
 
+- fix basedpyright errors, avoiding ignore comments where possible
 - multiple transcode workers
   - main server instance (as part of the existing webhook server, rename to api?). core app wouldn't be running transcoder anymore
   - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
