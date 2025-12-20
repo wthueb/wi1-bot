@@ -70,5 +70,8 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0"
 
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true }}]
+
 [tool.hatch.build.targets.wheel]
 packages = ["wi1_bot"]

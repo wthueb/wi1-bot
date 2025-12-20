@@ -4,6 +4,8 @@ RUN apt-get update && apt-get install -yqq --no-install-recommends python3 && rm
 
 FROM base AS builder
 
+RUN apt-get update && apt-get install -yqq --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 ENV UV_PYTHON_DOWNLOADS=0 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
@@ -16,6 +18,8 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-install-proj
 COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable
+
+RUN sed -i 's/fallback-version = "0\.0\.0"/fallback-version = "'"$(uvx uv-dynamic-versioning)"'"/' pyproject.toml
 
 FROM builder AS test
 

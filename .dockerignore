@@ -5,8 +5,9 @@
 .envrc
 flake.nix
 flake.lock
+.vscode/
 
-.git/
+#.git/ need for uv-dynamic-versioning
 .github/
 .gitignore
 
