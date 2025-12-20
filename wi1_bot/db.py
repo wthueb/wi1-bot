@@ -1,5 +1,5 @@
 import os
-import pathlib
+from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
@@ -26,11 +26,11 @@ def get_db_path() -> str:
 
     if db_path is None:
         if xdg_data_home := os.getenv("XDG_DATA_HOME"):
-            db_dir = pathlib.Path(xdg_data_home) / "wi1-bot"
+            db_dir = Path(xdg_data_home) / "wi1-bot"
         elif home := os.getenv("HOME"):
-            db_dir = pathlib.Path(home) / ".local" / "share" / "wi1-bot"
+            db_dir = Path(home) / ".local" / "share" / "wi1-bot"
         else:
-            db_dir = pathlib.Path(".")
+            db_dir = Path(".")
 
         db_dir.mkdir(parents=True, exist_ok=True)
         db_path = str(db_dir / "wi1_bot.db")
@@ -54,7 +54,7 @@ def init_db() -> Engine:
     db_path = get_db_path()
     _engine = create_engine(f"sqlite:///{db_path}")
 
-    wi1_bot_dir = pathlib.Path(__file__).resolve().parent
+    wi1_bot_dir = Path(__file__).resolve().parent
     alembic_ini = wi1_bot_dir / "alembic.ini"
 
     if alembic_ini.exists():

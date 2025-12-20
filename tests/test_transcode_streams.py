@@ -1,7 +1,7 @@
-import pathlib
 import pprint
 import shlex
 import shutil
+from pathlib import Path
 from typing import Iterator
 
 import pytest
@@ -10,7 +10,7 @@ from wi1_bot.models import TranscodeItem
 from wi1_bot.transcoder import Transcoder, ffprobe
 from wi1_bot.transcoder.transcoder import build_ffmpeg_command
 
-FILES_PATH = pathlib.Path("./tests/files")
+FILES_PATH = Path("./tests/files")
 
 
 @pytest.fixture(autouse=True)

@@ -1,10 +1,10 @@
 import logging
-import pathlib
+from pathlib import Path
 
 from wi1_bot.config import RemotePathMapping, config
 
 
-def replace_remote_paths(path: pathlib.Path) -> pathlib.Path:
+def replace_remote_paths(path: Path) -> Path:
     if not config.general.remote_path_mappings:
         return path
 

@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -8,7 +8,7 @@ from wi1_bot.config import GeneralConfig, RemotePathMapping
 
 class TestReplaceRemotePaths:
     def test_no_mappings(self) -> None:
-        path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
+        path = Path("/movies/The Matrix (1999)/movie.mkv")
 
         mock_config = MagicMock()
         mock_config.general.remote_path_mappings = []
@@ -19,10 +19,8 @@ class TestReplaceRemotePaths:
         assert result == path
 
     def test_single_mapping_match(self) -> None:
-        path = pathlib.Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
-        mappings = [
-            RemotePathMapping(remote=pathlib.Path("/mnt/remote"), local=pathlib.Path("/local"))
-        ]
+        path = Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
+        mappings = [RemotePathMapping(remote=Path("/mnt/remote"), local=Path("/local"))]
 
         mock_config = MagicMock()
         mock_config.general = GeneralConfig(remote_path_mappings=mappings)
@@ -30,13 +28,11 @@ class TestReplaceRemotePaths:
         with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
-        assert result == pathlib.Path("/local/movies/The Matrix (1999)/movie.mkv")
+        assert result == Path("/local/movies/The Matrix (1999)/movie.mkv")
 
     def test_single_mapping_no_match(self) -> None:
-        path = pathlib.Path("/movies/The Matrix (1999)/movie.mkv")
-        mappings = [
-            RemotePathMapping(remote=pathlib.Path("/mnt/remote"), local=pathlib.Path("/local"))
-        ]
+        path = Path("/movies/The Matrix (1999)/movie.mkv")
+        mappings = [RemotePathMapping(remote=Path("/mnt/remote"), local=Path("/local"))]
 
         mock_config = MagicMock()
         mock_config.general = GeneralConfig(remote_path_mappings=mappings)
@@ -47,15 +43,11 @@ class TestReplaceRemotePaths:
         assert result == path
 
     def test_multiple_mappings_most_specific(self) -> None:
-        path = pathlib.Path("/mnt/remote/movies/action/The Matrix (1999)/movie.mkv")
+        path = Path("/mnt/remote/movies/action/The Matrix (1999)/movie.mkv")
         mappings = [
-            RemotePathMapping(remote=pathlib.Path("/mnt/remote"), local=pathlib.Path("/local1")),
-            RemotePathMapping(
-                remote=pathlib.Path("/mnt/remote/movies"), local=pathlib.Path("/local2")
-            ),
-            RemotePathMapping(
-                remote=pathlib.Path("/mnt/remote/movies/action"), local=pathlib.Path("/local3")
-            ),
+            RemotePathMapping(remote=Path("/mnt/remote"), local=Path("/local1")),
+            RemotePathMapping(remote=Path("/mnt/remote/movies"), local=Path("/local2")),
+            RemotePathMapping(remote=Path("/mnt/remote/movies/action"), local=Path("/local3")),
         ]
 
         mock_config = MagicMock()
@@ -65,15 +57,13 @@ class TestReplaceRemotePaths:
             result = replace_remote_paths(path)
 
         # Should use the most specific mapping
-        assert result == pathlib.Path("/local3/The Matrix (1999)/movie.mkv")
+        assert result == Path("/local3/The Matrix (1999)/movie.mkv")
 
     def test_multiple_mappings_partial_match(self) -> None:
-        path = pathlib.Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
+        path = Path("/mnt/remote/movies/The Matrix (1999)/movie.mkv")
         mappings = [
-            RemotePathMapping(remote=pathlib.Path("/mnt/remote/tv"), local=pathlib.Path("/local1")),
-            RemotePathMapping(
-                remote=pathlib.Path("/mnt/remote/movies"), local=pathlib.Path("/local2")
-            ),
+            RemotePathMapping(remote=Path("/mnt/remote/tv"), local=Path("/local1")),
+            RemotePathMapping(remote=Path("/mnt/remote/movies"), local=Path("/local2")),
         ]
 
         mock_config = MagicMock()
@@ -82,13 +72,13 @@ class TestReplaceRemotePaths:
         with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
-        assert result == pathlib.Path("/local2/The Matrix (1999)/movie.mkv")
+        assert result == Path("/local2/The Matrix (1999)/movie.mkv")
 
     def test_windows_to_linux_path(self) -> None:
         # Note: This test might behave differently on Windows vs Linux
         # In practice, pathlib handles platform-specific paths
-        path = pathlib.Path("/mnt/Z/movies/The Matrix (1999)/movie.mkv")
-        mappings = [RemotePathMapping(remote=pathlib.Path("/mnt/Z"), local=pathlib.Path("/data"))]
+        path = Path("/mnt/Z/movies/The Matrix (1999)/movie.mkv")
+        mappings = [RemotePathMapping(remote=Path("/mnt/Z"), local=Path("/data"))]
 
         mock_config = MagicMock()
         mock_config.general = GeneralConfig(remote_path_mappings=mappings)
@@ -96,7 +86,7 @@ class TestReplaceRemotePaths:
         with patch("wi1_bot.arr.util.config", mock_config):
             result = replace_remote_paths(path)
 
-        assert result == pathlib.Path("/data/movies/The Matrix (1999)/movie.mkv")
+        assert result == Path("/data/movies/The Matrix (1999)/movie.mkv")
 
 
 class TestConfigLoading:

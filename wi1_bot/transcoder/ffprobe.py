@@ -1,6 +1,6 @@
 import json
-import pathlib
 import subprocess
+from pathlib import Path
 from typing import Literal, NotRequired, TypedDict, cast
 
 
@@ -126,7 +126,7 @@ class FfprobeException(Exception):
     pass
 
 
-def ffprobe(path: pathlib.Path | str) -> FfprobeResult:
+def ffprobe(path: Path | str) -> FfprobeResult:
     command = [
         "ffprobe",
         "-hide_banner",

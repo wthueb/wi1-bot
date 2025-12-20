@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -114,9 +114,7 @@ class TestWebhook:
         mock_config.transcoding = mock_transcoding_config.transcoding
         mock_radarr._radarr.get_movie = MagicMock(return_value={"qualityProfileId": 1})
         mock_radarr.get_quality_profile_name = MagicMock(return_value="good")
-        mock_replace_paths.return_value = pathlib.Path(
-            "/movies/The Matrix (1999)/The Matrix (1999).mkv"
-        )
+        mock_replace_paths.return_value = Path("/movies/The Matrix (1999)/The Matrix (1999).mkv")
 
         on_download(movie_download_request)
 
@@ -149,7 +147,7 @@ class TestWebhook:
         mock_config.transcoding = mock_transcoding_config.transcoding
         mock_sonarr._sonarr.get_series = MagicMock(return_value={"qualityProfileId": 1})
         mock_sonarr.get_quality_profile_name = MagicMock(return_value="good")
-        mock_replace_paths.return_value = pathlib.Path("/tv/Game of Thrones/Season 01/S01E01.mkv")
+        mock_replace_paths.return_value = Path("/tv/Game of Thrones/Season 01/S01E01.mkv")
 
         on_download(series_download_request)
 

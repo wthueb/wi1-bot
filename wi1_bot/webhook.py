@@ -1,7 +1,7 @@
 import json
 import logging
-import pathlib
 import threading
+from pathlib import Path
 from typing import Any
 
 from flask import Flask, request
@@ -26,7 +26,7 @@ def on_grab(req: dict[str, Any]) -> None:
 
 
 def on_download(req: dict[str, Any]) -> None:
-    path: pathlib.Path
+    path: Path
 
     if "movie" in req:
         movie_json = radarr._radarr.get_movie(req["movie"]["id"])  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportPrivateUsage]
@@ -37,7 +37,7 @@ def on_download(req: dict[str, Any]) -> None:
         movie_folder = req["movie"]["folderPath"]
         relative_path = req["movieFile"]["relativePath"]
 
-        path = pathlib.Path(movie_folder) / relative_path
+        path = Path(movie_folder) / relative_path
 
         if not req["isUpgrade"]:
             push.send(path.name, title="new movie downloaded")
@@ -50,7 +50,7 @@ def on_download(req: dict[str, Any]) -> None:
         series_folder = req["series"]["path"]
         relative_path = req["episodeFile"]["relativePath"]
 
-        path = pathlib.Path(series_folder) / relative_path
+        path = Path(series_folder) / relative_path
 
         if not req["isUpgrade"]:
             push.send(path.name, title="new episode downloaded")

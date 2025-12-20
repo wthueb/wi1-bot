@@ -1,12 +1,12 @@
 import logging
 import os
-import pathlib
 import re
 import shlex
 import shutil
 import subprocess
 import tempfile
 import threading
+from pathlib import Path
 from time import sleep
 
 from wi1_bot import __version__, push
@@ -33,7 +33,7 @@ class UnknownError(Exception):
     pass
 
 
-def build_ffmpeg_command(item: TranscodeItem, transcode_to: pathlib.Path | str) -> list[str]:
+def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[str]:
     command = [
         "ffmpeg",
         "-hide_banner",
@@ -215,7 +215,7 @@ class Transcoder:
             sleep(3)
 
     def transcode(self, item: TranscodeItem) -> bool:
-        path = pathlib.Path(item.path)
+        path = Path(item.path)
 
         self.logger.info(f"attempting to transcode {path.name}")
 
@@ -236,7 +236,7 @@ class Transcoder:
 
         # duration = _get_duration(item.path)
 
-        tmp_folder = pathlib.Path(tempfile.gettempdir()) / "wi1-bot"
+        tmp_folder = Path(tempfile.gettempdir()) / "wi1-bot"
         tmp_folder.mkdir(exist_ok=True)
 
         filename = path.stem
@@ -297,7 +297,7 @@ class Transcoder:
                 perm_log_path = tmp_folder / f"{path.stem}.log"
 
                 if log_dir_str := os.getenv("WB_LOG_DIR"):
-                    log_dir = pathlib.Path(log_dir_str).resolve()
+                    log_dir = Path(log_dir_str).resolve()
 
                     perm_log_path = log_dir / "transcoder-errors" / f"{path.stem}.log"
                     perm_log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -331,20 +331,26 @@ class Transcoder:
 
         return True
 
-    def _rescan_content(self, new_path: pathlib.Path) -> None:
-        if new_path.is_relative_to(replace_remote_paths(config.radarr.root_folder)):
+    def _rescan_content(self, new_path: Path) -> None:
+        radarr_root = replace_remote_paths(config.radarr.root_folder)
+        sonarr_root = replace_remote_paths(config.sonarr.root_folder)
+
+        if new_path.is_relative_to(radarr_root):
             for m in self.radarr.get_movies():
-                if new_path.is_relative_to(m["path"]):
+                movie_path = replace_remote_paths(Path(m["path"]))
+
+                if new_path.is_relative_to(movie_path):
                     # have to rescan the movie twice: Radarr/Radarr#7668
                     # TODO: create function that waits for comand to finish
                     self.radarr.rescan_movie(m["id"])
                     sleep(5)
                     self.radarr.rescan_movie(m["id"])
                     break
-
-        elif new_path.is_relative_to(replace_remote_paths(config.sonarr.root_folder)):
+        elif new_path.is_relative_to(sonarr_root):
             for s in self.sonarr.get_series():
-                if new_path.is_relative_to(s["path"]):
+                series_path = replace_remote_paths(Path(s["path"]))
+
+                if new_path.is_relative_to(series_path):
                     self.sonarr.rescan_series(s["id"])
                     break
 

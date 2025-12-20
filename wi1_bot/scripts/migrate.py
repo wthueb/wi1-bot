@@ -2,8 +2,8 @@
 """Database migration script for wi1-bot."""
 
 import argparse
-import pathlib
 import sys
+from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
@@ -37,7 +37,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Find alembic.ini in the wi1_bot package
-    wi1_bot_dir = pathlib.Path(__file__).resolve().parent.parent
+    wi1_bot_dir = Path(__file__).resolve().parent.parent
     alembic_ini = wi1_bot_dir / "alembic.ini"
 
     if not alembic_ini.exists():

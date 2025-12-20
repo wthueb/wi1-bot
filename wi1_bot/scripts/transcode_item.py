@@ -1,5 +1,5 @@
 import argparse
-import pathlib
+from pathlib import Path
 
 from wi1_bot.config import config
 from wi1_bot.db import init_db
@@ -18,7 +18,7 @@ def main() -> None:
 
     init_db()
 
-    path = pathlib.Path(args.path).resolve()
+    path = Path(args.path).resolve()
 
     qp = config.transcoding.profiles["good"]
 

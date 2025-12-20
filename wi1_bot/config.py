@@ -45,7 +45,7 @@ class GeneralConfig(BaseModel):
 class ArrConfig(BaseModel):
     url: HttpUrl = Field(description="URL to Radarr/Sonarr dashboard")
     api_key: str = Field(min_length=1, description="API key for authentication")
-    root_folder: Path = Field(description="Absolute path to root folder")
+    root_folder: Path = Field(description="Absolute path to root folder (from Arr's perspective)")
 
     @field_validator("root_folder")
     @classmethod
