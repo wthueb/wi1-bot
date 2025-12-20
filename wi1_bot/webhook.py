@@ -60,10 +60,13 @@ def on_download(req: dict[str, Any]) -> None:
     if config.transcoding is None:
         return
 
+    if quality_profile not in config.transcoding.profiles:
+        logger.info(f"skipping transcoding for unknown quality profile '{quality_profile}'")
+        return
+
     path = replace_remote_paths(path)
 
     quality_options = config.transcoding.profiles[quality_profile]
-
     languages = quality_options.languages
     video_params = quality_options.video_params
     audio_params = quality_options.audio_params
