@@ -23,6 +23,8 @@ CLEAN_RELEASE_GROUP_REGEX = re.compile(
 )
 # https://github.com/Radarr/Radarr/blob/e29be26fc9a5570bdf37a1b9504b3c0162be7715/src/NzbDrone.Core/Parser/Parser.cs#L138
 CLEAN_TORRENT_SUFFIX_REGEX = re.compile(r"\[(?:ettv|rartv|rarbg|cttv|publichd)\]", re.IGNORECASE)
+# can't find where this is done in Radarr source
+CLEAN_SITE_TAG_REGEX = re.compile(r"@(HDSpace)", re.IGNORECASE)
 
 
 class SignalInterrupt(Exception):
@@ -31,6 +33,14 @@ class SignalInterrupt(Exception):
 
 class UnknownError(Exception):
     pass
+
+
+def sanitize_file_stem(stem: str) -> str:
+    stem = stem.strip()
+    stem = CLEAN_RELEASE_GROUP_REGEX.sub("", stem).strip()
+    stem = CLEAN_TORRENT_SUFFIX_REGEX.sub("", stem).strip()
+    stem = CLEAN_SITE_TAG_REGEX.sub("", stem).strip()
+    return stem
 
 
 def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[str]:
@@ -239,10 +249,8 @@ class Transcoder:
         tmp_folder = Path(tempfile.gettempdir()) / "wi1-bot"
         tmp_folder.mkdir(exist_ok=True)
 
-        filename = path.stem
-        filename = CLEAN_RELEASE_GROUP_REGEX.sub("", filename)
-        filename = CLEAN_TORRENT_SUFFIX_REGEX.sub("", filename)
-        transcode_to = tmp_folder / f"{filename}-TRANSCODED.mkv"
+        stem = sanitize_file_stem(path.stem)
+        transcode_to = tmp_folder / f"{stem}-TRANSCODED.mkv"
 
         command = build_ffmpeg_command(item, transcode_to)
 

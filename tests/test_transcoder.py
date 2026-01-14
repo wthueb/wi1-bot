@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from wi1_bot.models import TranscodeItem
-from wi1_bot.transcoder.transcoder import build_ffmpeg_command
+from wi1_bot.transcoder.transcoder import build_ffmpeg_command, sanitize_file_stem
 
 
 class TestBuildFfmpegCommand:
@@ -370,3 +370,12 @@ class TestBuildFfmpegCommand:
         if len(audio_maps) > 0:
             # The first audio stream should be English (index 2)
             assert "2" in audio_maps[0]
+
+
+def test_file_stem_sanitization() -> None:
+    assert (
+        sanitize_file_stem(
+            "Thor.Love.and.Thunder.2022.IMAX.Hybrid.1080p.BluRay.DD+7.1.x264-LoRD@HDSpace"
+        )
+        == "Thor.Love.and.Thunder.2022.IMAX.Hybrid.1080p.BluRay.DD+7.1.x264-LoRD"
+    )
