@@ -9,7 +9,7 @@ from wi1_bot.transcoder import queue
 def main() -> None:
     parser = argparse.ArgumentParser(description="add item to transcode queue")
 
-    parser.add_argument("path", help="file path to transcode")
+    parser.add_argument("path", nargs="+", help="file path to transcode")
 
     args = parser.parse_args()
 
@@ -18,18 +18,19 @@ def main() -> None:
 
     init_db()
 
-    path = Path(args.path).resolve()
-
     qp = config.transcoding.profiles["good"]
 
-    queue.add(
-        path=str(path),
-        languages=qp.languages,
-        video_params=qp.video_params,
-        audio_params=qp.audio_params,
-    )
+    for path in args.path:
+        path = Path(path).resolve()
 
-    print("place in queue:", queue.size)
+        queue.add(
+            path=str(path),
+            languages=qp.languages,
+            video_params=qp.video_params,
+            audio_params=qp.audio_params,
+        )
+
+    print("queue size:", queue.size)
 
 
 if __name__ == "__main__":
