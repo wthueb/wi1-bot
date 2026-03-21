@@ -126,9 +126,9 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[
         vindex += 1
 
     audio_streams.sort(
-        key=lambda s: 0
-        if "tags" in s and "language" in s["tags"] and s["tags"]["language"] in langs
-        else 1
+        key=lambda s: (
+            0 if "tags" in s and "language" in s["tags"] and s["tags"]["language"] in langs else 1
+        )
     )
 
     audio_has_matching_lang = any(
