@@ -96,16 +96,14 @@ class Radarr:
 
     def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
         if isinstance(movie, Movie):
-            json = self._radarr.movie.get(tmdb_id=movie.tmdb_id)
-            assert isinstance(json, list)
-            ids = [json[0]["id"]]
-        else:
-            ids = []
+            movie = [movie]
 
-            for m in movie:
-                json = self._radarr.movie.get(tmdb_id=m.tmdb_id)
-                assert isinstance(json, list)
-                ids.append(json[0]["id"])
+        ids: list[int] = []
+
+        for m in movie:
+            json = self._radarr.movie.get(tmdb_id=m.tmdb_id)
+            assert isinstance(json, list)
+            ids.append(json[0]["id"])
 
         try:
             tag_id = self._get_tag_for_user_id(user_id)
@@ -116,7 +114,7 @@ class Radarr:
 
         edit_json: JsonObject = {"movieIds": ids, "tags": [tag_id], "applyTags": "add"}
 
-        self._radarr.movie.update(data=edit_json)
+        self._radarr.movie.handler.request("movie/editor", method="PUT", json_data=edit_json)
 
         return True
 
