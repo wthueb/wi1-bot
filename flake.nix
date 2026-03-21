@@ -23,7 +23,7 @@
             ];
             env = {
               UV_PYTHON_DOWNLOADS = "never";
-              UV_PYTHON = pkgs.python311.interpreter;
+              UV_PYTHON = pkgs.python312.interpreter;
             };
             shellHook = ''
               uv sync

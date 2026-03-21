@@ -9,7 +9,7 @@
 - Pre-commit hooks: `pre-commit run --all-files`
 
 ## Code Style
-- **Python version**: >=3.11
+- **Python version**: >=3.12
 - **Line length**: 100 characters
 - **Type hints**: Strict typing required (`strict = true`). Always use type annotations.
 - **Imports**: Sorted and organized (ruff's `I` rules). Use absolute imports from `wi1_bot`.

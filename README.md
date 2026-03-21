@@ -15,7 +15,7 @@ A Discord bot to integrate [Radarr](https://radarr.video/) & [Sonarr](https://so
 3. `pip install -e .[dev]`
 4. `pre-commit install`
 
-Requires Python >=3.11.
+Requires Python >=3.12.
 
 ### TODO
 
