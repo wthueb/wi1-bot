@@ -47,7 +47,9 @@ class Sonarr:
         port = parsed.port or (443 if parsed.scheme == "https" else 8989)
         tls = parsed.scheme == "https"
 
-        self._sonarr = SonarrClient(host=host, api_key=api_key, port=port, tls=tls)
+        self._sonarr = SonarrClient(
+            host=host, api_key=api_key, port=port, tls=tls, base_path=parsed.path
+        )
 
     def lookup_series(self, query: str) -> list[Series]:
         # Note: pyarr v6 raises exceptions on API errors instead of returning error dicts

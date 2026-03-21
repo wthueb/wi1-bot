@@ -17,7 +17,9 @@ class Radarr:
         port = parsed.port or (443 if parsed.scheme == "https" else 7878)
         tls = parsed.scheme == "https"
 
-        self._radarr = RadarrClient(host=host, api_key=api_key, port=port, tls=tls)
+        self._radarr = RadarrClient(
+            host=host, api_key=api_key, port=port, tls=tls, base_path=parsed.path
+        )
 
     def lookup_movie(self, query: str) -> list[Movie]:
         possible_movies = self._radarr.movie.lookup(term=query)
