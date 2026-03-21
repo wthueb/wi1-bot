@@ -21,10 +21,6 @@
               ffmpeg-full
               uv
             ];
-            env = {
-              UV_PYTHON_DOWNLOADS = "never";
-              UV_PYTHON = pkgs.python312.interpreter;
-            };
             shellHook = ''
               uv sync
               source .venv/bin/activate
