@@ -5,13 +5,13 @@ import pytest
 
 from wi1_bot.arr.movie import Movie
 from wi1_bot.arr.radarr import Radarr
-from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
+from wi1_bot.arr.sonarr import Series, Sonarr
 
 
 class TestRadarr:
     @pytest.fixture
     def radarr(self) -> Radarr:
-        with patch("wi1_bot.arr.radarr.RadarrAPI"):
+        with patch("wi1_bot.arr.radarr.RadarrClient"):
             return Radarr("http://localhost:7878", "fake-api-key")
 
     @pytest.fixture
@@ -24,14 +24,14 @@ class TestRadarr:
         }
 
     def test_lookup_movie(self, radarr: Radarr, sample_movie_json: dict[str, Any]) -> None:
-        radarr._radarr.lookup_movie = MagicMock(return_value=[sample_movie_json])
+        radarr._radarr.movie.lookup = MagicMock(return_value=[sample_movie_json])
 
         movies = radarr.lookup_movie("The Matrix")
 
         assert len(movies) == 1
         assert movies[0].title == "The Matrix"
         assert movies[0].year == 1999
-        radarr._radarr.lookup_movie.assert_called_once_with("The Matrix")
+        radarr._radarr.movie.lookup.assert_called_once_with(term="The Matrix")
 
     def test_lookup_library_filters_by_id(
         self, radarr: Radarr, sample_movie_json: dict[str, Any]
@@ -39,7 +39,7 @@ class TestRadarr:
         movie_with_id = {**sample_movie_json, "id": 1}
         movie_without_id = sample_movie_json.copy()
 
-        radarr._radarr.lookup_movie = MagicMock(return_value=[movie_with_id, movie_without_id])
+        radarr._radarr.movie.lookup = MagicMock(return_value=[movie_with_id, movie_without_id])
 
         movies = radarr.lookup_library("The Matrix")
 
@@ -60,8 +60,8 @@ class TestRadarr:
         movie_without_user_tag = {**sample_movie_json, "id": 2}
 
         radarr._get_tag_for_user_id = MagicMock(return_value=5)
-        radarr._radarr.get_tag_detail = MagicMock(return_value={"movieIds": [1]})
-        radarr._radarr.lookup_movie = MagicMock(
+        radarr._radarr.tag.get_detail = MagicMock(return_value={"movieIds": [1]})
+        radarr._radarr.movie.lookup = MagicMock(
             return_value=[movie_with_user_tag, movie_without_user_tag]
         )
 
@@ -74,29 +74,29 @@ class TestRadarr:
         self, radarr: Radarr, sample_movie_json: dict[str, Any]
     ) -> None:
         movie = Movie(sample_movie_json)
-        radarr._radarr.get_movie = MagicMock(return_value=[{"id": 1}])
+        radarr._radarr.movie.get = MagicMock(return_value=[{"id": 1}])
 
         result = radarr.add_movie(movie)
 
         assert result is False
-        radarr._radarr.add_movie.assert_not_called()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
+        radarr._radarr.movie.add.assert_not_called()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
 
     def test_add_movie_success(self, radarr: Radarr, sample_movie_json: dict[str, Any]) -> None:
         movie = Movie(sample_movie_json)
-        radarr._radarr.get_movie = MagicMock(return_value=[])
+        radarr._radarr.movie.get = MagicMock(return_value=[])
         radarr._get_quality_profile_id = MagicMock(return_value=1)
-        radarr._radarr.get_root_folder = MagicMock(return_value=[{"path": "/movies"}])
-        radarr._radarr.add_movie = MagicMock()
+        radarr._radarr.root_folder.get = MagicMock(return_value=[{"path": "/movies"}])
+        radarr._radarr.movie.add = MagicMock()
 
         result = radarr.add_movie(movie)
 
         assert result is True
-        radarr._radarr.add_movie.assert_called_once()
+        radarr._radarr.movie.add.assert_called_once()
 
     def test_movie_downloaded_true(self, radarr: Radarr, sample_movie_json: dict[str, Any]) -> None:
         movie = Movie(sample_movie_json)
-        radarr._radarr.get_movie = MagicMock(return_value=[{"id": 1}])
-        radarr._radarr.get_movie_files_by_movie_id = MagicMock(
+        radarr._radarr.movie.get = MagicMock(return_value=[{"id": 1}])
+        radarr._radarr.movie_file.get = MagicMock(
             return_value=[{"id": 1, "path": "/path/to/movie.mkv"}]
         )
 
@@ -108,8 +108,8 @@ class TestRadarr:
         self, radarr: Radarr, sample_movie_json: dict[str, Any]
     ) -> None:
         movie = Movie(sample_movie_json)
-        radarr._radarr.get_movie = MagicMock(return_value=[{"id": 1}])
-        radarr._radarr.get_movie_files_by_movie_id = MagicMock(return_value=[])
+        radarr._radarr.movie.get = MagicMock(return_value=[{"id": 1}])
+        radarr._radarr.movie_file.get = MagicMock(return_value=[])
 
         result = radarr.movie_downloaded(movie)
 
@@ -117,14 +117,14 @@ class TestRadarr:
 
     def test_movie_not_in_library(self, radarr: Radarr, sample_movie_json: dict[str, Any]) -> None:
         movie = Movie(sample_movie_json)
-        radarr._radarr.get_movie = MagicMock(return_value=[])
+        radarr._radarr.movie.get = MagicMock(return_value=[])
 
         result = radarr.movie_downloaded(movie)
 
         assert result is False
 
     def test_get_tag_for_user_id_exists(self, radarr: Radarr) -> None:
-        radarr._radarr.get_tag = MagicMock(
+        radarr._radarr.tag.get = MagicMock(
             return_value=[
                 {"id": 1, "label": "user-123456"},
                 {"id": 2, "label": "user-789012"},
@@ -136,13 +136,13 @@ class TestRadarr:
         assert tag_id == 1
 
     def test_get_tag_for_user_id_not_exists(self, radarr: Radarr) -> None:
-        radarr._radarr.get_tag = MagicMock(return_value=[{"id": 1, "label": "user-789012"}])
+        radarr._radarr.tag.get = MagicMock(return_value=[{"id": 1, "label": "user-789012"}])
 
         with pytest.raises(ValueError, match="no tag with the user id 123456"):
             radarr._get_tag_for_user_id(123456)
 
     def test_get_quality_profile_id_exists(self, radarr: Radarr) -> None:
-        radarr._radarr.get_quality_profile = MagicMock(
+        radarr._radarr.quality_profile.get = MagicMock(
             return_value=[
                 {"id": 1, "name": "Good"},
                 {"id": 2, "name": "HD-1080p"},
@@ -154,7 +154,7 @@ class TestRadarr:
         assert profile_id == 1
 
     def test_get_quality_profile_id_not_exists(self, radarr: Radarr) -> None:
-        radarr._radarr.get_quality_profile = MagicMock(return_value=[{"id": 1, "name": "HD-1080p"}])
+        radarr._radarr.quality_profile.get = MagicMock(return_value=[{"id": 1, "name": "HD-1080p"}])
 
         with pytest.raises(ValueError, match="no quality profile with the name bad"):
             radarr._get_quality_profile_id("bad")
@@ -163,7 +163,7 @@ class TestRadarr:
 class TestSonarr:
     @pytest.fixture
     def sonarr(self) -> Sonarr:
-        with patch("wi1_bot.arr.sonarr.SonarrAPI"):
+        with patch("wi1_bot.arr.sonarr.SonarrClient"):
             return Sonarr("http://localhost:8989", "fake-api-key")
 
     @pytest.fixture
@@ -176,20 +176,14 @@ class TestSonarr:
         }
 
     def test_lookup_series(self, sonarr: Sonarr, sample_series_json: dict[str, Any]) -> None:
-        sonarr._sonarr.lookup_series = MagicMock(return_value=[sample_series_json])
+        sonarr._sonarr.series.lookup = MagicMock(return_value=[sample_series_json])
 
         series_list = sonarr.lookup_series("Game of Thrones")
 
         assert len(series_list) == 1
         assert series_list[0].title == "Game of Thrones"
         assert series_list[0].year == 2011
-        sonarr._sonarr.lookup_series.assert_called_once_with("Game of Thrones")
-
-    def test_lookup_series_error(self, sonarr: Sonarr) -> None:
-        sonarr._sonarr.lookup_series = MagicMock(return_value={"message": "API error occurred"})
-
-        with pytest.raises(SonarrError, match="API error occurred"):
-            sonarr.lookup_series("Bad Query")
+        sonarr._sonarr.series.lookup.assert_called_once_with(term="Game of Thrones")
 
     def test_lookup_library_filters_by_id(
         self, sonarr: Sonarr, sample_series_json: dict[str, Any]
@@ -197,7 +191,7 @@ class TestSonarr:
         series_with_id = {**sample_series_json, "id": 1}
         series_without_id = sample_series_json.copy()
 
-        sonarr._sonarr.lookup_series = MagicMock(return_value=[series_with_id, series_without_id])
+        sonarr._sonarr.series.lookup = MagicMock(return_value=[series_with_id, series_without_id])
 
         series_list = sonarr.lookup_library("Game of Thrones")
 
@@ -218,7 +212,7 @@ class TestSonarr:
         series_without_user_tag = {**sample_series_json, "tags": [3]}
 
         sonarr._get_tag_for_user_id = MagicMock(return_value=5)
-        sonarr._sonarr.lookup_series = MagicMock(
+        sonarr._sonarr.series.lookup = MagicMock(
             return_value=[series_with_user_tag, series_without_user_tag]
         )
 
@@ -235,27 +229,26 @@ class TestSonarr:
         result = sonarr.add_series(series)
 
         assert result is False
-        sonarr._sonarr.add_series.assert_not_called()
+        sonarr._sonarr.series.add.assert_not_called()  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
 
     def test_add_series_success(self, sonarr: Sonarr, sample_series_json: dict[str, Any]) -> None:
         series = Series(sample_series_json)
         sonarr._get_quality_profile_id = MagicMock(return_value=1)
-        sonarr._sonarr.get_language_profile = MagicMock(return_value=[{"id": 1}])
-        sonarr._sonarr.get_root_folder = MagicMock(return_value=[{"path": "/tv"}])
-        sonarr._sonarr.add_series = MagicMock(return_value={"id": 123})
+        sonarr._sonarr.root_folder.get = MagicMock(return_value=[{"path": "/tv"}])
+        sonarr._sonarr.series.add = MagicMock(return_value={"id": 123})
 
         result = sonarr.add_series(series)
 
         assert result is True
         assert series.db_id == 123
-        sonarr._sonarr.add_series.assert_called_once()
+        sonarr._sonarr.series.add.assert_called_once()
 
     def test_series_downloaded_true(
         self, sonarr: Sonarr, sample_series_json: dict[str, Any]
     ) -> None:
         series_json_with_id = {**sample_series_json, "id": 1}
         series = Series(series_json_with_id)
-        sonarr._sonarr.get_episode_files_by_series_id = MagicMock(
+        sonarr._sonarr.episode_file.get = MagicMock(
             return_value=[{"id": 1, "path": "/path/to/episode.mkv"}]
         )
 
@@ -268,7 +261,7 @@ class TestSonarr:
     ) -> None:
         series_json_with_id = {**sample_series_json, "id": 1}
         series = Series(series_json_with_id)
-        sonarr._sonarr.get_episode_files_by_series_id = MagicMock(return_value=[])
+        sonarr._sonarr.episode_file.get = MagicMock(return_value=[])
 
         result = sonarr.series_downloaded(series)
 
@@ -284,7 +277,7 @@ class TestSonarr:
         assert result is False
 
     def test_get_tag_for_user_id_exists(self, sonarr: Sonarr) -> None:
-        sonarr._sonarr.get_tag = MagicMock(
+        sonarr._sonarr.tag.get = MagicMock(
             return_value=[
                 {"id": 1, "label": "user-123456"},
                 {"id": 2, "label": "user-789012"},
@@ -296,7 +289,7 @@ class TestSonarr:
         assert tag_id == 1
 
     def test_get_tag_for_user_id_not_exists(self, sonarr: Sonarr) -> None:
-        sonarr._sonarr.get_tag = MagicMock(return_value=[{"id": 1, "label": "user-789012"}])
+        sonarr._sonarr.tag.get = MagicMock(return_value=[{"id": 1, "label": "user-789012"}])
 
         with pytest.raises(ValueError, match="no tag with the user id 123456"):
             sonarr._get_tag_for_user_id(123456)

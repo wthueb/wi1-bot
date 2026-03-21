@@ -202,6 +202,15 @@ wheels = [
 ]
 
 [[package]]
+name = "backoff"
+version = "2.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/d7/5bbeb12c44d7c4f2fb5b56abce497eb5ed9f34d85701de869acedd602619/backoff-2.2.1.tar.gz", hash = "sha256:03f829f5bb1923180821643f8753b0502c3b682293992485b0eef2807afa5cba", size = 17001, upload-time = "2022-10-05T19:19:32.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/73/b6e24bd22e6720ca8ee9a85a0c4a2971af8497d8f3193fa05390cbd46e09/backoff-2.2.1-py3-none-any.whl", hash = "sha256:63579f9a0628e06278f7e47b7d7d5b6ce20dc65c5e96a6f3ca99a6adca0396e8", size = 15148, upload-time = "2022-10-05T19:19:30.546Z" },
+]
+
+[[package]]
 name = "basedpyright"
 version = "1.36.1"
 source = { registry = "https://pypi.org/simple" }
@@ -875,16 +884,18 @@ wheels = [
 
 [[package]]
 name = "pyarr"
-version = "5.2.0"
+version = "6.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "backoff" },
     { name = "overrides" },
     { name = "requests" },
     { name = "types-requests" },
+    { name = "yarl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d7/dc/3df29efc72a53cad21de33e84144822ddfdbdd68127df6c577a187313de9/pyarr-5.2.0.tar.gz", hash = "sha256:8e571cf4a8f53184ac9ef2642995d75962550f1dca22ea238db1ad97c903529c", size = 35344, upload-time = "2023-07-28T14:51:54.483Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/b9/c1be33112e0b5cf84e982771f575ad48f605d9bb339908f7e2d827266c06/pyarr-6.0.0.tar.gz", hash = "sha256:a129fff64db0f96d9885c7be80b126fa7c5ec8a31cd9feacd4d4bc1d8d5d3bf3", size = 24773, upload-time = "2026-03-20T21:44:03.336Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/7b/703551fae52e6b2e3976f9dfb6c85d2226d523179f2d18bc6721cac6fb3d/pyarr-5.2.0-py3-none-any.whl", hash = "sha256:003e2c40183e97afc8a3da511573c25a3e8d7a9cb36ab28c0a678daeb706bcd4", size = 39607, upload-time = "2023-07-28T14:51:53.389Z" },
+    { url = "https://files.pythonhosted.org/packages/04/fa/2aa751e8e9ec8b559176f463959230b784cbc7d6a0a4698380e3f60bb496/pyarr-6.0.0-py3-none-any.whl", hash = "sha256:4861cfd5952893ffa236027edccc99d4090b584e33d7b8c33fb00dada36ca287", size = 60688, upload-time = "2026-03-20T21:44:04.497Z" },
 ]
 
 [[package]]
@@ -1239,7 +1250,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13.0" },
     { name = "discord-py", specifier = ">=2.3.2" },
     { name = "flask", specifier = ">=3.0.2" },
-    { name = "pyarr", specifier = ">=5.2.0" },
+    { name = "pyarr", specifier = ">=6.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },

@@ -1,13 +1,14 @@
 from shutil import rmtree
-from typing import Any
+from urllib.parse import urlparse
 
-from pyarr import SonarrAPI
+from pyarr import Sonarr as SonarrClient
+from pyarr.types import JsonArray, JsonObject
 
 from .download import Download
 
 
 class Series:
-    def __init__(self, series_json: dict[str, Any]) -> None:
+    def __init__(self, series_json: JsonObject) -> None:
         self.json = series_json
 
         self.title: str = series_json["title"]
@@ -41,18 +42,21 @@ class SonarrError(Exception):
 
 class Sonarr:
     def __init__(self, url: str, api_key: str) -> None:
-        self._sonarr = SonarrAPI(url, api_key)
+        parsed = urlparse(url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or (443 if parsed.scheme == "https" else 8989)
+        tls = parsed.scheme == "https"
+
+        self._sonarr = SonarrClient(host=host, api_key=api_key, port=port, tls=tls)
 
     def lookup_series(self, query: str) -> list[Series]:
-        possible_series = self._sonarr.lookup_series(query)
-
-        if isinstance(possible_series, dict):
-            raise SonarrError(possible_series["message"])
+        # Note: pyarr v6 raises exceptions on API errors instead of returning error dicts
+        possible_series = self._sonarr.series.lookup(term=query)
 
         return [Series(s) for s in possible_series]
 
     def lookup_library(self, query: str) -> list[Series]:
-        possible_series = self._sonarr.lookup_series(query)
+        possible_series = self._sonarr.series.lookup(term=query)
 
         return [Series(s) for s in possible_series if "id" in s]
 
@@ -62,10 +66,10 @@ class Sonarr:
         except ValueError:
             return []
 
-        possible_series = self._sonarr.lookup_series(query)
+        possible_series = self._sonarr.series.lookup(term=query)
 
-        # self._sonarr.get_tag_detail is broken/not supported in v1 sonarr API so have
-        # to filter the tmdb lookup (probably slower but saves an API call)
+        # self._sonarr.tag.get_detail is broken/not supported in v1 sonarr API so have
+        # to filter the tvdb lookup (probably slower but saves an API call)
         user_series = [s for s in possible_series if tag_id in s["tags"]]
 
         return [Series(s) for s in user_series]
@@ -75,15 +79,17 @@ class Sonarr:
             return False
 
         quality_profile_id = self._get_quality_profile_id(profile)
-        language_profile_id = self._sonarr.get_language_profile()[0]["id"]
-        root_folder = self._sonarr.get_root_folder()
-        assert isinstance(root_folder, list)
-        root_folder_path = root_folder[0]["path"]
 
-        series_json = self._sonarr.add_series(
-            series.json,
+        root_folder = self._sonarr.root_folder.get()
+        assert isinstance(root_folder, list)
+        root_folder_path: str = root_folder[0]["path"]
+
+        # Note: language_profile_id is deprecated in Sonarr v4, but pyarr still requires it.
+        # Using 1 as a default placeholder value.
+        series_json = self._sonarr.series.add(
+            series=series.json,
             quality_profile_id=quality_profile_id,
-            language_profile_id=language_profile_id,
+            language_profile_id=1,
             root_dir=root_folder_path,
             search_for_missing_episodes=True,
         )
@@ -96,10 +102,10 @@ class Sonarr:
         if series.db_id is None:
             raise ValueError(f"{series} is not in the library")
 
-        series_json = self._sonarr.get_series(series.db_id)
+        series_json = self._sonarr.series.get(item_id=series.db_id)
         assert isinstance(series_json, dict)
 
-        self._sonarr.del_series(series.db_id, delete_files=True)
+        self._sonarr.series.delete(item_id=series.db_id, delete_files=True)
 
         try:
             rmtree(series_json["path"])
@@ -110,46 +116,46 @@ class Sonarr:
         if series.db_id is None:
             return False
 
-        files = self._sonarr.get_episode_files_by_series_id(series.db_id)
+        files = self._sonarr.episode_file.get(series_id=series.db_id)
+        assert isinstance(files, list)
 
-        if files:
-            return True
-
-        return False
+        return len(files) > 0
 
     def create_tag(self, tag: str) -> None:
-        self._sonarr.create_tag(tag)
+        self._sonarr.tag.create(label=tag)
 
     def add_tag(self, series: Series, user_id: int) -> bool:
         try:
             tag_id = self._get_tag_for_user_id(user_id)
         except ValueError:
-            # tag_id = self._radarr.create_tag(str(user_id))['id']
+            # tag_id = self._sonarr.tag.create(label=str(user_id))['id']
 
             return False
 
-        series_json = self._sonarr.get_series(series.db_id)
+        series_json = self._sonarr.series.get(item_id=series.db_id)
         assert isinstance(series_json, dict)
 
         series_json["tags"].append(tag_id)
 
-        self._sonarr.upd_series(series_json)
+        self._sonarr.series.update(data=series_json)
 
         return True
 
     def get_downloads(self) -> list[Download]:
-        queue = self._sonarr.get_queue(
+        queue = self._sonarr.queue.get(
             page=1,
             page_size=100,
             sort_key="timeleft",
             sort_dir="ascending",
-            include_unknown_series_items=False,
-        )["records"]
+            include_series=True,
+            include_episode=True,
+        )
+        records: JsonArray = queue.get("records", [])
 
         seen: set[str] = set()
         downloads: list[Download] = []
 
-        for item in queue:
+        for item in records:
             d = Download(item)
 
             # dedupe in the case of season packs
@@ -172,51 +178,57 @@ class Sonarr:
 
         total = 0
 
-        for series in self._sonarr.get_series():
-            assert isinstance(series, dict)
-            if tag_id in series["tags"]:
-                total += series["statistics"]["sizeOnDisk"]
+        all_series = self._sonarr.series.get()
+        assert isinstance(all_series, list)
+
+        for s in all_series:
+            if tag_id in s["tags"]:
+                total += s["statistics"]["sizeOnDisk"]
 
         return total
 
     def get_quality_profile_name(self, profile_id: int) -> str:
-        profiles = self._sonarr.get_quality_profile()
+        profiles = self._sonarr.quality_profile.get()
+        assert isinstance(profiles, list)
 
         for profile in profiles:
             if profile["id"] == profile_id:
-                name = profile["name"]
-                assert isinstance(name, str)
+                name: str = profile["name"]
                 return name
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
-    def get_series(self) -> list[dict[str, Any]]:
-        series = self._sonarr.get_series()
+    def get_series(self) -> JsonArray:
+        series = self._sonarr.series.get()
         assert isinstance(series, list)
         return series
 
+    def get_series_by_id(self, series_id: int) -> JsonObject:
+        series = self._sonarr.series.get(item_id=series_id)
+        assert isinstance(series, dict)
+        return series
+
     def rescan_series(self, series_id: int) -> None:
-        self._sonarr.post_command("RescanSeries", seriesId=series_id)  # type: ignore
+        self._sonarr.command.execute(name="RescanSeries", seriesId=series_id)
 
     def _get_quality_profile_id(self, name: str) -> int:
-        profiles = self._sonarr.get_quality_profile()
+        profiles = self._sonarr.quality_profile.get()
+        assert isinstance(profiles, list)
 
         for profile in profiles:
             if profile["name"].lower() == name.lower():
-                profile_id = profile["id"]
-                assert isinstance(profile_id, int)
+                profile_id: int = profile["id"]
                 return profile_id
 
         raise ValueError(f"no quality profile with the name {name}")
 
     def _get_tag_for_user_id(self, user_id: int) -> int:
-        tags = self._sonarr.get_tag()
+        tags = self._sonarr.tag.get()
         assert isinstance(tags, list)
 
         for tag in tags:
             if str(user_id) in tag["label"]:
-                tag_id = tag["id"]
-                assert isinstance(tag_id, int)
+                tag_id: int = tag["id"]
                 return tag_id
 
         raise ValueError(f"no tag with the user id {user_id}")

@@ -1,6 +1,5 @@
 import argparse
 from time import sleep
-from typing import cast
 
 from wi1_bot.arr.radarr import Radarr
 from wi1_bot.arr.sonarr import Sonarr
@@ -10,28 +9,24 @@ from wi1_bot.config import config
 def rescan_radarr() -> None:
     radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
 
-    all_movies = radarr._radarr.get_movie()  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportPrivateUsage]
-    assert isinstance(all_movies, list)
-    all_movies.sort(key=lambda m: cast(str, m["title"]))  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
+    all_movies = radarr.get_movies()
+    all_movies.sort(key=lambda m: m["title"])
 
-    for movie in all_movies:  # pyright: ignore[reportUnknownVariableType]
-        assert isinstance(movie, dict)
+    for movie in all_movies:
         print(f"Rescanning {movie['title']}...")
-        radarr.refresh_movie(movie["id"])  # pyright: ignore[reportUnknownArgumentType]
+        radarr.refresh_movie(movie["id"])
         sleep(3)
 
 
 def rescan_sonarr() -> None:
     sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
-    all_series = sonarr._sonarr.get_series()  # pyright: ignore[reportPrivateUsage]
-    assert isinstance(all_series, list)
-    all_series.sort(key=lambda s: cast(str, s["title"]))  # pyright: ignore[reportUnknownMemberType, reportUnknownLambdaType]
+    all_series = sonarr.get_series()
+    all_series.sort(key=lambda s: s["title"])
 
-    for series in all_series:  # pyright: ignore[reportUnknownVariableType]
-        assert isinstance(series, dict)
+    for series in all_series:
         print(f"Rescanning {series['title']}...")
-        sonarr.rescan_series(series["id"])  # pyright: ignore[reportUnknownArgumentType]
+        sonarr.rescan_series(series["id"])
         sleep(5)
 
 
