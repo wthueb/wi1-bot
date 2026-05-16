@@ -6,7 +6,6 @@ from typing import Any
 
 from flask import Flask, request
 
-from wi1_bot import push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
 from wi1_bot.transcoder.transcode_queue import queue
@@ -21,10 +20,6 @@ radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
 sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
 
 
-def on_grab(req: dict[str, Any]) -> None:
-    push.send(req["release"]["releaseTitle"], title=f"file grabbed ({req['downloadClient']})")
-
-
 def on_download(req: dict[str, Any]) -> None:
     path: Path
 
@@ -37,9 +32,6 @@ def on_download(req: dict[str, Any]) -> None:
         relative_path = req["movieFile"]["relativePath"]
 
         path = Path(movie_folder) / relative_path
-
-        if not req["isUpgrade"]:
-            push.send(path.name, title="new movie downloaded")
     elif "series" in req:
         series_json = sonarr.get_series_by_id(req["series"]["id"])
 
@@ -49,9 +41,6 @@ def on_download(req: dict[str, Any]) -> None:
         relative_path = req["episodeFile"]["relativePath"]
 
         path = Path(series_folder) / relative_path
-
-        if not req["isUpgrade"]:
-            push.send(path.name, title="new episode downloaded")
     else:
         raise ValueError("unknown download request")
 

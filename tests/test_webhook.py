@@ -60,26 +60,13 @@ class TestWebhook:
             "downloadClient": "qBittorrent",
         }
 
-    @patch("wi1_bot.webhook.push")
-    def test_on_grab(self, mock_push: MagicMock, grab_request: dict[str, Any]) -> None:
-        from wi1_bot.webhook import on_grab
-
-        on_grab(grab_request)
-
-        mock_push.send.assert_called_once_with(
-            "The.Matrix.1999.1080p.BluRay.x265",
-            title="file grabbed (qBittorrent)",
-        )
-
     @patch("wi1_bot.webhook.radarr")
-    @patch("wi1_bot.webhook.push")
     @patch("wi1_bot.webhook.queue")
     @patch("wi1_bot.webhook.config")
     def test_on_download_movie_without_transcoding(
         self,
         mock_config: MagicMock,
         mock_queue: MagicMock,
-        mock_push: MagicMock,
         mock_radarr: MagicMock,
         movie_download_request: dict[str, Any],
     ) -> None:
@@ -92,13 +79,9 @@ class TestWebhook:
 
         on_download(movie_download_request)
 
-        mock_push.send.assert_called_once_with(
-            "The Matrix (1999).mkv", title="new movie downloaded"
-        )
         mock_queue.add.assert_not_called()
 
     @patch("wi1_bot.webhook.radarr")
-    @patch("wi1_bot.webhook.push")
     @patch("wi1_bot.webhook.queue")
     @patch("wi1_bot.webhook.config")
     @patch("wi1_bot.webhook.replace_remote_paths")
@@ -107,7 +90,6 @@ class TestWebhook:
         mock_replace_paths: MagicMock,
         mock_config: MagicMock,
         mock_queue: MagicMock,
-        mock_push: MagicMock,
         mock_radarr: MagicMock,
         movie_download_request: dict[str, Any],
         mock_transcoding_config: MagicMock,
@@ -122,9 +104,6 @@ class TestWebhook:
 
         on_download(movie_download_request)
 
-        mock_push.send.assert_called_once_with(
-            "The Matrix (1999).mkv", title="new movie downloaded"
-        )
         mock_queue.add.assert_called_once_with(
             path="/movies/The Matrix (1999)/The Matrix (1999).mkv",
             languages="eng",
@@ -133,7 +112,6 @@ class TestWebhook:
         )
 
     @patch("wi1_bot.webhook.sonarr")
-    @patch("wi1_bot.webhook.push")
     @patch("wi1_bot.webhook.queue")
     @patch("wi1_bot.webhook.config")
     @patch("wi1_bot.webhook.replace_remote_paths")
@@ -142,7 +120,6 @@ class TestWebhook:
         mock_replace_paths: MagicMock,
         mock_config: MagicMock,
         mock_queue: MagicMock,
-        mock_push: MagicMock,
         mock_sonarr: MagicMock,
         series_download_request: dict[str, Any],
         mock_transcoding_config: MagicMock,
@@ -157,16 +134,13 @@ class TestWebhook:
 
         on_download(series_download_request)
 
-        mock_push.send.assert_called_once_with("S01E01.mkv", title="new episode downloaded")
         mock_queue.add.assert_called_once()
 
     @patch("wi1_bot.webhook.radarr")
-    @patch("wi1_bot.webhook.push")
     @patch("wi1_bot.webhook.config")
     def test_on_download_upgrade_no_notification(
         self,
         mock_config: MagicMock,
-        mock_push: MagicMock,
         mock_radarr: MagicMock,
         movie_download_request: dict[str, Any],
     ) -> None:
@@ -179,8 +153,6 @@ class TestWebhook:
         mock_radarr.get_quality_profile_name = MagicMock(return_value="good")
 
         on_download(movie_download_request)
-
-        mock_push.send.assert_not_called()
 
     def test_on_download_unknown_request(self) -> None:
         from wi1_bot.webhook import on_download
