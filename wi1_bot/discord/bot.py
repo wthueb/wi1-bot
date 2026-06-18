@@ -83,19 +83,30 @@ async def downloads_cmd(ctx: commands.Context[commands.Bot]) -> None:
     await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
+def _used_space_gb(user_ids: set[int]) -> float:
+    return (
+        sum(radarr.get_quota_amount(uid) + sonarr.get_quota_amount(uid) for uid in user_ids)
+        / 1024**3
+    )
+
+
 @bot.command(name="quota", help="see your used space on the plex")
 @commands.cooldown(1, 60, commands.BucketType.user)
 async def quota_cmd(ctx: commands.Context[commands.Bot]) -> None:
     async with ctx.typing():
-        used = (
-            radarr.get_quota_amount(ctx.message.author.id)
-            + sonarr.get_quota_amount(ctx.message.author.id)
-        ) / 1024**3
+        author_id = ctx.message.author.id
 
+        # find the quota this user falls under, as either the owner or a member
+        user_ids = {author_id}
         maximum: float = 0
 
-        if ctx.message.author.id in config.discord.quotas:
-            maximum = config.discord.quotas[ctx.message.author.id]
+        for owner_id, quota in config.discord.quotas.items():
+            if author_id == owner_id or author_id in quota.with_:
+                user_ids = {owner_id, *quota.with_}
+                maximum = quota.amount
+                break
+
+        used = _used_space_gb(user_ids)
 
         pct = used / maximum * 100 if maximum != 0 else 100
 
@@ -115,12 +126,14 @@ async def quotas_cmd(ctx: commands.Context[commands.Bot]) -> None:
     async with ctx.typing():
         msg: list[str] = []
 
-        for user_id, total in quotas.items():
-            used = (radarr.get_quota_amount(user_id) + sonarr.get_quota_amount(user_id)) / 1024**3
+        for owner_id, quota in quotas.items():
+            total = quota.amount
+
+            used = _used_space_gb({owner_id, *quota.with_})
 
             pct = used / total * 100 if total != 0 else 100
 
-            user = await bot.fetch_user(user_id)
+            user = await bot.fetch_user(owner_id)
 
             msg.append(f"{user.display_name}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)")
 

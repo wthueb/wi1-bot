@@ -36,7 +36,12 @@ discord:
   quotas:
     # value is in gigabytes
     USER1_ID: 123
-    USER2_ID: 456
+    # additional discord ids can count toward the same quota
+    USER2_ID:
+      amount: 456
+      with:
+        - OTHER_USER_ID1
+        - OTHER_USER_ID2
 
 # pushover settings, optional
 pushover:
