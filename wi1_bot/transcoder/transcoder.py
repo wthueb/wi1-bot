@@ -221,6 +221,8 @@ class Transcoder:
             if remove:
                 queue.remove(item)
 
+            self.logger.info(f"remaining queue size: {queue.size}")
+
             sleep(3)
 
     def transcode(self, item: TranscodeItem) -> bool:
