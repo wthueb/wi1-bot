@@ -19,6 +19,8 @@ Requires Python >=3.12.
 
 ### TODO
 
+- use seerr for search/requests
+  - !link discord user to seerr user
 - fix basedpyright errors, avoiding ignore comments where possible
 - multiple transcode workers
   - main server instance (as part of the existing webhook server, rename to api?). core app wouldn't be running transcoder anymore
@@ -33,12 +35,10 @@ Requires Python >=3.12.
 - transcode avis
 - integration testing
   - https://pypi.org/project/pytest-docker/
-- use overseerr for search/requests
 - web dashboard? django i guess?
   - transcode queue, transcode progress, quotas
   - reactivity would be nice, maybe htmx/alpinejs?
     - https://www.mattlayman.com/blog/2021/how-to-htmx-django/
-- link discord user to overseerr user
 - ffmpeg filters for deinterlacing, scaling
   - https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html#hwaccel-transcode-with-scaling
 - have config.discord.users be a dict with 'quotas' and 'name' for *arr tags
