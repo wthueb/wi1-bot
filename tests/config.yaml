@@ -4,11 +4,13 @@ radarr:
   url: http://localhost:7878
   api_key: test-api-key
   root_folder: /tmp/movies
+  instance_name: Radarr
 
 sonarr:
   url: http://localhost:8989
   api_key: test-api-key
   root_folder: /tmp/shows
+  instance_name: Sonarr
 
 discord:
   bot_token: test-token

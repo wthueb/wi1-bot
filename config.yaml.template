@@ -12,6 +12,8 @@ radarr:
   api_key: XXX
   # radarr root folder (absolute path)
   root_folder: /full/path/movies
+  # radarr instance name (Settings->General->Instance Name)
+  instance_name: Radarr
 
 sonarr:
   # sonarr url you use to get to the dashboard
@@ -20,6 +22,8 @@ sonarr:
   api_key: XXX
   # sonarr root folder (absolute path)
   root_folder: /full/path/shows
+  # sonarr instance name (Settings->General->Instance Name)
+  instance_name: Sonarr
 
 discord:
   # discord bot token

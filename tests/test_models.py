@@ -1,4 +1,4 @@
-from wi1_bot.arr.download import Download
+from wi1_bot.arr.common import Download
 from wi1_bot.arr.episode import Episode
 from wi1_bot.arr.movie import Movie
 

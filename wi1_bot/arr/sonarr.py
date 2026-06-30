@@ -1,10 +1,13 @@
+from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urlparse
 
 from pyarr import Sonarr as SonarrClient
 from pyarr.types import JsonArray, JsonObject
 
-from .download import Download
+from wi1_bot.config import ArrConfig
+
+from .common import Download, ImportMode
 
 
 class Series:
@@ -41,6 +44,10 @@ class SonarrError(Exception):
 
 
 class Sonarr:
+    @classmethod
+    def from_config(cls, config: ArrConfig) -> "Sonarr":
+        return Sonarr(str(config.url), config.api_key)
+
     def __init__(self, url: str, api_key: str) -> None:
         parsed = urlparse(url)
         host = parsed.hostname or "localhost"
@@ -210,8 +217,34 @@ class Sonarr:
         assert isinstance(series, dict)
         return series
 
+    def is_episode_monitored(self, tvdb_id: int, season_number: int, episode_number: int) -> bool:
+        series = self._sonarr.series.get(item_id=tvdb_id, tvdb=True)
+        assert isinstance(series, list)
+
+        if not series:
+            return False
+
+        episodes = self._sonarr.episode.get(series_id=series[0]["id"])
+        assert isinstance(episodes, list)
+
+        for episode in episodes:
+            if (
+                episode["seasonNumber"] == season_number
+                and episode["episodeNumber"] == episode_number
+            ):
+                return bool(episode["monitored"])
+
+        return False
+
     def rescan_series(self, series_id: int) -> None:
         self._sonarr.command.execute(name="RescanSeries", seriesId=series_id)
+
+    def downloaded_episodes_scan(
+        self, path: Path, import_mode: ImportMode = ImportMode.AUTO
+    ) -> None:
+        self._sonarr.command.execute(
+            name="DownloadedEpisodesScan", path=str(path), importMode=import_mode
+        )
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._sonarr.quality_profile.get()

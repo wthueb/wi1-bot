@@ -14,7 +14,7 @@ class SeriesCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger(__name__)
-        self.sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
+        self.sonarr = Sonarr.from_config(config.sonarr)
 
     @commands.command(name="addshow", help="add a show to the plex")
     @commands.has_any_role("plex-admin", "plex-shows")

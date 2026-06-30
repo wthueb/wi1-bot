@@ -184,8 +184,8 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[
 class Transcoder:
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
-        self.radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
-        self.sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
+        self.radarr = Radarr.from_config(config.radarr)
+        self.sonarr = Sonarr.from_config(config.sonarr)
 
     def start(self) -> None:
         self.logger.info("starting transcoder")

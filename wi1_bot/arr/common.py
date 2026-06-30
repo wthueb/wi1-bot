@@ -1,7 +1,14 @@
+from enum import IntEnum
 from typing import Any
 
 from .episode import Episode
 from .movie import Movie
+
+
+class ImportMode(IntEnum):
+    AUTO = 0
+    MOVE = 1
+    COPY = 2
 
 
 class Download:

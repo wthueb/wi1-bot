@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=["!", "."])
 
-radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
-sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
+radarr = Radarr.from_config(config.radarr)
+sonarr = Sonarr.from_config(config.sonarr)
 
 
 @bot.check

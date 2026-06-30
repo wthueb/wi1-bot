@@ -1,16 +1,23 @@
+from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urlparse
 
 from pyarr import Radarr as RadarrClient
 from pyarr.types import JsonArray, JsonObject
 
-from .download import Download
+from wi1_bot.config import ArrConfig
+
+from .common import Download, ImportMode
 from .movie import Movie
 
 __all__ = ["Movie", "Radarr"]
 
 
 class Radarr:
+    @classmethod
+    def from_config(cls, config: ArrConfig) -> "Radarr":
+        return Radarr(str(config.url), config.api_key)
+
     def __init__(self, url: str, api_key: str) -> None:
         parsed = urlparse(url)
         host = parsed.hostname or "localhost"
@@ -164,6 +171,12 @@ class Radarr:
         assert isinstance(movie, dict)
         return movie
 
+    def is_movie_monitored(self, tmdb_id: int) -> bool:
+        movies = self._radarr.movie.get(tmdb_id=tmdb_id)
+        assert isinstance(movies, list)
+
+        return bool(movies) and bool(movies[0]["monitored"])
+
     def rescan_movie(self, movie_id: int) -> None:
         self._radarr.command.execute(name="RescanMovie", movieId=movie_id)
 
@@ -172,6 +185,11 @@ class Radarr:
 
     def search_missing(self) -> None:
         self._radarr.command.execute(name="MissingMoviesSearch")
+
+    def downloaded_movies_scan(self, path: Path, import_mode: ImportMode = ImportMode.AUTO) -> None:
+        self._radarr.command.execute(
+            name="DownloadedMoviesScan", path=str(path), importMode=import_mode
+        )
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._radarr.quality_profile.get()
@@ -198,4 +216,4 @@ class Radarr:
 if __name__ == "__main__":
     from wi1_bot.config import config
 
-    radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
+    radarr = Radarr.from_config(config.radarr)

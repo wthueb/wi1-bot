@@ -7,7 +7,7 @@ from wi1_bot.config import config
 
 
 def rescan_radarr() -> None:
-    radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
+    radarr = Radarr.from_config(config.radarr)
 
     all_movies = radarr.get_movies()
     all_movies.sort(key=lambda m: m["title"])
@@ -19,7 +19,7 @@ def rescan_radarr() -> None:
 
 
 def rescan_sonarr() -> None:
-    sonarr = Sonarr(str(config.sonarr.url), config.sonarr.api_key)
+    sonarr = Sonarr.from_config(config.sonarr)
 
     all_series = sonarr.get_series()
     all_series.sort(key=lambda s: s["title"])

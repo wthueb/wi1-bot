@@ -14,7 +14,7 @@ class MovieCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.logger = logging.getLogger(__name__)
-        self.radarr = Radarr(str(config.radarr.url), config.radarr.api_key)
+        self.radarr = Radarr.from_config(config.radarr)
 
     @commands.command(name="addmovie", help="add a movie to the plex")
     async def addmovie_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:

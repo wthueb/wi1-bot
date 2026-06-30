@@ -101,10 +101,12 @@ radarr:
   url: http://localhost:7878
   api_key: test-radarr-key
   root_folder: /movies
+  instance_name: Radarr
 sonarr:
   url: http://localhost:8989
   api_key: test-sonarr-key
   root_folder: /tv
+  instance_name: Sonarr
 discord:
   bot_token: test-discord-token
   channel_id: 123456789
@@ -134,10 +136,12 @@ radarr:
   url: http://localhost:7878
   api_key: test-radarr-key
   root_folder: /movies
+  instance_name: Radarr
 sonarr:
   url: http://localhost:8989
   api_key: test-sonarr-key
   root_folder: /tv
+  instance_name: Sonarr
 discord:
   bot_token: test-discord-token
   channel_id: 123456789
