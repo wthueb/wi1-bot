@@ -19,8 +19,6 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable
 
-RUN sed -i 's/fallback-version = "0\.0\.0"/fallback-version = "'"$(uvx uv-dynamic-versioning)"'"/' pyproject.toml
-
 FROM builder AS test
 
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-editable
