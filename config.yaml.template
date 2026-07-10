@@ -58,11 +58,12 @@ pushover:
 
 # transcoding settings, optional
 transcoding:
-  # -hwaccel in ffmpeg, optional
-  hwaccel: cuda
   profiles:
     # name of profile must match name in radarr/sonarr
     good:
+      # -hwaccel in ffmpeg, per profile, optional
+      # omit for software decoding (no hardware acceleration)
+      hwaccel: cuda
       # ffmpeg arguments for video streams, don't include stream specifiers, optional
       # -c copy used if not specified
       video_params: -c hevc_nvenc -b 5000k
@@ -80,8 +81,11 @@ transcoding:
       # ffmpeg arguments to retry with once if a transcode fails, optional
       # e.g. fall back to software encoding if hardware encoding errors out
       fallback:
+        # hwaccel here too, optional; omit it to decode in software so a
+        # hardware-decoding failure can recover
         video_params: -c libx265 -b 5000k
         audio_params: -c aac -ac 2 -b 128k
     great:
+      hwaccel: cuda
       video_params: -c hevc_nvenc -b 8000k
       audio_params: -c dca -ac 6 -b 384k

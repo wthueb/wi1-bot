@@ -114,6 +114,13 @@ class DiscordConfig(BaseModel):
 class TranscodingFallback(BaseModel):
     video_params: str | None = Field(None, description="FFmpeg video parameters")
     audio_params: str | None = Field(None, description="FFmpeg audio parameters")
+    hwaccel: str | None = Field(
+        None,
+        description=(
+            "FFmpeg hardware acceleration for the fallback; omit for software"
+            " decoding (e.g. to recover from a hardware-decoding failure)"
+        ),
+    )
 
 
 class TranscodingProfile(BaseModel):
@@ -124,6 +131,10 @@ class TranscodingProfile(BaseModel):
         True,
         description="Keep a title's original-language tracks even if not in languages",
     )
+    hwaccel: str | None = Field(
+        None,
+        description="FFmpeg hardware acceleration for this profile; omit for software decoding",
+    )
     fallback: TranscodingFallback | None = Field(
         None, description="FFmpeg parameters to retry with once if a transcode fails"
     )
@@ -131,7 +142,6 @@ class TranscodingProfile(BaseModel):
 
 class TranscodingConfig(BaseModel):
     profiles: dict[str, TranscodingProfile] = Field(description="Transcoding profiles by name")
-    hwaccel: str | None = Field(None, description="FFmpeg hardware acceleration type")
 
     @field_validator("profiles")
     @classmethod

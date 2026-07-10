@@ -180,23 +180,35 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_command_with_hwaccel(
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
+    ) -> None:
+        mock_config.transcoding = None
+        item = TranscodeParams(path="/movies/test.mkv", hwaccel="cuda")
+        mock_ffprobe.return_value = mock_ffprobe_output
+
+        command = build_ffmpeg_command(item, "/tmp/output.mkv")
+
+        assert "-hwaccel" in command
+        assert "cuda" in command
+        assert "-hwaccel_output_format" in command
+
+    @patch("wi1_bot.transcoder.transcoder.ffprobe")
+    @patch("wi1_bot.transcoder.transcoder.config")
+    def test_command_without_hwaccel(
         self,
         mock_config: MagicMock,
         mock_ffprobe: MagicMock,
         basic_item: TranscodeParams,
         mock_ffprobe_output: dict[str, Any],
     ) -> None:
-        # Mock config with transcoding hwaccel
-        mock_transcoding = MagicMock()
-        mock_transcoding.hwaccel = "cuda"
-        mock_config.transcoding = mock_transcoding
+        mock_config.transcoding = None
         mock_ffprobe.return_value = mock_ffprobe_output
 
+        # no hwaccel on the params -> no hardware acceleration flags
         command = build_ffmpeg_command(basic_item, "/tmp/output.mkv")
 
-        assert "-hwaccel" in command
-        assert "cuda" in command
-        assert "-hwaccel_output_format" in command
+        assert "-hwaccel" not in command
+        assert "-hwaccel_output_format" not in command
 
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
@@ -397,6 +409,7 @@ class TestTranscodeFallback:
         audio_params: str = "-c:a aac",
         languages: str | None = None,
         keep_original_language: bool = False,
+        hwaccel: str | None = None,
         fallback: MagicMock | None = None,
     ) -> MagicMock:
         profile = MagicMock()
@@ -404,6 +417,7 @@ class TestTranscodeFallback:
         profile.audio_params = audio_params
         profile.languages = languages
         profile.keep_original_language = keep_original_language
+        profile.hwaccel = hwaccel
         profile.fallback = fallback
         return profile
 
@@ -555,3 +569,36 @@ class TestTranscodeFallback:
         params = mock_run.call_args.args[0]
         # the title's original language (jpn) is appended to the profile keep-list
         assert params.languages == "eng,jpn"
+
+    def test_profile_and_fallback_use_their_own_hwaccel(
+        self, transcoder: Transcoder, source_file: Path
+    ) -> None:
+        # the profile decodes with videotoolbox; its fallback omits hwaccel so it
+        # can decode in software when hardware decoding is what failed
+        fallback = MagicMock()
+        fallback.video_params = "-c:v sw"
+        fallback.audio_params = "-c:a copy"
+        fallback.hwaccel = None
+        item = TranscodeItem(path=str(source_file), quality_profile="good")
+        config = self._config(self._profile(hwaccel="videotoolbox", fallback=fallback))
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(
+                Transcoder,
+                "_run_ffmpeg",
+                side_effect=[
+                    (TranscodeResult.FAILED, 1, "boom"),
+                    (TranscodeResult.SUCCESS, 0, ""),
+                ],
+            ) as mock_run,
+            patch.object(t_mod, "shutil"),
+            patch.object(Transcoder, "_rescan_content"),
+        ):
+            transcoder.transcode(item)
+
+        assert mock_run.call_count == 2
+        primary_params = mock_run.call_args_list[0].args[0]
+        fallback_params = mock_run.call_args_list[1].args[0]
+        assert primary_params.hwaccel == "videotoolbox"
+        assert fallback_params.hwaccel is None

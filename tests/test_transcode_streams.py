@@ -39,13 +39,13 @@ def _profile(
     profile.audio_params = audio_params
     profile.languages = languages
     profile.keep_original_language = False
+    profile.hwaccel = None
     profile.fallback = None
     return profile
 
 
 def _config(profile: MagicMock) -> MagicMock:
     config = MagicMock()
-    config.transcoding.hwaccel = None
     config.transcoding.profiles = {"good": profile}
     return config
 

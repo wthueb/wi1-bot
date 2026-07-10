@@ -159,9 +159,9 @@ pushover:
   api_key: test-api-key
   devices: device1,device2
 transcoding:
-  hwaccel: cuda
   profiles:
     good:
+      hwaccel: cuda
       video_params: "-c:v libx265"
       audio_params: "-c:a aac"
       languages: "eng,ita"
@@ -189,7 +189,7 @@ general:
             assert config.pushover is not None
             assert config.pushover.user_key == "test-user-key"
             assert config.transcoding is not None
-            assert config.transcoding.hwaccel == "cuda"
+            assert config.transcoding.profiles["good"].hwaccel == "cuda"
             assert len(config.general.remote_path_mappings) == 1
 
 

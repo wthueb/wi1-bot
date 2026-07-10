@@ -57,6 +57,7 @@ class TranscodeParams:
     languages: str | None = None
     video_params: str | None = None
     audio_params: str | None = None
+    hwaccel: str | None = None
 
 
 def sanitize_file_stem(stem: str) -> str:
@@ -74,9 +75,9 @@ def build_ffmpeg_command(params: TranscodeParams, transcode_to: Path | str) -> l
         "-y",
     ]
 
-    if config.transcoding is not None and config.transcoding.hwaccel is not None:
-        command.extend(["-hwaccel", config.transcoding.hwaccel])
-        command.extend(["-hwaccel_output_format", config.transcoding.hwaccel])
+    if params.hwaccel:
+        command.extend(["-hwaccel", params.hwaccel])
+        command.extend(["-hwaccel_output_format", params.hwaccel])
 
     command.extend(["-probesize", "100M"])
     command.extend(["-analyzeduration", "250M"])
@@ -293,11 +294,15 @@ class Transcoder:
 
         tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
 
+        # hwaccel is per-profile/per-fallback; omitting it means no hardware
+        # acceleration, so the fallback can decode in software to recover from a
+        # hardware-decoding failure
         params = TranscodeParams(
             path=item.path,
             languages=languages,
             video_params=profile.video_params,
             audio_params=profile.audio_params,
+            hwaccel=profile.hwaccel,
         )
 
         result, status, last_output = self._run_ffmpeg(params, transcode_to, tmp_log_path)
@@ -307,11 +312,14 @@ class Transcoder:
                 f"transcoding {path.name} failed, retrying with fallback parameters"
             )
 
+            fallback = profile.fallback
+
             fallback_params = TranscodeParams(
                 path=item.path,
                 languages=languages,
-                video_params=profile.fallback.video_params,
-                audio_params=profile.fallback.audio_params,
+                video_params=fallback.video_params,
+                audio_params=fallback.audio_params,
+                hwaccel=fallback.hwaccel,
             )
 
             result, status, last_output = self._run_ffmpeg(
