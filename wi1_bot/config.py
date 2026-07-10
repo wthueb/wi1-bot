@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 from pydantic_settings import (
@@ -39,6 +40,9 @@ class RemotePathMapping(BaseModel):
 
 
 class GeneralConfig(BaseModel):
+    log_format: Literal["logfmt", "json"] = Field(
+        default="logfmt", description="Log output format: logfmt or json"
+    )
     remote_path_mappings: list[RemotePathMapping] = Field(default_factory=list)
 
 

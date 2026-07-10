@@ -6,26 +6,37 @@ from pathlib import Path
 from typing import Any
 
 from wi1_bot import __version__, webhook
+from wi1_bot.config import config
 from wi1_bot.db import get_db_path, init_db
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
 
 
 def main() -> None:
+    log_format = config.general.log_format
+
     logging_config: dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": True,
         "formatters": {
-            "basic": {
-                "class": "logging.Formatter",
-                "format": "[%(asctime)s] %(levelname)s %(message)s",
+            "logfmt": {
+                "()": "logfmter.Logfmter",
+                "keys": ["ts", "level", "logger", "func", "line"],
+                "mapping": {
+                    "ts": "asctime",
+                    "level": "levelname",
+                    "logger": "name",
+                    "func": "funcName",
+                    "line": "lineno",
+                },
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
-            "detailed": {
-                "class": "logging.Formatter",
+            "json": {
+                "()": "pythonjsonlogger.json.JsonFormatter",
                 "format": (
-                    "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s"
+                    "%(asctime)s %(levelname)s %(name)s %(funcName)s %(lineno)d %(message)s"
                 ),
+                "datefmt": "%Y-%m-%d %H:%M:%S",
             },
         },
         "handlers": {
@@ -33,7 +44,7 @@ def main() -> None:
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
                 "level": "DEBUG",
-                "formatter": "detailed",
+                "formatter": log_format,
             },
         },
         "loggers": {
@@ -54,7 +65,7 @@ def main() -> None:
             "maxBytes": 1024**2 * 10,  # 10 MB
             "backupCount": 100,
             "level": "INFO",
-            "formatter": "basic",
+            "formatter": log_format,
         }
 
         logging_config["handlers"]["file_debug"] = {
@@ -63,7 +74,7 @@ def main() -> None:
             "maxBytes": 1024**2 * 10,  # 10 MB
             "backupCount": 20,
             "level": "DEBUG",
-            "formatter": "detailed",
+            "formatter": log_format,
         }
 
         logging_config["loggers"][""]["handlers"].extend(["file", "file_debug"])

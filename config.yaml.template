@@ -1,5 +1,7 @@
 ---
 general:
+  # log output format: logfmt (default) or json
+  log_format: logfmt
   # remote path mappings, optional
   remote_path_mappings:
     - remote: /data
