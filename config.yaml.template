@@ -70,9 +70,13 @@ transcoding:
       # -c copy used if not specified
       audio_params: -c aac -ac 2 -b 128k
       # comma separated ISO 639-2 codes, optional
-      # if languages is specified only those languages will be copied
-      # currently only applies to subtitles
+      # if languages is specified, only those languages' audio/subtitle tracks
+      # are kept; if unset, all tracks are kept
       languages: eng,spa
+      # keep a title's original-language tracks even if not in languages, so a
+      # foreign-language film/anime keeps its original audio/subtitles
+      # optional, defaults to true
+      keep_original_language: true
     great:
       video_params: -c hevc_nvenc -b 8000k
       audio_params: -c dca -ac 6 -b 384k

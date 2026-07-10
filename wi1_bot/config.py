@@ -115,6 +115,10 @@ class TranscodingProfile(BaseModel):
     video_params: str | None = Field(None, description="FFmpeg video parameters")
     audio_params: str | None = Field(None, description="FFmpeg audio parameters")
     languages: str | None = Field(None, description="Comma-separated ISO 639-2 language codes")
+    keep_original_language: bool = Field(
+        True,
+        description="Keep a title's original-language tracks even if not in languages",
+    )
 
 
 class TranscodingConfig(BaseModel):

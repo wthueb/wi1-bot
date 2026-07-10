@@ -9,6 +9,7 @@ from flask import Flask, request
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.arr.common import ImportMode
 from wi1_bot.config import config
+from wi1_bot.languages import keep_original_language
 from wi1_bot.transcoder.transcode_queue import queue
 
 app = Flask(__name__)
@@ -40,6 +41,9 @@ def on_download(req: dict[str, Any]) -> None:
 
         quality_profile = radarr.get_quality_profile_name(movie_json["qualityProfileId"])
 
+        movie_language = movie_json.get("originalLanguage")
+        original_language = movie_language.get("name") if movie_language else None
+
         movie_folder = req["movie"]["folderPath"]
         relative_path = req["movieFile"]["relativePath"]
 
@@ -59,6 +63,9 @@ def on_download(req: dict[str, Any]) -> None:
         series_json = sonarr.get_series_by_id(req["series"]["id"])
 
         quality_profile = sonarr.get_quality_profile_name(series_json["qualityProfileId"])
+
+        series_language = series_json.get("originalLanguage")
+        original_language = series_language.get("name") if series_language else None
 
         series_folder = req["series"]["path"]
         relative_path = req["episodeFile"]["relativePath"]
@@ -96,6 +103,9 @@ def on_download(req: dict[str, Any]) -> None:
 
     quality_options = config.transcoding.profiles[quality_profile]
     languages = quality_options.languages
+    if quality_options.keep_original_language:
+        # don't strip a foreign-language title's original audio/subtitle tracks
+        languages = keep_original_language(languages, original_language)
     video_params = quality_options.video_params
     audio_params = quality_options.audio_params
 
