@@ -77,6 +77,11 @@ transcoding:
       # foreign-language film/anime keeps its original audio/subtitles
       # optional, defaults to true
       keep_original_language: true
+      # ffmpeg arguments to retry with once if a transcode fails, optional
+      # e.g. fall back to software encoding if hardware encoding errors out
+      fallback:
+        video_params: -c libx265 -b 5000k
+        audio_params: -c aac -ac 2 -b 128k
     great:
       video_params: -c hevc_nvenc -b 8000k
       audio_params: -c dca -ac 6 -b 384k

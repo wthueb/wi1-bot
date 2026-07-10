@@ -111,6 +111,11 @@ class DiscordConfig(BaseModel):
         return v
 
 
+class TranscodingFallback(BaseModel):
+    video_params: str | None = Field(None, description="FFmpeg video parameters")
+    audio_params: str | None = Field(None, description="FFmpeg audio parameters")
+
+
 class TranscodingProfile(BaseModel):
     video_params: str | None = Field(None, description="FFmpeg video parameters")
     audio_params: str | None = Field(None, description="FFmpeg audio parameters")
@@ -118,6 +123,9 @@ class TranscodingProfile(BaseModel):
     keep_original_language: bool = Field(
         True,
         description="Keep a title's original-language tracks even if not in languages",
+    )
+    fallback: TranscodingFallback | None = Field(
+        None, description="FFmpeg parameters to retry with once if a transcode fails"
     )
 
 

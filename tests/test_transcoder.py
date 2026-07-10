@@ -1,16 +1,24 @@
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+import wi1_bot.transcoder.transcoder as t_mod
 from wi1_bot.models import TranscodeItem
-from wi1_bot.transcoder.transcoder import build_ffmpeg_command, sanitize_file_stem
+from wi1_bot.transcoder.transcoder import (
+    TranscodeParams,
+    Transcoder,
+    TranscodeResult,
+    build_ffmpeg_command,
+    sanitize_file_stem,
+)
 
 
 class TestBuildFfmpegCommand:
     @pytest.fixture
-    def basic_item(self) -> TranscodeItem:
-        return TranscodeItem(
+    def basic_item(self) -> TranscodeParams:
+        return TranscodeParams(
             path="/movies/test.mkv",
             languages=None,
             video_params=None,
@@ -53,7 +61,7 @@ class TestBuildFfmpegCommand:
         self,
         mock_config: MagicMock,
         mock_ffprobe: MagicMock,
-        basic_item: TranscodeItem,
+        basic_item: TranscodeParams,
         mock_ffprobe_output: dict[str, Any],
     ) -> None:
         mock_config.transcoding = None
@@ -78,7 +86,7 @@ class TestBuildFfmpegCommand:
         self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
     ) -> None:
         mock_config.transcoding = None
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages=None,
             video_params="-c libx265 -preset medium",
@@ -99,7 +107,7 @@ class TestBuildFfmpegCommand:
         self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
     ) -> None:
         mock_config.transcoding = None
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages=None,
             video_params=None,
@@ -120,7 +128,7 @@ class TestBuildFfmpegCommand:
         self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
     ) -> None:
         mock_config.transcoding = None
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages="eng",
             video_params=None,
@@ -140,7 +148,7 @@ class TestBuildFfmpegCommand:
         self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
     ) -> None:
         mock_config.transcoding = None
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages="eng",
             video_params=None,
@@ -175,7 +183,7 @@ class TestBuildFfmpegCommand:
         self,
         mock_config: MagicMock,
         mock_ffprobe: MagicMock,
-        basic_item: TranscodeItem,
+        basic_item: TranscodeParams,
         mock_ffprobe_output: dict[str, Any],
     ) -> None:
         # Mock config with transcoding hwaccel
@@ -193,7 +201,7 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_command_converts_movtext_to_subrip(
-        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeItem
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeParams
     ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = {
@@ -227,7 +235,7 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_command_skips_subtitle_without_codec(
-        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeItem
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeParams
     ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = {
@@ -254,7 +262,7 @@ class TestBuildFfmpegCommand:
     @patch("wi1_bot.transcoder.transcoder.ffprobe")
     @patch("wi1_bot.transcoder.transcoder.config")
     def test_command_with_multiple_video_streams(
-        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeItem
+        self, mock_config: MagicMock, mock_ffprobe: MagicMock, basic_item: TranscodeParams
     ) -> None:
         mock_config.transcoding = None
         mock_ffprobe.return_value = {
@@ -284,7 +292,7 @@ class TestBuildFfmpegCommand:
         self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
     ) -> None:
         mock_config.transcoding = None
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages=None,
             video_params="-c libx265",
@@ -304,7 +312,7 @@ class TestBuildFfmpegCommand:
         self, mock_config: MagicMock, mock_ffprobe: MagicMock, mock_ffprobe_output: dict[str, Any]
     ) -> None:
         mock_config.transcoding = None
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages="eng, ita",  # Multiple languages
             video_params=None,
@@ -347,7 +355,7 @@ class TestBuildFfmpegCommand:
             ]
         }
 
-        item = TranscodeItem(
+        item = TranscodeParams(
             path="/movies/test.mkv",
             languages="eng",
             video_params=None,
@@ -379,3 +387,171 @@ def test_file_stem_sanitization() -> None:
         )
         == "Thor.Love.and.Thunder.2022.IMAX.Hybrid.1080p.BluRay.DD+7.1.x264-LoRD"
     )
+
+
+class TestTranscodeFallback:
+    def _profile(
+        self,
+        *,
+        video_params: str = "-c:v hw",
+        audio_params: str = "-c:a aac",
+        languages: str | None = None,
+        keep_original_language: bool = False,
+        fallback: MagicMock | None = None,
+    ) -> MagicMock:
+        profile = MagicMock()
+        profile.video_params = video_params
+        profile.audio_params = audio_params
+        profile.languages = languages
+        profile.keep_original_language = keep_original_language
+        profile.fallback = fallback
+        return profile
+
+    def _config(self, profile: MagicMock) -> MagicMock:
+        config = MagicMock()
+        config.transcoding.profiles = {"good": profile}
+        return config
+
+    @pytest.fixture
+    def transcoder(self) -> Transcoder:
+        # arr clients are mocked by the autouse conftest fixture
+        return Transcoder()
+
+    @pytest.fixture
+    def source_file(self, tmp_path: Path) -> Path:
+        src = tmp_path / "The Movie.mkv"
+        src.write_text("data")
+        return src
+
+    def test_unknown_profile_skips_without_running(
+        self, transcoder: Transcoder, source_file: Path
+    ) -> None:
+        item = TranscodeItem(path=str(source_file), quality_profile="missing")
+        config = self._config(self._profile())
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(Transcoder, "_run_ffmpeg") as mock_run,
+        ):
+            result = transcoder.transcode(item)
+
+        assert result is True
+        mock_run.assert_not_called()
+
+    def test_no_fallback_reports_error(
+        self,
+        transcoder: Transcoder,
+        source_file: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("WB_LOG_DIR", str(tmp_path / "logs"))
+        item = TranscodeItem(path=str(source_file), quality_profile="good")
+        config = self._config(self._profile(fallback=None))
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(
+                Transcoder, "_run_ffmpeg", return_value=(TranscodeResult.FAILED, 1, "boom")
+            ) as mock_run,
+            patch.object(t_mod, "shutil") as mock_shutil,
+            patch.object(t_mod, "push") as mock_push,
+        ):
+            result = transcoder.transcode(item)
+
+        assert result is True
+        # no fallback defined, so only one attempt
+        mock_run.assert_called_once()
+        # the failure is reported: log copied to transcoder-errors and pushover sent
+        mock_shutil.copy.assert_called_once()
+        mock_push.send.assert_called_once()
+
+    def test_fallback_retries_then_reports_error(
+        self,
+        transcoder: Transcoder,
+        source_file: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("WB_LOG_DIR", str(tmp_path / "logs"))
+        fallback = MagicMock()
+        fallback.video_params = "-c:v sw"
+        fallback.audio_params = "-c:a copy"
+        item = TranscodeItem(path=str(source_file), quality_profile="good")
+        config = self._config(self._profile(fallback=fallback))
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(
+                Transcoder,
+                "_run_ffmpeg",
+                side_effect=[
+                    (TranscodeResult.FAILED, 1, "boom"),
+                    (TranscodeResult.FAILED, 1, "boom again"),
+                ],
+            ) as mock_run,
+            patch.object(t_mod, "shutil") as mock_shutil,
+            patch.object(t_mod, "push") as mock_push,
+        ):
+            result = transcoder.transcode(item)
+
+        assert result is True
+        # primary attempt failed, so a second attempt runs with the fallback params
+        assert mock_run.call_count == 2
+        fallback_params = mock_run.call_args_list[1].args[0]
+        assert fallback_params.video_params == "-c:v sw"
+        assert fallback_params.audio_params == "-c:a copy"
+        # the fallback also failed, so the error is reported once
+        mock_shutil.copy.assert_called_once()
+        mock_push.send.assert_called_once()
+
+    def test_fallback_succeeds(self, transcoder: Transcoder, source_file: Path) -> None:
+        fallback = MagicMock()
+        fallback.video_params = "-c:v sw"
+        fallback.audio_params = "-c:a copy"
+        item = TranscodeItem(path=str(source_file), quality_profile="good")
+        config = self._config(self._profile(fallback=fallback))
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(
+                Transcoder,
+                "_run_ffmpeg",
+                side_effect=[
+                    (TranscodeResult.FAILED, 1, "boom"),
+                    (TranscodeResult.SUCCESS, 0, ""),
+                ],
+            ) as mock_run,
+            patch.object(t_mod, "shutil") as mock_shutil,
+            patch.object(Transcoder, "_rescan_content") as mock_rescan,
+        ):
+            result = transcoder.transcode(item)
+
+        assert result is True
+        assert mock_run.call_count == 2
+        # the fallback succeeded, so the transcoded file is moved into place
+        mock_shutil.move.assert_called_once()
+        mock_rescan.assert_called_once()
+
+    def test_resolves_languages_with_original_language(
+        self, transcoder: Transcoder, source_file: Path
+    ) -> None:
+        item = TranscodeItem(
+            path=str(source_file), quality_profile="good", original_language="Japanese"
+        )
+        profile = self._profile(languages="eng", keep_original_language=True)
+        config = self._config(profile)
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(
+                Transcoder, "_run_ffmpeg", return_value=(TranscodeResult.SUCCESS, 0, "")
+            ) as mock_run,
+            patch.object(t_mod, "shutil"),
+            patch.object(Transcoder, "_rescan_content"),
+        ):
+            transcoder.transcode(item)
+
+        params = mock_run.call_args.args[0]
+        # the title's original language (jpn) is appended to the profile keep-list
+        assert params.languages == "eng,jpn"

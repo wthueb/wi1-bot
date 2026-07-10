@@ -10,19 +10,12 @@ from wi1_bot.arr.common import ImportMode
 class TestWebhook:
     @pytest.fixture
     def mock_transcoding_config(self) -> MagicMock:
-        # Create a Pydantic-like mock config object with transcoding
+        # the webhook only needs the profile name to exist; params are resolved
+        # from the profile by the transcoder, not the webhook
         config = MagicMock()
 
-        # Create transcoding profile mock
-        profile = MagicMock()
-        profile.languages = "eng"
-        profile.video_params = "-c:v libx265"
-        profile.audio_params = "-c:a aac"
-        profile.keep_original_language = True
-
-        # Create transcoding config mock
         transcoding = MagicMock()
-        transcoding.profiles = {"good": profile}
+        transcoding.profiles = {"good": MagicMock()}
 
         config.transcoding = transcoding
         return config
@@ -142,12 +135,11 @@ class TestWebhook:
 
         mock_queue.add.assert_called_once_with(
             path="/movies/The Matrix (1999)/The Matrix (1999).mkv",
-            languages="eng",
-            video_params="-c:v libx265",
-            audio_params="-c:a aac",
+            quality_profile="good",
+            original_language="English",
         )
 
-    def test_on_download_movie_keeps_original_language(
+    def test_on_download_movie_passes_original_language(
         self,
         radarr_instance: MagicMock,
         movie_download_request: dict[str, Any],
@@ -156,7 +148,8 @@ class TestWebhook:
         from wi1_bot import webhook
 
         mock_radarr = MagicMock()
-        # a Japanese title whose original audio/subs must survive the "eng" keep-list
+        # a foreign-language title: its original language is passed through so the
+        # transcoder can keep the original audio/subtitle tracks
         mock_radarr.get_movie_by_id.return_value = {
             "qualityProfileId": 1,
             "originalLanguage": {"id": 8, "name": "Japanese"},
@@ -184,53 +177,8 @@ class TestWebhook:
 
         mock_queue.add.assert_called_once_with(
             path="/movies/The Matrix (1999)/The Matrix (1999).mkv",
-            languages="eng,jpn",
-            video_params="-c:v libx265",
-            audio_params="-c:a aac",
-        )
-
-    def test_on_download_movie_keep_original_language_disabled(
-        self,
-        radarr_instance: MagicMock,
-        movie_download_request: dict[str, Any],
-        mock_transcoding_config: MagicMock,
-    ) -> None:
-        from wi1_bot import webhook
-
-        # a Japanese title, but the profile opts out of keeping the original language
-        mock_transcoding_config.transcoding.profiles["good"].keep_original_language = False
-
-        mock_radarr = MagicMock()
-        mock_radarr.get_movie_by_id.return_value = {
-            "qualityProfileId": 1,
-            "originalLanguage": {"id": 8, "name": "Japanese"},
-        }
-        mock_radarr.get_quality_profile_name.return_value = "good"
-
-        mock_config = MagicMock()
-        mock_config.transcoding = mock_transcoding_config.transcoding
-        mock_config.radarr4k = None
-        mock_config.sonarr4k = None
-
-        with (
-            patch.object(webhook, "instances", [radarr_instance]),
-            patch.object(webhook, "config", mock_config),
-            patch.object(webhook, "queue") as mock_queue,
-            patch.object(webhook, "Radarr") as mock_radarr_cls,
-            patch.object(webhook, "replace_remote_paths") as mock_replace_paths,
-        ):
-            mock_radarr_cls.from_config.return_value = mock_radarr
-            mock_replace_paths.return_value = Path(
-                "/movies/The Matrix (1999)/The Matrix (1999).mkv"
-            )
-
-            webhook.on_download(movie_download_request)
-
-        mock_queue.add.assert_called_once_with(
-            path="/movies/The Matrix (1999)/The Matrix (1999).mkv",
-            languages="eng",
-            video_params="-c:v libx265",
-            audio_params="-c:a aac",
+            quality_profile="good",
+            original_language="Japanese",
         )
 
     def test_on_download_series(

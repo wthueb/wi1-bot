@@ -10,13 +10,12 @@ class TranscodeItem(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     path: Mapped[str]
-    languages: Mapped[str | None]
-    video_params: Mapped[str | None]
-    audio_params: Mapped[str | None]
+    quality_profile: Mapped[str]
+    original_language: Mapped[str | None]
 
     def __repr__(self) -> str:
         return (
             f"TranscodeItem(id={self.id}, path={self.path!r}, "
-            f"languages={self.languages!r}, video_params={self.video_params!r}, "
-            f"audio_params={self.audio_params!r})"
+            f"quality_profile={self.quality_profile!r}, "
+            f"original_language={self.original_language!r})"
         )

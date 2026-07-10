@@ -6,12 +6,15 @@ import shutil
 import subprocess
 import tempfile
 import threading
+from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 from time import sleep
 
 from wi1_bot import __version__, push
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.config import config
+from wi1_bot.languages import keep_original_language
 
 from .ffprobe import FfprobeException, Stream, ffprobe
 from .transcode_queue import TranscodeItem, queue
@@ -35,6 +38,27 @@ class UnknownError(Exception):
     pass
 
 
+class TranscodeResult(Enum):
+    SUCCESS = auto()  # ffmpeg succeeded, move the transcoded file into place
+    SKIP = auto()  # handled failure, drop the item from the queue
+    RETRY = auto()  # handled failure, keep the item to try again later
+    FAILED = auto()  # unhandled failure, eligible for a fallback attempt
+
+
+@dataclass(frozen=True)
+class TranscodeParams:
+    """Concrete ffmpeg parameters for a single transcode attempt.
+
+    Resolved from a quality profile (and the title's original language) at
+    transcode time.
+    """
+
+    path: str
+    languages: str | None = None
+    video_params: str | None = None
+    audio_params: str | None = None
+
+
 def sanitize_file_stem(stem: str) -> str:
     stem = stem.strip()
     stem = CLEAN_RELEASE_GROUP_REGEX.sub("", stem).strip()
@@ -43,7 +67,7 @@ def sanitize_file_stem(stem: str) -> str:
     return stem
 
 
-def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[str]:
+def build_ffmpeg_command(params: TranscodeParams, transcode_to: Path | str) -> list[str]:
     command = [
         "ffmpeg",
         "-hide_banner",
@@ -57,30 +81,30 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[
     command.extend(["-probesize", "100M"])
     command.extend(["-analyzeduration", "250M"])
 
-    command.extend(["-i", item.path])
+    command.extend(["-i", params.path])
 
     command.extend(["-metadata", f"wi1_bot_version={__version__}"])
 
     langs: list[str] = []
 
-    if item.languages:
-        langs = [lang.strip() for lang in item.languages.split(",")]
+    if params.languages:
+        langs = [lang.strip() for lang in params.languages.split(",")]
 
-    info = ffprobe(item.path)
+    info = ffprobe(params.path)
     streams = info["streams"]
 
     command.extend(["-map", "0:v:0"])
 
-    if item.video_params:
-        params = shlex.split(item.video_params)
+    if params.video_params:
+        parts = shlex.split(params.video_params)
 
-        for param in params:
+        for param in parts:
             if param.startswith("-"):
                 command.append(f"{param}:v:0")
             else:
                 command.append(param)
 
-        command.extend(["-metadata:s:v:0", f"params={item.video_params}"])
+        command.extend(["-metadata:s:v:0", f"params={params.video_params}"])
     else:
         command.extend(["-c:v:0", "copy"])
         command.extend(["-metadata:s:v:0", "params=-c copy"])
@@ -149,16 +173,16 @@ def build_ffmpeg_command(item: TranscodeItem, transcode_to: Path | str) -> list[
 
         command.extend(["-map", f"0:{stream['index']}"])
 
-        if item.audio_params:
-            params = shlex.split(item.audio_params)
+        if params.audio_params:
+            parts = shlex.split(params.audio_params)
 
-            for param in params:
+            for param in parts:
                 if param.startswith("-"):
                     command.append(f"{param}:a:{aindex}")
                 else:
                     command.append(param)
 
-            command.extend([f"-metadata:s:a:{aindex}", f"params={item.audio_params}"])
+            command.extend([f"-metadata:s:a:{aindex}", f"params={params.audio_params}"])
         else:
             command.extend([f"-c:a:{aindex}", "copy"])
             command.extend([f"-metadata:s:a:{aindex}", "params=-c copy"])
@@ -238,6 +262,20 @@ class Transcoder:
             self.logger.info(f"file does not exist: {item.path}, skipping transcoding")
             return True
 
+        if config.transcoding is None or item.quality_profile not in config.transcoding.profiles:
+            self.logger.warning(
+                f"unknown quality profile '{item.quality_profile}' for {path.name},"
+                " skipping transcoding"
+            )
+            return True
+
+        profile = config.transcoding.profiles[item.quality_profile]
+
+        languages = profile.languages
+        if profile.keep_original_language:
+            # don't strip a foreign-language title's original audio/subtitle tracks
+            languages = keep_original_language(languages, item.original_language)
+
         # push.send(f"{basename}", title="starting transcode")
 
         # TODO: calculate compression amount
@@ -253,75 +291,59 @@ class Transcoder:
         stem = sanitize_file_stem(path.stem)
         transcode_to = tmp_folder / f"{stem}-TRANSCODED.mkv"
 
-        command = build_ffmpeg_command(item, transcode_to)
+        tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
 
-        self.logger.debug(f"ffmpeg command: {shlex.join(command)}")
+        params = TranscodeParams(
+            path=item.path,
+            languages=languages,
+            video_params=profile.video_params,
+            audio_params=profile.audio_params,
+        )
 
-        with subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        ) as proc:
-            last_output = ""
+        result, status, last_output = self._run_ffmpeg(params, transcode_to, tmp_log_path)
 
-            tmp_log_path = tmp_folder / "wi1_bot.transcoder.log"
+        if result is TranscodeResult.FAILED and profile.fallback is not None:
+            self.logger.warning(
+                f"transcoding {path.name} failed, retrying with fallback parameters"
+            )
 
-            with open(tmp_log_path, "w") as ffmpeg_log_file:
-                ffmpeg_log_file.write(f"ffmpeg command: {shlex.join(command)}\n")
-                assert proc.stdout is not None
-                for line in proc.stdout:
-                    ffmpeg_log_file.write(line)
-                    last_output = line.strip()
+            fallback_params = TranscodeParams(
+                path=item.path,
+                languages=languages,
+                video_params=profile.fallback.video_params,
+                audio_params=profile.fallback.audio_params,
+            )
 
-            status = proc.wait()
+            result, status, last_output = self._run_ffmpeg(
+                fallback_params, transcode_to, tmp_log_path
+            )
 
-            if status != 0:
-                try:
-                    transcode_to.unlink(missing_ok=True)
-                except Exception:
-                    self.logger.debug(f"failed to delete transcoded file: {transcode_to}")
+        if result is TranscodeResult.SKIP:
+            return True
 
-                if (
-                    "Error opening input files" in last_output
-                    or "No such file or directory" in last_output
-                ):
-                    self.logger.info(f"file does not exist: {path}, skipping transcoding")
-                    return True
+        if result is TranscodeResult.RETRY:
+            return False
 
-                if "File name too long" in last_output:
-                    self.logger.info(f"file name is too long: {path}, skipping transcoding")
-                    return True
+        if result is TranscodeResult.FAILED:
+            perm_log_path = tmp_folder / f"{path.stem}.log"
 
-                if "received signal 15" in last_output:
-                    self.logger.info(f"transcoding interrupted by signal: {path}, will retry")
-                    return False
+            if log_dir_str := os.getenv("WB_LOG_DIR"):
+                log_dir = Path(log_dir_str).resolve()
 
-                if "cannot open shared object file" in last_output:
-                    self.logger.error("ffmpeg error: missing shared object file, will retry")
-                    push.send(f"ffmpeg error: {last_output}", title="ffmpeg error")
-                    return False
+                perm_log_path = log_dir / "transcoder-errors" / f"{path.stem}.log"
+                perm_log_path.parent.mkdir(parents=True, exist_ok=True)
 
-                perm_log_path = tmp_folder / f"{path.stem}.log"
+            shutil.copy(tmp_log_path, perm_log_path)
 
-                if log_dir_str := os.getenv("WB_LOG_DIR"):
-                    log_dir = Path(log_dir_str).resolve()
+            self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
+            self.logger.error(f"log file: {perm_log_path}")
 
-                    perm_log_path = log_dir / "transcoder-errors" / f"{path.stem}.log"
-                    perm_log_path.parent.mkdir(parents=True, exist_ok=True)
+            push.send(
+                f"{path.name} has failed to transcode, log: {perm_log_path}",
+                title="transcoding error",
+            )
 
-                shutil.copy(tmp_log_path, perm_log_path)
-
-                self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
-                self.logger.error(f"log file: {perm_log_path}")
-
-                push.send(
-                    f"{path.name} has failed to transcode, log: {perm_log_path}",
-                    title="transcoding error",
-                )
-
-                return True
+            return True
 
         if not path.exists():
             self.logger.debug(f"file doesn't exist: {item.path}, deleting transcoded file")
@@ -339,6 +361,65 @@ class Transcoder:
         # push.send(f"{path.name} -> {new_path.name}", title="file transcoded")
 
         return True
+
+    def _run_ffmpeg(
+        self, params: TranscodeParams, transcode_to: Path, tmp_log_path: Path
+    ) -> tuple[TranscodeResult, int, str]:
+        """Run ffmpeg for a single attempt and classify the outcome.
+
+        Writes the ffmpeg output to ``tmp_log_path`` (overwriting any previous
+        attempt's log) and returns the outcome, exit status and last output line.
+        """
+        path = Path(params.path)
+
+        command = build_ffmpeg_command(params, transcode_to)
+
+        self.logger.debug(f"ffmpeg command: {shlex.join(command)}")
+
+        with subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        ) as proc:
+            last_output = ""
+
+            with open(tmp_log_path, "w") as ffmpeg_log_file:
+                ffmpeg_log_file.write(f"ffmpeg command: {shlex.join(command)}\n")
+                assert proc.stdout is not None
+                for line in proc.stdout:
+                    ffmpeg_log_file.write(line)
+                    last_output = line.strip()
+
+            status = proc.wait()
+
+        if status == 0:
+            return TranscodeResult.SUCCESS, status, last_output
+
+        try:
+            transcode_to.unlink(missing_ok=True)
+        except Exception:
+            self.logger.debug(f"failed to delete transcoded file: {transcode_to}")
+
+        if "Error opening input files" in last_output or "No such file or directory" in last_output:
+            self.logger.info(f"file does not exist: {path}, skipping transcoding")
+            return TranscodeResult.SKIP, status, last_output
+
+        if "File name too long" in last_output:
+            self.logger.info(f"file name is too long: {path}, skipping transcoding")
+            return TranscodeResult.SKIP, status, last_output
+
+        if "received signal 15" in last_output:
+            self.logger.info(f"transcoding interrupted by signal: {path}, will retry")
+            return TranscodeResult.RETRY, status, last_output
+
+        if "cannot open shared object file" in last_output:
+            self.logger.error("ffmpeg error: missing shared object file, will retry")
+            push.send(f"ffmpeg error: {last_output}", title="ffmpeg error")
+            return TranscodeResult.RETRY, status, last_output
+
+        return TranscodeResult.FAILED, status, last_output
 
     def _rescan_content(self, new_path: Path) -> None:
         radarr_root = replace_remote_paths(config.radarr.root_folder)

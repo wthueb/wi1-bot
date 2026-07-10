@@ -10,17 +10,15 @@ class TranscodeQueue:
     def add(
         self,
         path: str,
-        languages: str | None = None,
-        video_params: str | None = None,
-        audio_params: str | None = None,
+        quality_profile: str,
+        original_language: str | None = None,
     ) -> None:
         engine = get_engine()
         with Session(engine) as session:
             item = TranscodeItem(
                 path=path,
-                languages=languages,
-                video_params=video_params,
-                audio_params=audio_params,
+                quality_profile=quality_profile,
+                original_language=original_language,
             )
             session.add(item)
             session.commit()

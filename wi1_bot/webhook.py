@@ -9,7 +9,6 @@ from flask import Flask, request
 from wi1_bot.arr import Radarr, Sonarr, replace_remote_paths
 from wi1_bot.arr.common import ImportMode
 from wi1_bot.config import config
-from wi1_bot.languages import keep_original_language
 from wi1_bot.transcoder.transcode_queue import queue
 
 app = Flask(__name__)
@@ -101,19 +100,12 @@ def on_download(req: dict[str, Any]) -> None:
 
     path = replace_remote_paths(path)
 
-    quality_options = config.transcoding.profiles[quality_profile]
-    languages = quality_options.languages
-    if quality_options.keep_original_language:
-        # don't strip a foreign-language title's original audio/subtitle tracks
-        languages = keep_original_language(languages, original_language)
-    video_params = quality_options.video_params
-    audio_params = quality_options.audio_params
-
+    # store a reference to the quality profile and the title's original language;
+    # the concrete ffmpeg params are resolved from the profile at transcode time
     queue.add(
         path=str(path),
-        languages=languages,
-        video_params=video_params,
-        audio_params=audio_params,
+        quality_profile=quality_profile,
+        original_language=original_language,
     )
 
 

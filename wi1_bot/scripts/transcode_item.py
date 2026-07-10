@@ -7,27 +7,34 @@ from wi1_bot.transcoder import queue
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="add item to transcode queue")
-
-    parser.add_argument("path", nargs="+", help="file path to transcode")
-
-    args = parser.parse_args()
-
     if config.transcoding is None:
         raise ValueError("transcoding not configured")
 
-    init_db()
+    default_profile = next(iter(config.transcoding.profiles))
 
-    qp = config.transcoding.profiles["good"]
+    parser = argparse.ArgumentParser(description="add item to transcode queue")
+
+    parser.add_argument("path", nargs="+", help="file path to transcode")
+    parser.add_argument(
+        "-p",
+        "--profile",
+        default=default_profile,
+        help=f"quality profile to transcode with (default: {default_profile})",
+    )
+
+    args = parser.parse_args()
+
+    if args.profile not in config.transcoding.profiles:
+        raise ValueError(f"unknown quality profile: {args.profile}")
+
+    init_db()
 
     for path in args.path:
         path = Path(path).resolve()
 
         queue.add(
             path=str(path),
-            languages=qp.languages,
-            video_params=qp.video_params,
-            audio_params=qp.audio_params,
+            quality_profile=args.profile,
         )
 
     print("queue size:", queue.size)
