@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.6.0](https://github.com/wthueb/wi1-bot/compare/v3.5.0...v3.6.0) (2026-07-10)
+
+
+### Features
+
+* keep original language audio/subtitles when transcoding ([a190c53](https://github.com/wthueb/wi1-bot/commit/a190c538ee4be8dadfc10eb35bfb24853ea929c5))
+* try optional fallback transcoding parameters if initial transcode fails ([892db5d](https://github.com/wthueb/wi1-bot/commit/892db5d0c1916ae51e63fe66b67e8613d62a06a3))
+
+
+### Bug Fixes
+
+* make hwaccel per-profile instead of global ([0e099ba](https://github.com/wthueb/wi1-bot/commit/0e099ba1fa90ac64e4b2435dd09f772e51a8c336))
+
 ## [3.5.0](https://github.com/wthueb/wi1-bot/compare/v3.4.0...v3.5.0) (2026-07-06)
 
 
