@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.0](https://github.com/wthueb/wi1-bot/compare/v3.6.0...v3.7.0) (2026-07-10)
+
+
+### Features
+
+* add configurable log format (logfmt or json) ([77e0bdd](https://github.com/wthueb/wi1-bot/commit/77e0bddf24ae85d0d3225893263e885b384e0d72))
+
 ## [3.6.0](https://github.com/wthueb/wi1-bot/compare/v3.5.0...v3.6.0) (2026-07-10)
 
 
