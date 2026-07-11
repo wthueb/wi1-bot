@@ -5,11 +5,24 @@ import os
 from pathlib import Path
 from typing import Any
 
+from pythonjsonlogger.json import JsonFormatter
+
 from wi1_bot import __version__, webhook
 from wi1_bot.config import config
 from wi1_bot.db import get_db_path, init_db
 from wi1_bot.discord import bot
 from wi1_bot.transcoder import Transcoder
+
+
+class SrcJsonFormatter(JsonFormatter):
+    def add_fields(
+        self,
+        log_data: dict[str, Any],
+        record: logging.LogRecord,
+        message_dict: dict[str, Any],
+    ) -> None:
+        record.__dict__["src"] = f"{record.funcName}:{record.lineno}"
+        super().add_fields(log_data, record, message_dict)
 
 
 def main() -> None:
@@ -21,21 +34,18 @@ def main() -> None:
         "formatters": {
             "logfmt": {
                 "()": "logfmter.Logfmter",
-                "keys": ["ts", "level", "logger", "func", "line"],
+                "keys": ["ts", "level", "logger", "src"],
                 "mapping": {
                     "ts": "asctime",
                     "level": "levelname",
                     "logger": "name",
-                    "func": "funcName",
-                    "line": "lineno",
                 },
+                "defaults": {"src": "{funcName}:{lineno}"},
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "json": {
-                "()": "pythonjsonlogger.json.JsonFormatter",
-                "format": (
-                    "%(asctime)s %(levelname)s %(name)s %(funcName)s %(lineno)d %(message)s"
-                ),
+                "()": SrcJsonFormatter,
+                "format": "%(asctime)s %(levelname)s %(name)s %(src)s %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
         },
