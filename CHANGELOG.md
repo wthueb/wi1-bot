@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/wthueb/wi1-bot/compare/v3.7.0...v3.7.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* cleanup log fields for better cardinality ([3ff434f](https://github.com/wthueb/wi1-bot/commit/3ff434fffa814fb29a303f3b1fe92f3b4b10f595))
+
 ## [3.7.0](https://github.com/wthueb/wi1-bot/compare/v3.6.0...v3.7.0) (2026-07-10)
 
 
