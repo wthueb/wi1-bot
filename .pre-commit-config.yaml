@@ -15,9 +15,9 @@ repos:
         entry: ruff format
         pass_filenames: false
         types: [python]
-      - id: basedpyright
-        name: basedpyright
+      - id: ty
+        name: ty
         language: system
-        entry: basedpyright
+        entry: ty check
         pass_filenames: false
         types: [python]

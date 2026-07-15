@@ -1,0 +1,42 @@
+[project]
+name = "webhook"
+dynamic = ["version"]
+description = "Radarr/Sonarr download webhook + transcode job server for wi1-bot"
+authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.5",
+    "arr",
+    "common",
+    "flask>=3.1.3",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.3",
+    "sqlalchemy>=2.0.51",
+    "waitress>=3.0.2",
+]
+
+[project.scripts]
+wi1-bot-webhook = "wi1_bot.webhook.scripts.serve:main"
+migrate = "wi1_bot.webhook.scripts.migrate:main"
+transcode-item = "wi1_bot.webhook.scripts.transcode_item:main"
+rescan = "wi1_bot.webhook.scripts.rescan:main"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src/wi1_bot/webhook"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/wi1_bot/webhook"]

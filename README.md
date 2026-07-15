@@ -1,33 +1,50 @@
 # wi1-bot
 
-A Discord bot to integrate [Radarr](https://radarr.video/) & [Sonarr](https://sonarr.tv/), allowing commands like !addmovie and !downloads.
+Integrates [Radarr](https://radarr.video/) & [Sonarr](https://sonarr.tv/) with Discord
+(commands like `!addmovie`, `!downloads`) and transcodes downloads with ffmpeg.
 
-### Usage
+It is a [uv](https://docs.astral.sh/uv/) workspace of five packages — two shared
+libraries and three independently deployable services (each with its own config file
+and Docker image):
 
-1. Copy `config.yaml.template` to `$XDG_CONFIG_HOME/wi1-bot/config.yaml` and set the necessary values.
-2. `pip install wi1-bot` (or from source: `pip install git+https://github.com/wthueb/wi1-bot.git`)
-3. `wi1-bot`
+| Package | Import | What it is |
+|---|---|---|
+| `common` | `wi1_bot.common` | shared logging + pushover helpers (library) |
+| `arr` | `wi1_bot.arr` | Radarr/Sonarr (pyarr) wrapper (library) |
+| `wi1-bot` | `wi1_bot.bot` | the Discord bot → image `wthueb/wi1-bot` |
+| `webhook` | `wi1_bot.webhook` | Radarr/Sonarr download webhook; owns the transcode queue and dispatches jobs → image `wthueb/wi1-bot-webhook` |
+| `transcoder` | `wi1_bot.transcoder` | replicable ffmpeg worker that pulls jobs from the webhook → image `wthueb/wi1-bot-transcoder` |
+
+The three services all share one top-level `wi1_bot` namespace but ship as separate
+distributions, so each image only contains the code (and dependencies) it needs.
+Transcode workers claim leased jobs from the webhook over HTTP and can be scaled out
+(`docker compose up -d --scale wi1-bot-transcoder=3`).
+
+### Usage (Docker)
+
+1. Copy each service's `config.yaml.template` to its own config directory and fill it in:
+   - `wi1-bot/config.yaml.template` → `bot/config.yaml`
+   - `webhook/config.yaml.template` → `webhook/config.yaml`
+   - `transcoder/config.yaml.template` → `transcoder/config.yaml`
+2. Point Radarr/Sonarr's connect webhook at the webhook service (`http://<host>:9000/`).
+3. `docker compose up -d` (edit `compose.yaml` for the media mount and GPU as needed).
 
 ### Development
 
 1. `git clone https://github.com/wthueb/wi1-bot.git`
 2. `cd wi1-bot/`
-3. `pip install -e .[dev]`
-4. `pre-commit install`
+3. `uv sync`
+4. `uv run pre-commit install`
 
-Requires Python >=3.12.
+Run a service locally with its config: `WB_CONFIG_PATH=… uv run wi1-bot-webhook`
+(likewise `wi1-bot`, `wi1-bot-transcoder`). Tests/type-check: `uv run pytest`,
+`uv run ty check`. Requires Python >=3.12.
 
 ### TODO
 
 - use seerr for search/requests
   - !link discord user to seerr user
-- fix basedpyright errors, avoiding ignore comments where possible
-- multiple transcode workers
-  - main server instance (as part of the existing webhook server, rename to api?). core app wouldn't be running transcoder anymore
-  - worker nodes that point at the main server instance and use REST calls to get jobs and update job statuses
-    - separate docker image
-    - configure transcoding settings for each profile on each instance
-    - if job fails, retry once on every instance before error notification
+- fix ty errors, avoiding ignore comments where possible
 - figure out qsv codecs
   - also maybe software encoders?
 - maybe check languages and things on new downloads via webhook

@@ -13,9 +13,11 @@ flake.lock
 
 .dockerignore
 Dockerfile
+Dockerfile.*
 compose.yaml
+**/tests/
+**/config.yaml.template
 
-.mypy_cache/
 .pytest_cache/
 .ruff_cache/
 __pycache__/
@@ -31,7 +33,6 @@ _version.py
 AGENTS.md
 
 config.yaml
-!tests/config.yaml
 
 log/
 logs/

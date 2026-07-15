@@ -1,0 +1,29 @@
+[project]
+name = "arr"
+dynamic = ["version"]
+description = "Radarr/Sonarr (pyarr) wrapper for wi1-bot"
+authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "pyarr>=6.6.0",
+    "pydantic>=2.13.4",
+]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src/wi1_bot/arr"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/wi1_bot/arr"]

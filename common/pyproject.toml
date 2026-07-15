@@ -1,0 +1,33 @@
+[project]
+name = "common"
+dynamic = ["version"]
+description = "Shared helpers for wi1-bot services (logging, pushover)"
+authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "logfmter>=0.0.12",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "python-json-logger>=4.1.0",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src/wi1_bot/common"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/wi1_bot/common"]

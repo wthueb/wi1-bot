@@ -2,7 +2,34 @@ services:
   wi1-bot:
     container_name: wi1-bot
     image: wthueb/wi1-bot
+    environment:
+      - WB_CONFIG_PATH=/config/config.yaml
+      - WB_LOG_DIR=/logs
+    volumes:
+      - ./bot:/config
+      - ./logs:/logs
+    restart: unless-stopped
+
+  wi1-bot-webhook:
+    container_name: wi1-bot-webhook
+    image: wthueb/wi1-bot-webhook
+    ports:
+      - "9000:9000"
+    environment:
+      - WB_CONFIG_PATH=/config/config.yaml
+      - WB_LOG_DIR=/logs
+      - WB_DB_PATH=/data/wi1_bot.db
+    volumes:
+      - ./webhook:/config
+      - ./logs:/logs
+      - queue-db:/data
+    restart: unless-stopped
+
+  wi1-bot-transcoder:
+    image: wthueb/wi1-bot-transcoder
+    # scale out with: docker compose up -d --scale wi1-bot-transcoder=3
     deploy:
+      replicas: 1
       resources:
         reservations:
           devices:
@@ -12,8 +39,19 @@ services:
     devices:
       - /dev/dri:/dev/dri
     environment:
-      - WB_CONFIG_PATH=/data/config.yaml
-      - WB_LOG_DIR=/data/logs
-      - WB_DB_PATH=/data/wi1_bot.db
+      - WB_CONFIG_PATH=/config/config.yaml
+      - WB_LOG_DIR=/logs
+      # points workers at the webhook's job API (overrides worker.webhook_url)
+      - WB_WORKER__WEBHOOK_URL=http://wi1-bot-webhook:9000
     volumes:
-      - .:/data
+      - ./transcoder:/config
+      - ./logs:/logs
+      # the media library, mapped to whatever remote_path_mappings.local expects
+      - /path/to/media:/mnt/plex
+    depends_on:
+      - wi1-bot-webhook
+    restart: unless-stopped
+
+volumes:
+  # the transcode queue, owned by the webhook; workers reach it over HTTP, not the DB
+  queue-db:

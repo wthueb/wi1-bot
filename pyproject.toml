@@ -1,60 +1,23 @@
-[project]
-name = "wi1-bot"
-dynamic = ["version"]
-description = "Discord bot for Radarr/Sonarr integration"
-authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
-readme = "README.md"
-license = "MIT"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.12"
-]
-requires-python = ">=3.12"
-dependencies = [
-    "alembic>=1.18.5",
-    "discord-py>=2.7.1",
-    "flask>=3.1.3",
-    "logfmter>=0.0.12",
-    "pyarr>=6.6.0",
-    "pydantic>=2.13.4",
-    "pydantic-settings>=2.14.2",
-    "python-json-logger>=4.1.0",
-    "pyyaml>=6.0.3",
-    "requests>=2.34.2",
-    "sqlalchemy>=2.0.51",
-]
+[tool.uv.workspace]
+members = ["common", "arr", "wi1-bot", "webhook", "transcoder"]
 
-[project.urls]
-Homepage = "https://github.com/wthueb/wi1-bot"
-
-[project.scripts]
-wi1-bot = "wi1_bot.scripts.start:main"
-transcode-item = "wi1_bot.scripts.transcode_item:main"
-add-tag = "wi1_bot.scripts.add_tag:main"
-rescan = "wi1_bot.scripts.rescan:main"
-migrate = "wi1_bot.scripts.migrate:main"
+[tool.uv.sources]
+common = { workspace = true }
+arr = { workspace = true }
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.39.9",
     "pre-commit>=4.6.0",
     "pytest>=9.1.1",
     "ruff>=0.15.20",
+    "ty>=0.0.1",
 ]
 
-[tool.basedpyright]
-typeCheckingMode = "strict"
+[tool.ty.environment]
+python-version = "3.12"
 
-[[tool.basedpyright.executionEnvironments]]
-root = "tests"
-reportPrivateUsage = false
-
-[[tool.basedpyright.executionEnvironments]]
-root = "wi1_bot/arr"
-reportUnknownVariableType = false
-reportUnknownMemberType = false
-reportUnknownArgumentType = false
+[tool.ty.terminal]
+error-on-warning = true
 
 [tool.ruff]
 line-length = 100
@@ -62,18 +25,8 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
-[build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
-build-backend = "hatchling.build"
+[tool.ruff.lint.isort]
+known-first-party = ["wi1_bot"]
 
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.uv-dynamic-versioning]
-fallback-version = "0.0.0"
-
-[tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true }}]
-
-[tool.hatch.build.targets.wheel]
-packages = ["wi1_bot"]
+[tool.pytest]
+testpaths = ["common", "arr", "wi1-bot", "webhook", "transcoder"]

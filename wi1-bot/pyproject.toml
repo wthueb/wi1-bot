@@ -1,0 +1,37 @@
+[project]
+name = "wi1-bot"
+dynamic = ["version"]
+description = "Discord bot for Radarr/Sonarr integration"
+authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "arr",
+    "common",
+    "discord-py>=2.7.1",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.3",
+]
+
+[project.scripts]
+wi1-bot = "wi1_bot.bot.scripts.start:main"
+add-tag = "wi1_bot.bot.scripts.add_tag:main"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src/wi1_bot/bot"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/wi1_bot/bot"]

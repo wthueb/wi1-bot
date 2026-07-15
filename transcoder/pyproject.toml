@@ -1,0 +1,35 @@
+[project]
+name = "transcoder"
+dynamic = ["version"]
+description = "Replicable ffmpeg transcode worker for wi1-bot"
+authors = [{ name = "William Huebner", email = "wilhueb@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "common",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+wi1-bot-transcoder = "wi1_bot.transcoder.scripts.run:main"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src/wi1_bot/transcoder"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/wi1_bot/transcoder"]

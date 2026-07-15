@@ -1,0 +1,54 @@
+---
+general:
+  # log output format: logfmt (default) or json
+  log_format: logfmt
+
+radarr:
+  # radarr url you use to get to the dashboard
+  url: http://localhost:7878/radarr
+  # radarr api key (Settings->General->Security->API Key)
+  api_key: XXX
+  # radarr root folder (absolute path)
+  root_folder: /full/path/movies
+  # radarr instance name (Settings->General->Instance Name)
+  instance_name: Radarr
+
+sonarr:
+  # sonarr url you use to get to the dashboard
+  url: http://localhost:8989/sonarr
+  # sonarr api key (Settings->General->Security->API Key)
+  api_key: XXX
+  # sonarr root folder (absolute path)
+  root_folder: /full/path/shows
+  # sonarr instance name (Settings->General->Instance Name)
+  instance_name: Sonarr
+
+discord:
+  # discord bot token
+  bot_token: XXX
+  # discord channel id that the bot will be in
+  channel_id: XXX
+  # your discord user id
+  admin_id: XXX
+
+  # what the bot is watching, optional
+  bot_presence: David Cronenberg's Crash
+
+  # specify quotas for users, optional (value is in gigabytes)
+  quotas:
+    USER1_ID: 123
+    # additional discord ids can count toward the same quota
+    USER2_ID:
+      amount: 456
+      with:
+        - OTHER_USER_ID1
+        - OTHER_USER_ID2
+
+# pushover settings, optional
+pushover:
+  # pushover user key
+  user_key: XXX
+  # pushover application api key
+  api_key: XXX
+  # comma separated list of pushover device names
+  devices: device1,device2
