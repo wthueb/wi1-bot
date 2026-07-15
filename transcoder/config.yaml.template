@@ -1,0 +1,51 @@
+---
+general:
+  # log output format: logfmt (default) or json
+  log_format: logfmt
+  # map Arr-native paths (as the webhook enqueues them) to this worker's local
+  # filesystem, so ffmpeg can read/write the media
+  remote_path_mappings:
+    - remote: /data
+      local: /mnt/plex
+
+worker:
+  # base URL of the wi1-bot-webhook job server
+  webhook_url: http://wi1-bot-webhook:9000
+  # identifier reported when claiming jobs, optional (defaults to the hostname)
+  # worker_name: transcoder-1
+  # seconds to wait between polling for jobs, optional
+  poll_interval: 3
+  # seconds between lease heartbeats while transcoding, optional
+  heartbeat_interval: 120
+  # directory for in-progress transcodes, optional (defaults to system temp)
+  # tmp_dir: /tmp/wi1-bot
+
+transcoding:
+  profiles:
+    # name of profile must match the quality profile name in radarr/sonarr
+    good:
+      # -hwaccel in ffmpeg, per profile, optional
+      # omit for software decoding (no hardware acceleration)
+      hwaccel: cuda
+      # ffmpeg arguments for video streams, don't include stream specifiers, optional
+      # -c copy used if not specified
+      video_params: -c hevc_nvenc -b 5000k
+      # ffmpeg arguments for audio streams, don't include stream specifiers, optional
+      # -c copy used if not specified
+      audio_params: -c aac -ac 2 -b 128k
+      # comma separated ISO 639-2 codes, optional
+      # if set, only those languages' audio/subtitle tracks are kept
+      languages: eng,spa
+      # keep a title's original-language tracks even if not in languages, so a
+      # foreign-language film/anime keeps its original audio/subtitles
+      # optional, defaults to true
+      keep_original_language: true
+      # ffmpeg arguments to retry with once if a transcode fails, optional
+      fallback:
+        # omit hwaccel to decode in software so a hardware-decoding failure can recover
+        video_params: -c libx265 -b 5000k
+        audio_params: -c aac -ac 2 -b 128k
+    great:
+      hwaccel: cuda
+      video_params: -c hevc_nvenc -b 8000k
+      audio_params: -c dca -ac 6 -b 384k

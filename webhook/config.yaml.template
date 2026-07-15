@@ -1,0 +1,44 @@
+---
+general:
+  # log output format: logfmt (default) or json
+  log_format: logfmt
+
+radarr:
+  # radarr url you use to get to the dashboard
+  url: http://localhost:7878/radarr
+  # radarr api key (Settings->General->Security->API Key)
+  api_key: XXX
+  # radarr root folder (absolute path, from Radarr's perspective)
+  root_folder: /full/path/movies
+  # radarr instance name (Settings->General->Instance Name)
+  instance_name: Radarr
+
+# optional 4k radarr instance; downloads monitored here are cross-scanned
+radarr4k:
+  url: http://localhost:7878/radarr4k
+  api_key: XXX
+  root_folder: /full/path/movies4k
+  instance_name: Radarr4K
+
+sonarr:
+  url: http://localhost:8989/sonarr
+  api_key: XXX
+  root_folder: /full/path/shows
+  instance_name: Sonarr
+
+# optional 4k sonarr instance
+sonarr4k:
+  url: http://localhost:8989/sonarr4k
+  api_key: XXX
+  root_folder: /full/path/shows4k
+  instance_name: Sonarr4K
+
+webhook:
+  # port the webhook + transcode job API listen on
+  port: 9000
+
+# pushover settings, optional (used for transcode failure notifications)
+pushover:
+  user_key: XXX
+  api_key: XXX
+  devices: device1,device2

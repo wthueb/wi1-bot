@@ -1,18 +1,28 @@
 ---
-# Minimal test configuration for running tests
+# Combined test configuration. Each service's Config ignores keys it doesn't
+# declare (extra="ignore"), so this single file satisfies bot, webhook and
+# transcoder config loading during the test suite.
 radarr:
   url: http://localhost:7878
   api_key: test-api-key
-  root_folder: /tmp/movies
+  root_folder: /movies
   instance_name: Radarr
 
 sonarr:
   url: http://localhost:8989
   api_key: test-api-key
-  root_folder: /tmp/shows
+  root_folder: /tv
   instance_name: Sonarr
 
 discord:
   bot_token: test-token
   channel_id: 123456789
   admin_id: 987654321
+
+transcoding:
+  profiles:
+    good:
+      video_params: -c hevc_nvenc -b 5000k
+
+worker:
+  webhook_url: http://localhost:9000
