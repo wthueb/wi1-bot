@@ -47,7 +47,7 @@ class TranscodeQueue:
             session.commit()
             return item.id
 
-    def claim(self, worker_id: str, lease_secs: int | None = None) -> TranscodeItem | None:
+    def claim(self, worker_id: str, lease_secs: float | None = None) -> TranscodeItem | None:
         """Atomically hand the oldest available job to a worker.
 
         Picks the oldest ``queued`` row, or an ``in_progress`` row whose lease has
@@ -83,7 +83,7 @@ class TranscodeQueue:
             session.expunge(item)
             return item
 
-    def heartbeat(self, item_id: int, worker_id: str, lease_secs: int | None = None) -> bool:
+    def heartbeat(self, item_id: int, worker_id: str, lease_secs: float | None = None) -> bool:
         """Extend a claimed job's lease. Only the owning worker may renew it."""
         if lease_secs is None:
             lease_secs = config.webhook.lease_secs

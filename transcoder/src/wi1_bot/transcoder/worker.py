@@ -144,7 +144,6 @@ def run() -> None:
     base_url = config.worker.webhook_url.rstrip("/")
     worker_name = config.worker.worker_name
     poll_interval = config.worker.poll_interval
-    heartbeat_interval = config.worker.heartbeat_interval
 
     transcoder = Transcoder()
 
@@ -175,7 +174,8 @@ def run() -> None:
 
         started = time.monotonic()
         try:
-            with _Heartbeat(base_url, job_id, worker_name, heartbeat_interval):
+            # the webhook owns the cadence and tells us how often to heartbeat
+            with _Heartbeat(base_url, job_id, worker_name, job["heartbeat"]):
                 result = transcoder.transcode(
                     job["path"], job["quality_profile"], job.get("original_language"), log_extra
                 )

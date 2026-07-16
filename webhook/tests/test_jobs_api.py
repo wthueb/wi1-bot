@@ -5,6 +5,7 @@ import pytest
 from flask.testing import FlaskClient
 
 import wi1_bot.webhook.app as app_mod
+from wi1_bot.webhook.config import config
 from wi1_bot.webhook.transcode_queue import queue
 
 
@@ -31,6 +32,7 @@ def test_full_success_lifecycle(client: FlaskClient) -> None:
     assert job["path"] == "/movies/a.mkv"
     assert job["quality_profile"] == "good"
     assert job["original_language"] == "English"
+    assert job["heartbeat"] == config.webhook.heartbeat
 
     with patch.object(app_mod, "rescan_content") as mock_rescan:
         resp = client.post(f"/jobs/{job['id']}/complete", json={"filename": "a-TRANSCODED.mkv"})

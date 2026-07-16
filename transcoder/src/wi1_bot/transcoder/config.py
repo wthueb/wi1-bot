@@ -68,9 +68,6 @@ class WorkerConfig(BaseModel):
     poll_interval: float = Field(
         default=3, gt=0, description="Seconds to wait between polling for jobs"
     )
-    heartbeat_interval: float = Field(
-        default=120, gt=0, description="Seconds between lease heartbeats while transcoding"
-    )
     tmp_dir: Path | None = Field(
         default=None, description="Directory for in-progress transcodes (default: system temp)"
     )

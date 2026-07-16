@@ -150,7 +150,9 @@ def test_claim_lease_secs_can_be_overridden(queue: TranscodeQueue) -> None:
 def test_claim_lease_defaults_to_configured_value(
     queue: TranscodeQueue, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(config.webhook, "lease_secs", 42)
+    # lease is derived: heartbeat * (missed_heartbeats + 0.5) -> 12 * 3.5 == 42
+    monkeypatch.setattr(config.webhook, "heartbeat", 12)
+    monkeypatch.setattr(config.webhook, "missed_heartbeats", 3)
     queue.add("/movies/a.mkv", "good")
 
     before = _utcnow()

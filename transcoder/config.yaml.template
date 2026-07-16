@@ -15,8 +15,6 @@ worker:
   # worker_name: transcoder-1
   # seconds to wait between polling for jobs, optional
   poll_interval: 3
-  # seconds between lease heartbeats while transcoding, optional
-  heartbeat_interval: 120
   # directory for in-progress transcodes, optional (defaults to system temp)
   # tmp_dir: /tmp/wi1-bot
 

@@ -97,6 +97,7 @@ def test_enqueue_then_claim_hands_off_full_job(wired: FlaskClient) -> None:
     assert job["path"] == "/movies/a.mkv"
     assert job["quality_profile"] == "good"
     assert job["original_language"] == "English"
+    assert job["heartbeat"] == config.webhook.heartbeat
     # claiming marks it in_progress owned by this worker
     assert _db_item(job_id).worker_id == "w1"
 
@@ -222,7 +223,9 @@ def test_heartbeat_rejected_after_lease_reclaimed(wired: FlaskClient) -> None:
 
 
 def test_claim_uses_configured_lease(wired: FlaskClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(config.webhook, "lease_secs", 123)
+    # lease is derived: heartbeat * (missed_heartbeats + 0.5) -> 82 * 1.5 == 123
+    monkeypatch.setattr(config.webhook, "heartbeat", 82)
+    monkeypatch.setattr(config.webhook, "missed_heartbeats", 1)
 
     job_id = queue.add("/movies/a.mkv", "good")
     before = _utcnow()

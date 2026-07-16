@@ -15,14 +15,28 @@ class GeneralConfig(BaseModel):
 
 class WebhookConfig(BaseModel):
     port: int = Field(default=9000, gt=0, description="Port for the webhook/job API")
-    lease_secs: int = Field(
-        default=900,
+    heartbeat: float = Field(
+        default=120,
         gt=0,
         description=(
-            "Seconds a claimed transcode job's lease stays valid before another worker"
-            " may reclaim it (workers heartbeat to keep it alive)"
+            "Seconds between lease heartbeats a worker sends while transcoding"
+            " (sent to the worker when it claims a job)"
         ),
     )
+    missed_heartbeats: int = Field(
+        default=3,
+        gt=0,
+        description=(
+            "How many heartbeats a claimed job may miss before another worker may"
+            " reclaim it; the lease is heartbeat * (missed_heartbeats + 0.5) seconds"
+        ),
+    )
+
+    @property
+    def lease_secs(self) -> float:
+        # the extra half-interval keeps the lease alive while the last heartbeat is in
+        # flight, so a job isn't reclaimed just because a heartbeat is mid-send
+        return self.heartbeat * (self.missed_heartbeats + 0.5)
 
 
 class Config(BaseServiceConfig):

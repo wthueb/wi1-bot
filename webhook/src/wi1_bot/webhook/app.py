@@ -158,6 +158,7 @@ def job_claim() -> Any:
         "path": item.path,
         "quality_profile": item.quality_profile,
         "original_language": item.original_language,
+        "heartbeat": config.webhook.heartbeat,
     }, 200
 
 
