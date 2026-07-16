@@ -45,6 +45,8 @@ def setup_logging(
     root_handlers: list[str] = ["console"]
 
     if log_dir is not None:
+        log_dir.mkdir(parents=True, exist_ok=True)
+
         handlers["file"] = {
             "class": "logging.handlers.RotatingFileHandler",
             "filename": str(log_dir / f"{name}.log"),
