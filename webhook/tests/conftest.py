@@ -13,4 +13,6 @@ def db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     db_mod._engine = None
     db_mod.init_db()
     yield
-    db_mod._engine = None
+    if db_mod._engine is not None:
+        db_mod._engine.dispose()
+        db_mod._engine = None

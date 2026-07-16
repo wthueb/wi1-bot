@@ -30,3 +30,7 @@ known-first-party = ["wi1_bot"]
 
 [tool.pytest]
 testpaths = ["common", "arr", "bot", "webhook", "transcoder"]
+filterwarnings = [
+    # backoff 2.2.1 pulled in by pyarr
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning",
+]
