@@ -7,7 +7,7 @@ from pyarr.types import JsonArray, JsonObject
 
 from wi1_bot.arr.config import ArrConfig
 
-from .common import Download, ImportMode
+from .common import Download, ImportMode, MediaState
 
 
 class Series:
@@ -129,6 +129,24 @@ class Sonarr:
         assert isinstance(files, list)
 
         return len(files) > 0
+
+    def series_state(self, series: Series) -> MediaState:
+        """Classify a looked-up series as ABSENT, MONITORED, or DOWNLOADED.
+
+        A series lookup carries the library ``id`` (``series.db_id``) when Sonarr
+        already tracks it, but blanks ``statistics``, so each in-library result costs
+        one series fetch to see whether any episode files exist.
+        """
+        if series.db_id is None:
+            return MediaState.ABSENT
+
+        if self.get_series_by_id(series.db_id)["statistics"]["episodeFileCount"] > 0:
+            return MediaState.DOWNLOADED
+
+        if series.json.get("monitored"):
+            return MediaState.MONITORED
+
+        return MediaState.ABSENT
 
     def create_tag(self, tag: str) -> None:
         self._sonarr.tag.create(label=tag)

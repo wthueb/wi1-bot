@@ -7,7 +7,7 @@ from pyarr.types import JsonArray, JsonObject
 
 from wi1_bot.arr.config import ArrConfig
 
-from .common import Download, ImportMode
+from .common import Download, ImportMode, MediaState
 from .movie import Movie
 
 __all__ = ["Movie", "Radarr"]
@@ -97,6 +97,26 @@ class Radarr:
         files = self._radarr.movie_file.get(movie_id=potential[0]["id"])
 
         return len(files) > 0
+
+    def movie_state(self, movie: Movie) -> MediaState:
+        """Classify a looked-up movie as ABSENT, MONITORED, or DOWNLOADED.
+
+        When Radarr already tracks a movie, lookup returns the library record itself
+        (this is what :meth:`lookup_library` filters on), so ``id``, ``movieFileId``
+        and ``monitored`` are all in the lookup result — no extra API calls. Don't use
+        ``hasFile`` here: only the ``/movie`` controller populates it (from
+        statistics), so lookup results always report it null/false.
+        """
+        if "id" not in movie.json:
+            return MediaState.ABSENT
+
+        if movie.json.get("movieFileId", 0) > 0:
+            return MediaState.DOWNLOADED
+
+        if movie.json.get("monitored"):
+            return MediaState.MONITORED
+
+        return MediaState.ABSENT
 
     def create_tag(self, tag: str) -> None:
         self._radarr.tag.create(label=tag)

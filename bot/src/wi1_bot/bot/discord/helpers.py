@@ -1,9 +1,21 @@
 import asyncio
 import re
+from collections.abc import Callable
 from typing import TypeVar
 
 import discord
 from discord.ext import commands
+
+from wi1_bot.arr import MediaState
+
+# suffix appended to a choice in an add-list so users can see, before they pick, whether
+# a title is already downloaded ("on plex") or monitored (queued to download). ABSENT
+# titles get nothing so they read as a normal search result.
+STATE_SUFFIX: dict[MediaState, str] = {
+    MediaState.ABSENT: "",
+    MediaState.MONITORED: " — *monitored*",
+    MediaState.DOWNLOADED: " — **on plex**",
+}
 
 
 async def member_has_role(member: discord.Member | discord.User, role: str) -> bool:
@@ -33,9 +45,13 @@ T = TypeVar("T")
 
 
 async def select_from_list(
-    bot: commands.Bot, msg: discord.Message, command: str, choices: list[T]
+    bot: commands.Bot,
+    msg: discord.Message,
+    command: str,
+    choices: list[T],
+    render: Callable[[T], str] = str,
 ) -> tuple[discord.Message, list[T]]:
-    choices_text = "\n".join(f"{i + 1}. {choice}" for i, choice in enumerate(choices))
+    choices_text = "\n".join(f"{i + 1}. {render(choice)}" for i, choice in enumerate(choices))
 
     await reply(
         msg,
