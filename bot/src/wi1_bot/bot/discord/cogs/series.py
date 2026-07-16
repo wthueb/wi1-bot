@@ -7,7 +7,7 @@ from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
 from wi1_bot.bot.config import config
 from wi1_bot.common import push
 
-from ..helpers import member_has_role, reply, select_from_list
+from ..helpers import STATE_SUFFIX, member_has_role, reply, select_from_list
 
 
 class SeriesCog(commands.Cog):
@@ -42,7 +42,17 @@ class SeriesCog(commands.Cog):
                 )
                 return
 
-        resp, to_add = await select_from_list(self.bot, ctx.message, "addshow", potential)
+            # resolve each result's state up front so the picker can show what's already
+            # on plex / monitored before the user commits to adding it
+            states = {series: self.sonarr.series_state(series) for series in potential}
+
+        resp, to_add = await select_from_list(
+            self.bot,
+            ctx.message,
+            "addshow",
+            potential,
+            render=lambda series: f"{series}{STATE_SUFFIX[states[series]]}",
+        )
 
         if not to_add:
             return

@@ -11,6 +11,12 @@ class ImportMode(IntEnum):
     COPY = 2
 
 
+class MediaState(IntEnum):
+    ABSENT = 0
+    MONITORED = 1
+    DOWNLOADED = 2
+
+
 class Download:
     def __init__(self, data: dict[str, Any]) -> None:
         self.content: Movie | Episode | str
