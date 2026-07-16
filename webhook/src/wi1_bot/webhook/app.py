@@ -98,10 +98,15 @@ def on_download(req: dict[str, Any]) -> None:
 
     # enqueue every completed download as an Arr-native path; the worker maps it to
     # its own filesystem and resolves the quality profile (dropping ones it can't transcode)
-    queue.add(
+    job_id = queue.add(
         path=str(path),
         quality_profile=quality_profile,
         original_language=original_language,
+    )
+    logger.info(
+        f"enqueued transcode job {job_id} for {path} "
+        f"(profile {quality_profile!r}, queue size {queue.size})",
+        extra={"job_id": job_id},
     )
 
 
@@ -142,7 +147,11 @@ def job_claim() -> Any:
     if item is None:
         return "", 204
 
-    logger.info(f"dispatched job {item.id} ({Path(item.path).name}) to worker {worker_id!r}")
+    logger.info(
+        f"dispatched job {item.id} ({Path(item.path).name}) to worker {worker_id!r} "
+        f"(attempt {item.attempts})",
+        extra={"job_id": item.id, "worker_id": worker_id},
+    )
 
     return {
         "id": item.id,
@@ -157,24 +166,42 @@ def job_heartbeat(item_id: int) -> Any:
     body: dict[str, Any] = request.get_json(silent=True) or {}
     worker_id = body.get("worker_id") or "unknown"
 
+    log_extra = {"job_id": item_id, "worker_id": worker_id}
+
+    logger.debug(f"got heartbeat for job {item_id} from worker {worker_id!r}", extra=log_extra)
+
     if queue.heartbeat(item_id, worker_id):
         return "", 200
 
     # the lease was lost (reclaimed/expired/finished) or belongs to another worker
+    logger.warning(
+        f"rejected heartbeat for job {item_id} from worker {worker_id!r} "
+        "(lease expired, reclaimed, or held by another worker)",
+        extra=log_extra,
+    )
     return "", 409
 
 
 @app.route("/jobs/<int:item_id>/complete", methods=["POST"])
 def job_complete(item_id: int) -> Any:
     body: dict[str, Any] = request.get_json(silent=True) or {}
+    worker_id = body.get("worker_id") or "unknown"
     filename = body.get("filename")
 
     path = queue.complete(item_id)
 
+    log_extra = {"job_id": item_id, "worker_id": worker_id}
+
     if path is None:
+        logger.warning(
+            f"got completion for unknown job {item_id} from worker {worker_id!r} "
+            "(already completed or expired)",
+            extra=log_extra,
+        )
         return "", 404
 
     if filename:
+        logger.info(f"job {item_id} completed by worker {worker_id!r}: {filename}", extra=log_extra)
         try:
             new_path = Path(path).parent / filename
             rescan_content(
@@ -185,10 +212,12 @@ def job_complete(item_id: int) -> Any:
                 new_path,
             )
         except Exception:
-            logger.warning(f"error rescanning after transcode of {filename}", exc_info=True)
+            logger.warning(
+                f"error rescanning after transcode of {filename}", exc_info=True, extra=log_extra
+            )
     else:
         # no filename -> the worker skipped this job (e.g. unknown profile); just drop it
-        logger.info(f"job {item_id} skipped by worker, dropped")
+        logger.info(f"job {item_id} skipped by worker {worker_id!r}, dropped", extra=log_extra)
 
     return "", 200
 
@@ -196,21 +225,26 @@ def job_complete(item_id: int) -> Any:
 @app.route("/jobs/<int:item_id>/fail", methods=["POST"])
 def job_fail(item_id: int) -> Any:
     body: dict[str, Any] = request.get_json(silent=True) or {}
+    worker_id = body.get("worker_id") or "unknown"
     reason = body.get("reason", "unknown error")
     retry = bool(body.get("retry", False))
     log_tail = body.get("log_tail")
 
     path = queue.fail(item_id, retry=retry)
 
+    log_extra = {"job_id": item_id, "worker_id": worker_id}
+
     if path is not None:
         # terminal failure (not requeued) -> notify
         msg = f"{Path(path).name} failed to transcode: {reason}"
         if log_tail:
             msg = f"{msg}\n{log_tail}"
-        logger.error(msg)
+        logger.error(msg, extra=log_extra)
         push.send(config.pushover, msg, title="transcoding error")
     else:
-        logger.warning(f"job {item_id} failed, requeued: {reason}")
+        logger.warning(
+            f"job {item_id} from worker {worker_id!r} failed, requeued: {reason}", extra=log_extra
+        )
 
     return "", 200
 

@@ -10,35 +10,40 @@ def _posts(mock_requests: MagicMock) -> list[tuple[str, dict[str, object]]]:
 
 def test_report_complete_posts_filename() -> None:
     with patch.object(worker_mod, "requests") as mock_requests:
-        worker_mod._report("http://wh", 5, JobResult("complete", filename="a-TRANSCODED.mkv"))
+        worker_mod._report("http://wh", 5, "w1", JobResult("complete", filename="a-TRANSCODED.mkv"))
 
     assert _posts(mock_requests) == [
-        ("http://wh/jobs/5/complete", {"filename": "a-TRANSCODED.mkv"}),
+        ("http://wh/jobs/5/complete", {"worker_id": "w1", "filename": "a-TRANSCODED.mkv"}),
     ]
 
 
 def test_report_skip_completes_without_filename() -> None:
     with patch.object(worker_mod, "requests") as mock_requests:
-        worker_mod._report("http://wh", 5, JobResult("skip"))
+        worker_mod._report("http://wh", 5, "w1", JobResult("skip"))
 
-    assert _posts(mock_requests) == [("http://wh/jobs/5/complete", {})]
+    assert _posts(mock_requests) == [("http://wh/jobs/5/complete", {"worker_id": "w1"})]
 
 
 def test_report_retry_fails_with_retry_true() -> None:
     with patch.object(worker_mod, "requests") as mock_requests:
-        worker_mod._report("http://wh", 5, JobResult("retry", reason="interrupted"))
+        worker_mod._report("http://wh", 5, "w1", JobResult("retry", reason="interrupted"))
 
     assert _posts(mock_requests) == [
-        ("http://wh/jobs/5/fail", {"retry": True, "reason": "interrupted"}),
+        ("http://wh/jobs/5/fail", {"worker_id": "w1", "retry": True, "reason": "interrupted"}),
     ]
 
 
 def test_report_fail_includes_log_tail() -> None:
     with patch.object(worker_mod, "requests") as mock_requests:
-        worker_mod._report("http://wh", 5, JobResult("fail", reason="boom", log_tail="ffmpeg died"))
+        worker_mod._report(
+            "http://wh", 5, "w1", JobResult("fail", reason="boom", log_tail="ffmpeg died")
+        )
 
     assert _posts(mock_requests) == [
-        ("http://wh/jobs/5/fail", {"retry": False, "reason": "boom", "log_tail": "ffmpeg died"}),
+        (
+            "http://wh/jobs/5/fail",
+            {"worker_id": "w1", "retry": False, "reason": "boom", "log_tail": "ffmpeg died"},
+        ),
     ]
 
 
@@ -47,4 +52,4 @@ def test_report_swallows_network_errors() -> None:
         mock_requests.RequestException = Exception
         mock_requests.post.side_effect = Exception("connection refused")
         # a failed report must not raise (the lease will expire and re-dispatch)
-        worker_mod._report("http://wh", 5, JobResult("complete", filename="a.mkv"))
+        worker_mod._report("http://wh", 5, "w1", JobResult("complete", filename="a.mkv"))

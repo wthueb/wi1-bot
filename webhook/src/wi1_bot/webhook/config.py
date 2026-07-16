@@ -15,6 +15,14 @@ class GeneralConfig(BaseModel):
 
 class WebhookConfig(BaseModel):
     port: int = Field(default=9000, gt=0, description="Port for the webhook/job API")
+    lease_secs: int = Field(
+        default=900,
+        gt=0,
+        description=(
+            "Seconds a claimed transcode job's lease stays valid before another worker"
+            " may reclaim it (workers heartbeat to keep it alive)"
+        ),
+    )
 
 
 class Config(BaseServiceConfig):

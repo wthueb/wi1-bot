@@ -77,6 +77,11 @@ def test_fail_retry_requeues_without_notifying(client: FlaskClient) -> None:
     assert queue.size == 1
 
 
+def test_complete_unknown_job_returns_404(client: FlaskClient) -> None:
+    resp = client.post("/jobs/999/complete", json={"worker_id": "w", "filename": "a.mkv"})
+    assert resp.status_code == 404
+
+
 def test_heartbeat(client: FlaskClient) -> None:
     queue.add("/movies/a.mkv", "good")
     job = client.post("/jobs/claim", json={"worker_id": "w"}).get_json()

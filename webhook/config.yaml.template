@@ -36,6 +36,10 @@ sonarr4k:
 webhook:
   # port the webhook + transcode job API listen on
   port: 9000
+  # seconds a claimed transcode job's lease stays valid before another worker may
+  # reclaim it; workers heartbeat to keep it alive, so set this above the heartbeat
+  # interval (default 900)
+  lease_secs: 900
 
 # pushover settings, optional (used for transcode failure notifications)
 pushover:

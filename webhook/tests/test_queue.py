@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 from sqlalchemy.orm import Session
 
+from wi1_bot.webhook.config import config
 from wi1_bot.webhook.db import get_engine
 from wi1_bot.webhook.models import TranscodeItem
 from wi1_bot.webhook.transcode_queue import TranscodeQueue, _utcnow
@@ -13,6 +14,15 @@ def queue(db: None) -> TranscodeQueue:
     q = TranscodeQueue()
     q.clear()
     return q
+
+
+def test_add_returns_new_job_id(queue: TranscodeQueue) -> None:
+    job_id = queue.add("/movies/a.mkv", "good")
+    assert isinstance(job_id, int)
+
+    item = queue.claim("w")
+    assert item is not None
+    assert item.id == job_id
 
 
 def test_add_and_claim(queue: TranscodeQueue) -> None:
@@ -118,3 +128,26 @@ def test_heartbeat_extends_only_for_owner(queue: TranscodeQueue) -> None:
 
     assert queue.heartbeat(item.id, "worker-1") is True
     assert queue.heartbeat(item.id, "worker-2") is False
+
+
+def test_claim_lease_secs_can_be_overridden(queue: TranscodeQueue) -> None:
+    queue.add("/movies/a.mkv", "good")
+
+    before = _utcnow()
+    item = queue.claim("w", lease_secs=5)
+    assert item is not None
+    assert item.lease_expires_at is not None
+    assert timedelta(seconds=4) <= item.lease_expires_at - before <= timedelta(seconds=6)
+
+
+def test_claim_lease_defaults_to_configured_value(
+    queue: TranscodeQueue, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(config.webhook, "lease_secs", 42)
+    queue.add("/movies/a.mkv", "good")
+
+    before = _utcnow()
+    item = queue.claim("w")
+    assert item is not None
+    assert item.lease_expires_at is not None
+    assert timedelta(seconds=41) <= item.lease_expires_at - before <= timedelta(seconds=43)
