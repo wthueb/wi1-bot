@@ -1472,7 +1472,7 @@ wheels = [
 
 [[package]]
 name = "wi1-bot"
-source = { editable = "wi1-bot" }
+source = { editable = "bot" }
 dependencies = [
     { name = "arr" },
     { name = "common" },

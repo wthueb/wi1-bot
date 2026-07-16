@@ -1,5 +1,5 @@
 [tool.uv.workspace]
-members = ["common", "arr", "wi1-bot", "webhook", "transcoder"]
+members = ["common", "arr", "bot", "webhook", "transcoder"]
 
 [tool.uv.sources]
 common = { workspace = true }
@@ -29,4 +29,4 @@ select = ["E", "F", "I"]
 known-first-party = ["wi1_bot"]
 
 [tool.pytest]
-testpaths = ["common", "arr", "wi1-bot", "webhook", "transcoder"]
+testpaths = ["common", "arr", "bot", "webhook", "transcoder"]

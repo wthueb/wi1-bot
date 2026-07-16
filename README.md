@@ -23,7 +23,7 @@ Transcode workers claim leased jobs from the webhook over HTTP and can be scaled
 ### Usage (Docker)
 
 1. Copy each service's `config.yaml.template` to its own config directory and fill it in:
-   - `wi1-bot/config.yaml.template` → `bot/config.yaml`
+   - `bot/config.yaml.template` → `bot/config.yaml`
    - `webhook/config.yaml.template` → `webhook/config.yaml`
    - `transcoder/config.yaml.template` → `transcoder/config.yaml`
 2. Point Radarr/Sonarr's connect webhook at the webhook service (`http://<host>:9000/`).
