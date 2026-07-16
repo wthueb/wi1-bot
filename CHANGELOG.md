@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.0](https://github.com/wthueb/wi1-bot/compare/v4.1.0...v4.2.0) (2026-07-16)
+
+
+### Features
+
+* display downloaded/monitored state in `!addmovie` / `!addshow` ([#15](https://github.com/wthueb/wi1-bot/issues/15)) ([249dc22](https://github.com/wthueb/wi1-bot/commit/249dc2224ca16c5fb470f36d8f69c874e8869086))
+
 ## [4.1.0](https://github.com/wthueb/wi1-bot/compare/v4.0.2...v4.1.0) (2026-07-16)
 
 
