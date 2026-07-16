@@ -286,7 +286,7 @@ class Transcoder:
                 )
         except FfprobeException:
             self.logger.warning("ffprobe failed, will not retry", exc_info=True)
-            return JobResult("fail", reason=f"{path.name} failed to transcode due to ffprobe error")
+            return JobResult("fail", reason="ffprobe error")
 
         if result is TranscodeResult.SKIP:
             return JobResult("skip")
