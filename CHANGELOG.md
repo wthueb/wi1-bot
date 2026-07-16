@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.1.0](https://github.com/wthueb/wi1-bot/compare/v4.0.2...v4.1.0) (2026-07-16)
+
+
+### Features
+
+* define heartbeat interval and missed heartbeats on webhook ([2d9c7da](https://github.com/wthueb/wi1-bot/commit/2d9c7da62c8e3e4c72ef69c5e8cd59481e8031c0))
+
+
+### Bug Fixes
+
+* transcode queue ids properly autoincrement, never duplicating ([3be995f](https://github.com/wthueb/wi1-bot/commit/3be995f9ec1d0b7bd1857e43abbb2b933e20ee78))
+
 ## [4.0.2](https://github.com/wthueb/wi1-bot/compare/v4.0.1...v4.0.2) (2026-07-16)
 
 
