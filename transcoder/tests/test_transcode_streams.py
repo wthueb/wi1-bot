@@ -61,7 +61,7 @@ def test_copy_mjpeg() -> None:
 
     t = Transcoder()
     with patch.object(t_mod, "config", _config(profile)):
-        t.transcode(str(path), "good", None)
+        t.transcode(str(path), "good", None, {})
 
     transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
     assert transcoded.exists()
@@ -83,7 +83,7 @@ def test_convert_movtext() -> None:
 
     t = Transcoder()
     with patch.object(t_mod, "config", _config(profile)):
-        t.transcode(str(path), "good", None)
+        t.transcode(str(path), "good", None, {})
 
     transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
     assert transcoded.exists()
@@ -105,7 +105,7 @@ def test_language_audio() -> None:
 
     t = Transcoder()
     with patch.object(t_mod, "config", _config(profile)):
-        t.transcode(str(path), "good", None)
+        t.transcode(str(path), "good", None, {})
 
     transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
     assert transcoded.exists()
@@ -130,7 +130,7 @@ def test_foreign_audio() -> None:
 
     t = Transcoder()
     with patch.object(t_mod, "config", _config(profile)):
-        t.transcode(str(path), "good", None)
+        t.transcode(str(path), "good", None, {})
 
     transcoded = path.with_name(f"{path.stem}-TRANSCODED.mkv")
     assert transcoded.exists()

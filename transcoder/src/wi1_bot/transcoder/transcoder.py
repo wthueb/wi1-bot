@@ -217,24 +217,29 @@ class Transcoder:
         self.logger = logging.getLogger(__name__)
 
     def transcode(
-        self, job_path: str, quality_profile: str, original_language: str | None
+        self,
+        job_path: str,
+        quality_profile: str,
+        original_language: str | None,
+        log_extra: dict[str, object],
     ) -> JobResult:
         if quality_profile not in config.transcoding.profiles:
             self.logger.info(
-                f"skipping job for unknown quality profile '{quality_profile}' ({job_path})"
+                f"skipping job for unknown quality profile '{quality_profile}' ({job_path})",
+                extra=log_extra,
             )
             return JobResult("skip")
 
         path = replace_remote_paths(Path(job_path), config.general.remote_path_mappings)
 
-        self.logger.info(f"attempting to transcode {path.name}")
+        self.logger.info(f"attempting to transcode {path.name}", extra=log_extra)
 
         if path.suffix == ".avi":
-            self.logger.info(f"cannot transcode {path.name}: .avi not supported")
+            self.logger.info(f"cannot transcode {path.name}: .avi not supported", extra=log_extra)
             return JobResult("skip")
 
         if not path.exists():
-            self.logger.info(f"file does not exist: {path}, skipping transcoding")
+            self.logger.info(f"file does not exist: {path}, skipping transcoding", extra=log_extra)
             return JobResult("skip")
 
         profile = config.transcoding.profiles[quality_profile]
@@ -264,11 +269,14 @@ class Transcoder:
         )
 
         try:
-            result, status, last_output = self._run_ffmpeg(params, transcode_to, tmp_log_path)
+            result, status, last_output = self._run_ffmpeg(
+                params, transcode_to, tmp_log_path, log_extra
+            )
 
             if result is TranscodeResult.FAILED and profile.fallback is not None:
                 self.logger.warning(
-                    f"transcoding {path.name} failed, retrying with fallback parameters"
+                    f"transcoding {path.name} failed, retrying with fallback parameters",
+                    extra=log_extra,
                 )
 
                 fallback = profile.fallback
@@ -282,10 +290,10 @@ class Transcoder:
                 )
 
                 result, status, last_output = self._run_ffmpeg(
-                    fallback_params, transcode_to, tmp_log_path
+                    fallback_params, transcode_to, tmp_log_path, log_extra
                 )
         except FfprobeException:
-            self.logger.warning("ffprobe failed, will not retry", exc_info=True)
+            self.logger.warning("ffprobe failed, will not retry", exc_info=True, extra=log_extra)
             return JobResult("fail", reason="ffprobe error")
 
         if result is TranscodeResult.SKIP:
@@ -305,8 +313,8 @@ class Transcoder:
 
             shutil.copy(tmp_log_path, perm_log_path)
 
-            self.logger.error(f"ffmpeg failed (status {status}): {last_output}")
-            self.logger.error(f"log file: {perm_log_path}")
+            self.logger.error(f"ffmpeg failed (status {status}): {last_output}", extra=log_extra)
+            self.logger.error(f"log file: {perm_log_path}", extra=log_extra)
 
             return JobResult(
                 "fail",
@@ -315,7 +323,9 @@ class Transcoder:
             )
 
         if not path.exists():
-            self.logger.debug(f"file doesn't exist: {path}, deleting transcoded file")
+            self.logger.debug(
+                f"file doesn't exist: {path}, deleting transcoded file", extra=log_extra
+            )
 
             transcode_to.unlink(missing_ok=True)
             return JobResult("skip")
@@ -324,12 +334,16 @@ class Transcoder:
         shutil.move(transcode_to, new_path)
         path.unlink()
 
-        self.logger.info(f"transcoded: {path.name} -> {new_path.name}")
+        self.logger.info(f"transcoded: {path.name} -> {new_path.name}", extra=log_extra)
 
         return JobResult("complete", filename=new_path.name)
 
     def _run_ffmpeg(
-        self, params: TranscodeParams, transcode_to: Path, tmp_log_path: Path
+        self,
+        params: TranscodeParams,
+        transcode_to: Path,
+        tmp_log_path: Path,
+        log_extra: dict[str, object],
     ) -> tuple[TranscodeResult, int, str]:
         """Run ffmpeg for a single attempt and classify the outcome.
 
@@ -340,7 +354,7 @@ class Transcoder:
 
         command = build_ffmpeg_command(params, transcode_to)
 
-        self.logger.debug(f"ffmpeg command: {shlex.join(command)}")
+        self.logger.debug(f"ffmpeg command: {shlex.join(command)}", extra=log_extra)
 
         with subprocess.Popen(
             command,
@@ -366,22 +380,28 @@ class Transcoder:
         try:
             transcode_to.unlink(missing_ok=True)
         except Exception:
-            self.logger.debug(f"failed to delete transcoded file: {transcode_to}")
+            self.logger.debug(f"failed to delete transcoded file: {transcode_to}", extra=log_extra)
 
         if "Error opening input files" in last_output or "No such file or directory" in last_output:
-            self.logger.info(f"file does not exist: {path}, skipping transcoding")
+            self.logger.info(f"file does not exist: {path}, skipping transcoding", extra=log_extra)
             return TranscodeResult.SKIP, status, last_output
 
         if "File name too long" in last_output:
-            self.logger.info(f"file name is too long: {path}, skipping transcoding")
+            self.logger.info(
+                f"file name is too long: {path}, skipping transcoding", extra=log_extra
+            )
             return TranscodeResult.SKIP, status, last_output
 
         if "received signal 15" in last_output:
-            self.logger.info(f"transcoding interrupted by signal: {path}, will retry")
+            self.logger.info(
+                f"transcoding interrupted by signal: {path}, will retry", extra=log_extra
+            )
             return TranscodeResult.RETRY, status, last_output
 
         if "cannot open shared object file" in last_output:
-            self.logger.error("ffmpeg error: missing shared object file, will retry")
+            self.logger.error(
+                "ffmpeg error: missing shared object file, will retry", extra=log_extra
+            )
             return TranscodeResult.RETRY, status, last_output
 
         return TranscodeResult.FAILED, status, last_output

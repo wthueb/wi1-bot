@@ -447,7 +447,7 @@ class TestTranscodeFallback:
             patch.object(t_mod, "config", config),
             patch.object(Transcoder, "_run_ffmpeg") as mock_run,
         ):
-            result = transcoder.transcode(str(source_file), "missing", None)
+            result = transcoder.transcode(str(source_file), "missing", None, {})
 
         assert result.action == "skip"
         mock_run.assert_not_called()
@@ -469,7 +469,7 @@ class TestTranscodeFallback:
             ) as mock_run,
             patch.object(t_mod, "shutil") as mock_shutil,
         ):
-            result = transcoder.transcode(str(source_file), "good", None)
+            result = transcoder.transcode(str(source_file), "good", None, {})
 
         # no fallback defined, so only one attempt; the failure is reported so the
         # webhook can notify (log copied to transcoder-errors)
@@ -503,7 +503,7 @@ class TestTranscodeFallback:
             ) as mock_run,
             patch.object(t_mod, "shutil") as mock_shutil,
         ):
-            result = transcoder.transcode(str(source_file), "good", None)
+            result = transcoder.transcode(str(source_file), "good", None, {})
 
         assert result.action == "fail"
         # primary attempt failed, so a second attempt runs with the fallback params
@@ -531,7 +531,7 @@ class TestTranscodeFallback:
             ) as mock_run,
             patch.object(t_mod, "shutil") as mock_shutil,
         ):
-            result = transcoder.transcode(str(source_file), "good", None)
+            result = transcoder.transcode(str(source_file), "good", None, {})
 
         # the fallback succeeded, so the transcoded file is moved into place and the
         # worker reports "complete" with the new filename (webhook does the rescan)
@@ -553,7 +553,7 @@ class TestTranscodeFallback:
             ) as mock_run,
             patch.object(t_mod, "shutil"),
         ):
-            transcoder.transcode(str(source_file), "good", "Japanese")
+            transcoder.transcode(str(source_file), "good", "Japanese", {})
 
         params = mock_run.call_args.args[0]
         # the title's original language (jpn) is appended to the profile keep-list
@@ -582,7 +582,7 @@ class TestTranscodeFallback:
             ) as mock_run,
             patch.object(t_mod, "shutil"),
         ):
-            transcoder.transcode(str(source_file), "good", None)
+            transcoder.transcode(str(source_file), "good", None, {})
 
         assert mock_run.call_count == 2
         primary_params = mock_run.call_args_list[0].args[0]

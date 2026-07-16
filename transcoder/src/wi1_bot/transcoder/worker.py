@@ -169,26 +169,26 @@ def run() -> None:
             continue
 
         job_id = job["id"]
-        job_extra = {"job_id": job_id, "worker_id": worker_name}
+        log_extra = {"job_id": job_id, "worker_id": worker_name}
 
-        logger.info(f"claimed job {job_id}: {job['path']}", extra=job_extra)
+        logger.info(f"claimed job {job_id}: {job['path']}", extra=log_extra)
 
         started = time.monotonic()
         try:
             with _Heartbeat(base_url, job_id, worker_name, heartbeat_interval):
                 result = transcoder.transcode(
-                    job["path"], job["quality_profile"], job.get("original_language")
+                    job["path"], job["quality_profile"], job.get("original_language"), log_extra
                 )
         except Exception:
             logger.warning(
-                f"unhandled error on job {job_id}, will retry", exc_info=True, extra=job_extra
+                f"unhandled error on job {job_id}, will retry", exc_info=True, extra=log_extra
             )
             result = JobResult("retry", reason="unhandled worker error")
 
         elapsed = time.monotonic() - started
         detail = f" ({result.reason})" if result.reason else ""
         logger.info(
-            f"job {job_id} finished in {elapsed:.1f}s: {result.action}{detail}", extra=job_extra
+            f"job {job_id} finished in {elapsed:.1f}s: {result.action}{detail}", extra=log_extra
         )
 
         _report(base_url, job_id, worker_name, result)
