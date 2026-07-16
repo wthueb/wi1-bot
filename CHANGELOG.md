@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/wthueb/wi1-bot/compare/v4.0.0...v4.0.1) (2026-07-16)
+
+
+### Bug Fixes
+
+* create log dir if it doesn't exist ([6a0984a](https://github.com/wthueb/wi1-bot/commit/6a0984a3f1540d5cc55b21bbdfb8b79f1ed28cfc))
+
 ## [4.0.0](https://github.com/wthueb/wi1-bot/compare/v3.7.0...v4.0.0) (2026-07-16)
 
 
