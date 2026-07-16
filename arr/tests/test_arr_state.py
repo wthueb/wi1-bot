@@ -54,8 +54,8 @@ class TestMovieState:
         for extra in ({}, {"id": 1, "monitored": True, "movieFileId": 9}):
             radarr.movie_state(Movie({**base_json, **extra}))
 
-        radarr._radarr.movie.get.assert_not_called()  # ty: ignore[unresolved-attribute]
-        radarr._radarr.movie_file.get.assert_not_called()  # ty: ignore[unresolved-attribute]
+        radarr._radarr.movie.get.assert_not_called()
+        radarr._radarr.movie_file.get.assert_not_called()
 
 
 class TestSeriesState:
@@ -77,7 +77,7 @@ class TestSeriesState:
         sonarr._sonarr.series.get = MagicMock()
 
         assert sonarr.series_state(Series(base_json)) is MediaState.ABSENT
-        sonarr._sonarr.series.get.assert_not_called()  # ty: ignore[unresolved-attribute]
+        sonarr._sonarr.series.get.assert_not_called()
 
     def test_downloaded_when_episode_files_exist(
         self, sonarr: Sonarr, base_json: dict[str, Any]
@@ -86,8 +86,7 @@ class TestSeriesState:
         sonarr._sonarr.series.get = MagicMock(return_value=self._series_detail(42))
 
         assert sonarr.series_state(series) is MediaState.DOWNLOADED
-        get = sonarr._sonarr.series.get
-        get.assert_called_once_with(item_id=1)  # ty: ignore[unresolved-attribute]
+        sonarr._sonarr.series.get.assert_called_once_with(item_id=1)
 
     def test_monitored_when_in_library_without_files(
         self, sonarr: Sonarr, base_json: dict[str, Any]
