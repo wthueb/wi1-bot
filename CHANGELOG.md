@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2](https://github.com/wthueb/wi1-bot/compare/v4.0.1...v4.0.2) (2026-07-16)
+
+
+### Bug Fixes
+
+* log job and worker ids in transcode process ([d929ff3](https://github.com/wthueb/wi1-bot/commit/d929ff32b4cdc9f71e2b367ad5a956d7ee25e085))
+
 ## [4.0.1](https://github.com/wthueb/wi1-bot/compare/v4.0.0...v4.0.1) (2026-07-16)
 
 
