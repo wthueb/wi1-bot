@@ -1,5 +1,27 @@
 # Changelog
 
+## [4.0.0](https://github.com/wthueb/wi1-bot/compare/v3.7.0...v4.0.0) (2026-07-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* split bot, webhook, and transcoder into their own separate services/images
+* rename main -> master
+
+### Bug Fixes
+
+* cleanup log fields for better cardinality ([3ff434f](https://github.com/wthueb/wi1-bot/commit/3ff434fffa814fb29a303f3b1fe92f3b4b10f595))
+
+
+### Miscellaneous Chores
+
+* rename main -&gt; master ([96a0ed0](https://github.com/wthueb/wi1-bot/commit/96a0ed005fa7f71f07302e614179946d0bd70e76))
+
+
+### Code Refactoring
+
+* split bot, webhook, and transcoder into their own separate services/images ([18c9964](https://github.com/wthueb/wi1-bot/commit/18c99640eeac082eb273e3c0a3fb1fe3de94972b))
+
 ## [3.7.0](https://github.com/wthueb/wi1-bot/compare/v3.6.0...v3.7.0) (2026-07-10)
 
 
