@@ -9,6 +9,8 @@ class Base(DeclarativeBase):
 
 class TranscodeItem(Base):
     __tablename__ = "transcode_queue"
+    # AUTOINCREMENT so job ids never get reused once the queue empties
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     path: Mapped[str]

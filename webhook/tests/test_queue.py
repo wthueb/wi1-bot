@@ -25,6 +25,13 @@ def test_add_returns_new_job_id(queue: TranscodeQueue) -> None:
     assert item.id == job_id
 
 
+def test_job_id_not_reused_after_queue_empties(queue: TranscodeQueue) -> None:
+    first = queue.add("/movies/a.mkv", "good")
+    queue.clear()
+    second = queue.add("/movies/b.mkv", "good")
+    assert second > first
+
+
 def test_add_and_claim(queue: TranscodeQueue) -> None:
     queue.add("/movies/a.mkv", "good", "English")
     assert queue.size == 1
