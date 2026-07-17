@@ -7,7 +7,15 @@ from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.bot.config import config
 from wi1_bot.common import push
 
-from ..helpers import STATE_SUFFIX, member_has_role, reply, select_from_list
+from ..helpers import (
+    STATE_SUFFIX,
+    SelectCancelled,
+    SelectInvalidIndex,
+    SelectTimeout,
+    member_has_role,
+    reply,
+    select_from_list,
+)
 
 
 class MovieCog(commands.Cog):
@@ -37,13 +45,22 @@ class MovieCog(commands.Cog):
             # on plex / monitored before the user commits to adding it
             states = {movie: self.radarr.movie_state(movie) for movie in potential}
 
-        resp, to_add = await select_from_list(
-            self.bot,
-            ctx.message,
-            "addmovie",
-            potential,
-            render=lambda movie: f"{movie}{STATE_SUFFIX[states[movie]]}",
-        )
+        try:
+            to_add, resp = await select_from_list(
+                self.bot,
+                ctx.message,
+                potential,
+                render=lambda movie: f"{movie}{STATE_SUFFIX[states[movie]]}",
+            )
+        except SelectTimeout:
+            await reply(ctx.message, "timed out, addmovie cancelled", error=True)
+            return
+        except SelectCancelled as e:
+            await reply(e.resp, "addmovie cancelled")
+            return
+        except SelectInvalidIndex as e:
+            await reply(e.resp, f"invalid index ({e.index}), addmovie cancelled", error=True)
+            return
 
         if not to_add:
             return
@@ -113,7 +130,17 @@ class MovieCog(commands.Cog):
                     )
                     return
 
-        resp, to_delete = await select_from_list(self.bot, ctx.message, "delmovie", potential)
+        try:
+            to_delete, resp = await select_from_list(self.bot, ctx.message, potential)
+        except SelectTimeout:
+            await reply(ctx.message, "timed out, delmovie cancelled", error=True)
+            return
+        except SelectCancelled as e:
+            await reply(e.resp, "delmovie cancelled")
+            return
+        except SelectInvalidIndex as e:
+            await reply(e.resp, f"invalid index ({e.index}), delmovie cancelled", error=True)
+            return
 
         if not to_delete:
             return
