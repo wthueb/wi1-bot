@@ -127,6 +127,8 @@ def index() -> Any:
                     return
 
                 on_download(request.json)
+            case "Grab" | "EpisodeFileDelete" | "Health" | "HealthRestored" as et:
+                logger.debug(f"ignoring {et} event")
             case et:
                 logger.warning(f"handler not setup for event type {et}")
 
