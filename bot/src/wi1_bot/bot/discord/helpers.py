@@ -17,6 +17,13 @@ STATE_SUFFIX: dict[MediaState, str] = {
     MediaState.DOWNLOADED: " — **on plex**",
 }
 
+# standalone status labels for info embeds
+STATE_LABEL: dict[MediaState, str] = {
+    MediaState.ABSENT: "not on plex",
+    MediaState.MONITORED: "monitored, not downloaded yet",
+    MediaState.DOWNLOADED: "on plex",
+}
+
 
 async def member_has_role(member: discord.Member | discord.User, role: str) -> bool:
     if isinstance(member, discord.Member):
@@ -25,7 +32,9 @@ async def member_has_role(member: discord.Member | discord.User, role: str) -> b
     return False
 
 
-async def reply(msg: discord.Message, content: str, title: str = "", error: bool = False) -> None:
+async def reply(
+    msg: discord.Message, content: str, title: str = "", error: bool = False
+) -> discord.Message:
     if len(content) > 2048:
         while len(content) > 2048 - len("\n..."):
             content = content[: content.rfind("\n")].rstrip()
@@ -38,7 +47,48 @@ async def reply(msg: discord.Message, content: str, title: str = "", error: bool
         color=discord.Color.red() if error else discord.Color.blue(),
     )
 
-    await msg.reply(embed=embed)
+    return await msg.reply(embed=embed)
+
+
+REQUEST_EMOJI = "📥"
+
+
+async def wait_for_request_reaction(
+    bot: commands.Bot, msg: discord.Message, timeout: float = 120
+) -> discord.Member | discord.User | None:
+    """Seed msg with the request emoji and wait for a user to react with it.
+
+    Returns the first non-bot user to react, or None on timeout (the seeded
+    reaction is removed to show the offer expired).
+    """
+    await msg.add_reaction(REQUEST_EMOJI)
+
+    def check(reaction: discord.Reaction, user: discord.Member | discord.User) -> bool:
+        return (
+            reaction.message.id == msg.id and str(reaction.emoji) == REQUEST_EMOJI and not user.bot
+        )
+
+    try:
+        _, user = await bot.wait_for("reaction_add", check=check, timeout=timeout)
+        return user
+    except asyncio.TimeoutError:
+        assert bot.user is not None
+
+        try:
+            await msg.remove_reaction(REQUEST_EMOJI, bot.user)
+        except discord.HTTPException:
+            pass
+
+        return None
+
+
+def format_runtime(minutes: int) -> str:
+    hours, mins = divmod(minutes, 60)
+
+    if hours == 0:
+        return f"{mins}m"
+
+    return f"{hours}h {mins}m"
 
 
 T = TypeVar("T")

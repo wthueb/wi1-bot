@@ -191,6 +191,13 @@ class Radarr:
         assert isinstance(movie, dict)
         return movie
 
+    def get_movie_credits(self, movie_id: int) -> JsonArray:
+        """Cast/crew Radarr has stored for a library movie (empty for movies it
+        doesn't track). pyarr has no credit sub-client, so go through the handler."""
+        credits = self._radarr.movie.handler.request("credit", params={"movieId": movie_id})
+        assert isinstance(credits, list)
+        return credits
+
     def is_movie_monitored(self, tmdb_id: int) -> bool:
         movies = self._radarr.movie.get(tmdb_id=tmdb_id)
         assert isinstance(movies, list)

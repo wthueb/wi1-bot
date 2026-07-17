@@ -1,6 +1,7 @@
 from wi1_bot.arr.common import Download
 from wi1_bot.arr.episode import Episode
 from wi1_bot.arr.movie import Movie
+from wi1_bot.arr.sonarr import Series
 
 
 class TestMovie:
@@ -35,6 +36,20 @@ class TestMovie:
         assert movie.full_title == "Inception (2010)"
         assert movie.url == "https://themoviedb.org/movie/27205"
 
+    def test_movie_creation_with_empty_imdb(self) -> None:
+        # the api can return imdbId as "" instead of omitting it; the url should
+        # still fall back instead of linking to https://imdb.com/title/
+        movie_json = {
+            "title": "Inception",
+            "year": 2010,
+            "tmdbId": 27205,
+            "imdbId": "",
+        }
+        movie = Movie(movie_json)
+
+        assert movie.imdb_id == ""
+        assert movie.url == "https://themoviedb.org/movie/27205"
+
     def test_movie_str_representation(self) -> None:
         movie_json = {
             "title": "The Matrix",
@@ -45,6 +60,45 @@ class TestMovie:
         movie = Movie(movie_json)
 
         assert str(movie) == "[The Matrix (1999)](https://imdb.com/title/tt0133093)"
+
+
+class TestSeries:
+    def test_series_creation_with_imdb(self) -> None:
+        series_json = {
+            "title": "Game of Thrones",
+            "year": 2011,
+            "tvdbId": 121361,
+            "imdbId": "tt0944947",
+        }
+        series = Series(series_json)
+
+        assert series.imdb_id == "tt0944947"
+        assert series.url == "https://imdb.com/title/tt0944947"
+
+    def test_series_creation_without_imdb(self) -> None:
+        series_json = {
+            "title": "Game of Thrones",
+            "year": 2011,
+            "tvdbId": 121361,
+        }
+        series = Series(series_json)
+
+        assert series.imdb_id == ""
+        assert series.url == "https://thetvdb.com/dereferrer/series/121361"
+
+    def test_series_creation_with_empty_imdb(self) -> None:
+        # sonarr lookups commonly return imdbId as ""; the url should still fall
+        # back to tvdb instead of linking to https://imdb.com/title/
+        series_json = {
+            "title": "Game of Thrones",
+            "year": 2011,
+            "tvdbId": 121361,
+            "imdbId": "",
+        }
+        series = Series(series_json)
+
+        assert series.imdb_id == ""
+        assert series.url == "https://thetvdb.com/dereferrer/series/121361"
 
 
 class TestEpisode:
