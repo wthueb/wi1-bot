@@ -13,13 +13,11 @@ class Movie:
 
         self.url = f"https://themoviedb.org/movie/{self.tmdb_id}"
 
-        self.imdb_id: str = ""
+        # prefer an imdb link, but the api can return imdbId as "" as well as omit it
+        self.imdb_id: str = movie_json.get("imdbId") or ""
 
-        try:
-            self.imdb_id = movie_json["imdbId"]
+        if self.imdb_id:
             self.url = f"https://imdb.com/title/{self.imdb_id}"
-        except KeyError:
-            pass
 
     def __str__(self) -> str:
         return f"[{self.full_title}]({self.url})"
