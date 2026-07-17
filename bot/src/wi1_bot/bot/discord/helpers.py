@@ -44,13 +44,35 @@ async def reply(msg: discord.Message, content: str, title: str = "", error: bool
 T = TypeVar("T")
 
 
+class SelectError(Exception):
+    """base class for errors raised by select_from_list."""
+
+
+class SelectTimeout(SelectError):
+    """raised when the user does not make a selection in time."""
+
+
+class SelectCancelled(SelectError):
+    """raised when the user cancels the selection."""
+
+    def __init__(self, resp: discord.Message) -> None:
+        self.resp = resp
+
+
+class SelectInvalidIndex(SelectError):
+    """raised when the user picks an index that is out of range."""
+
+    def __init__(self, index: int, resp: discord.Message) -> None:
+        self.index = index
+        self.resp = resp
+
+
 async def select_from_list(
     bot: commands.Bot,
     msg: discord.Message,
-    command: str,
     choices: list[T],
     render: Callable[[T], str] = str,
-) -> tuple[discord.Message, list[T]]:
+) -> tuple[list[T], discord.Message]:
     choices_text = "\n".join(f"{i + 1}. {render(choice)}" for i, choice in enumerate(choices))
 
     await reply(
@@ -69,33 +91,34 @@ async def select_from_list(
         # c, idxs, or new command
         regex = re.compile(r"^(c|(\d+,?)+|[!.].+ .*)$", re.IGNORECASE)
 
-        if re.match(regex, resp.content.strip()):
-            return True
-
-        return False
+        return bool(re.match(regex, resp.content.strip()))
 
     try:
         resp = await bot.wait_for("message", check=check, timeout=30)
     except asyncio.TimeoutError:
-        await reply(msg, f"timed out, {command} cancelled", error=True)
-        return msg, []
+        raise SelectTimeout from None
 
-    if resp.content.strip().lower() == "c":
-        await reply(resp, f"{command} cancelled")
-        return resp, []
+    content = resp.content.strip()
 
-    if resp.content.strip()[0] in [".", "!"]:
-        return resp, []
+    if content.lower() == "c":
+        raise SelectCancelled(resp)
 
-    idxs = [int(i) for i in resp.content.strip().split(",") if i.isdigit()]
+    # the user typed a new command instead of picking; abandon this selection
+    # silently and let the new command run
+    if content[0] in (".", "!"):
+        return [], resp
 
     selected: list[T] = []
 
-    for idx in idxs:
+    for i in content.split(","):
+        if not i.isdigit():
+            continue
+
+        idx = int(i)
+
         if idx < 1 or idx > len(choices):
-            await reply(resp, f"invalid index ({idx}), {command} cancelled", error=True)
-            return resp, []
+            raise SelectInvalidIndex(idx, resp)
 
         selected.append(choices[idx - 1])
 
-    return resp, selected
+    return selected, resp
