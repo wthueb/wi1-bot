@@ -122,6 +122,10 @@ def index() -> Any:
             case "Test":
                 logger.info("got test event from arr")
             case "Download":
+                if "movieFiles" in request.json or "episodeFiles" in request.json:
+                    logger.debug("ignoring On Import Complete event")
+                    return
+
                 on_download(request.json)
             case et:
                 logger.warning(f"handler not setup for event type {et}")
