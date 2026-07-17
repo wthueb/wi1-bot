@@ -24,13 +24,11 @@ class Series:
 
         self.url = f"https://thetvdb.com/dereferrer/series/{self.tvdb_id}"
 
-        self.imdb_id = ""
+        # prefer an imdb link, but the api can return imdbId as "" as well as omit it
+        self.imdb_id: str = series_json.get("imdbId") or ""
 
-        try:
-            self.imdb_id = series_json["imdbId"]
+        if self.imdb_id:
             self.url = f"https://imdb.com/title/{self.imdb_id}"
-        except KeyError:
-            pass
 
     def __str__(self) -> str:
         return f"[{self.full_title}]({self.url})"

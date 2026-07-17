@@ -159,6 +159,24 @@ class TestRadarr:
         with pytest.raises(ValueError, match="no quality profile with the name bad"):
             radarr._get_quality_profile_id("bad")
 
+    def test_get_movie_credits(self, radarr: Radarr) -> None:
+        credits = [
+            {"personName": "Keanu Reeves", "personTmdbId": 6384, "type": "cast", "order": 0},
+            {
+                "personName": "Lana Wachowski",
+                "personTmdbId": 9339,
+                "type": "crew",
+                "job": "Director",
+            },
+        ]
+
+        radarr._radarr.movie.handler.request = MagicMock(return_value=credits)
+
+        assert radarr.get_movie_credits(1) == credits
+        radarr._radarr.movie.handler.request.assert_called_once_with(
+            "credit", params={"movieId": 1}
+        )
+
 
 class TestSonarr:
     @pytest.fixture

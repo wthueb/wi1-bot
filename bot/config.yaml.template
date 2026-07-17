@@ -44,6 +44,11 @@ discord:
         - OTHER_USER_ID1
         - OTHER_USER_ID2
 
+# tmdb settings, optional (enables cast/director info in !movieinfo and !showinfo)
+tmdb:
+  # tmdb api key (v3, https://www.themoviedb.org/settings/api)
+  api_key: XXX
+
 # pushover settings, optional
 pushover:
   # pushover user key

@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from wi1_bot.bot.config import DiscordConfig
+from wi1_bot.bot.config import Config, DiscordConfig
 
 
 class TestQuotaConfig:
@@ -46,3 +46,19 @@ class TestQuotaConfig:
     def test_owner_in_own_with_list_rejected(self) -> None:
         with pytest.raises(ValidationError, match="more than one quota"):
             self._discord({111: {"amount": 10, "with": [111]}})
+
+
+class TestTmdbConfig:
+    def test_tmdb_is_optional(self) -> None:
+        # the shared test config has no tmdb section
+        assert Config().tmdb is None
+
+    def test_tmdb_api_key_parses(self) -> None:
+        cfg = Config(tmdb={"api_key": "abc"})  # type: ignore[arg-type]
+
+        assert cfg.tmdb is not None
+        assert cfg.tmdb.api_key == "abc"
+
+    def test_empty_api_key_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            Config(tmdb={"api_key": ""})  # type: ignore[arg-type]
