@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.2](https://github.com/wthueb/wi1-bot/compare/v4.2.1...v4.2.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* remove invalid characters from add-tag/!addtag ([7d23567](https://github.com/wthueb/wi1-bot/commit/7d235679fbff60e8dbe42b83cae3223447ace3c6))
+
 ## [4.2.1](https://github.com/wthueb/wi1-bot/compare/v4.2.0...v4.2.1) (2026-07-17)
 
 
