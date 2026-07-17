@@ -13,6 +13,10 @@ class GeneralConfig(BaseModel):
     )
 
 
+class TmdbConfig(BaseModel):
+    api_key: str = Field(min_length=1, description="TMDB API key (v3)")
+
+
 class Quota(BaseModel):
     amount: float = Field(gt=0, description="Quota amount in GB")
     with_: list[int] = Field(
@@ -66,6 +70,7 @@ class Config(BaseServiceConfig):
     sonarr: ArrConfig
     discord: DiscordConfig
     pushover: PushoverConfig | None = None
+    tmdb: TmdbConfig | None = None
 
 
 config = Config()  # type: ignore[call-arg]
