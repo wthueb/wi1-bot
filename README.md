@@ -78,9 +78,5 @@ Run a service locally with its config: `WB_CONFIG_PATH=… uv run wi1-bot-webhoo
   - !movierec based off of ratings and similar-to-user ratings?
     - https://towardsdatascience.com/the-4-recommendation-engines-that-can-predict-your-movie-tastes-109dc4e10c52
     - or just use TMDB's API to get recommendations (if that's possible?)
-- !movieinfo showing user/public ratings and other general info (runtime, cast, director)
-  - use TMDB API to get movie metadata
-  - if movie isn't on Radarr, react to message to add it?
-  - Tautulli API (get_history) to show who has already seen the movie
 - User leaderboard
   - movies/shows added, Tautulli watch counts
