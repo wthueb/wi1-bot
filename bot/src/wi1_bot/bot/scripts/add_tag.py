@@ -15,8 +15,8 @@ def main() -> None:
     radarr = Radarr.from_config(config.radarr)
     sonarr = Sonarr.from_config(config.sonarr)
 
-    radarr.create_tag(f"{args.nickname}: {args.discord_id}")
-    sonarr.create_tag(f"{args.nickname}: {args.discord_id}")
+    radarr.create_tag(f"{args.nickname}-{args.discord_id}")
+    sonarr.create_tag(f"{args.nickname}-{args.discord_id}")
 
 
 if __name__ == "__main__":

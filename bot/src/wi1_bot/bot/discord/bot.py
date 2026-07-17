@@ -147,7 +147,7 @@ async def quotas_cmd(ctx: commands.Context[commands.Bot]) -> None:
 @bot.command(name="addtag", help="add a user tag")
 @commands.has_role("plex-admin")
 async def addtag_cmd(ctx: commands.Context[commands.Bot], name: str, user: discord.Member) -> None:
-    tag = f"{name}: {user.id}"
+    tag = f"{name}-{user.id}"
 
     radarr.create_tag(tag)
     sonarr.create_tag(tag)
