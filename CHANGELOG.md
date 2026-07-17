@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.2.1](https://github.com/wthueb/wi1-bot/compare/v4.2.0...v4.2.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* debug logs for ignored known event types ([01d2c13](https://github.com/wthueb/wi1-bot/commit/01d2c13d5844db509aa7943a7b124f70fc9f2567))
+* ignore On Import Complete events ([9917a32](https://github.com/wthueb/wi1-bot/commit/9917a3296c22ed31478f067b1ce7cf507c66ecf5))
+
 ## [4.2.0](https://github.com/wthueb/wi1-bot/compare/v4.1.0...v4.2.0) (2026-07-16)
 
 
