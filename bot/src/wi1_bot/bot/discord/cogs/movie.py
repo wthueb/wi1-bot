@@ -142,8 +142,17 @@ class MovieCog(commands.Cog):
                 )
                 return
 
+            # resolve each result's state up front so the picker can show what's already
+            # on plex / monitored before the user commits to selecting it
+            states = {movie: self.radarr.movie_state(movie) for movie in potential}
+
         try:
-            selected, resp = await select_from_list(self.bot, ctx.message, potential)
+            selected, resp = await select_from_list(
+                self.bot,
+                ctx.message,
+                potential,
+                render=lambda movie: f"{movie}{STATE_SUFFIX[states[movie]]}",
+            )
         except SelectTimeout:
             await reply(ctx.message, "timed out, movieinfo cancelled", error=True)
             return
@@ -161,7 +170,7 @@ class MovieCog(commands.Cog):
 
         for movie in selected:
             async with ctx.typing():
-                state = self.radarr.movie_state(movie)
+                state = states[movie]
                 embed = self._build_movie_embed(movie, state)
 
             info_msg = await resp.reply(embed=embed)

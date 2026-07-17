@@ -162,8 +162,17 @@ class SeriesCog(commands.Cog):
                 )
                 return
 
+            # resolve each result's state up front so the picker can show what's already
+            # on plex / monitored before the user commits to selecting it
+            states = {series: self.sonarr.series_state(series) for series in potential}
+
         try:
-            selected, resp = await select_from_list(self.bot, ctx.message, potential)
+            selected, resp = await select_from_list(
+                self.bot,
+                ctx.message,
+                potential,
+                render=lambda series: f"{series}{STATE_SUFFIX[states[series]]}",
+            )
         except SelectTimeout:
             await reply(ctx.message, "timed out, showinfo cancelled", error=True)
             return
@@ -181,7 +190,7 @@ class SeriesCog(commands.Cog):
 
         for series in selected:
             async with ctx.typing():
-                state = self.sonarr.series_state(series)
+                state = states[series]
                 embed = self._build_series_embed(series, state)
 
             info_msg = await resp.reply(embed=embed)
