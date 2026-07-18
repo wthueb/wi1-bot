@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.3.0](https://github.com/wthueb/wi1-bot/compare/v4.2.2...v4.3.0) (2026-07-18)
+
+
+### Features
+
+* add !movieinfo and !showinfo commands + react to request ([#25](https://github.com/wthueb/wi1-bot/issues/25)) ([f10251f](https://github.com/wthueb/wi1-bot/commit/f10251f2daee90b48638ec9531b71ef501441154))
+
+
+### Bug Fixes
+
+* invalid return value on import complete ([06182cc](https://github.com/wthueb/wi1-bot/commit/06182cca3852a76e3d6ae6c6e495630937852447))
+
 ## [4.2.2](https://github.com/wthueb/wi1-bot/compare/v4.2.1...v4.2.2) (2026-07-17)
 
 
