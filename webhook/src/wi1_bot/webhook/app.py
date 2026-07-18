@@ -124,7 +124,7 @@ def index() -> Any:
             case "Download":
                 if "movieFiles" in request.json or "episodeFiles" in request.json:
                     logger.debug("ignoring On Import Complete event")
-                    return
+                    return "", 200
 
                 on_download(request.json)
             case "Grab" | "EpisodeFileDelete" | "Health" | "HealthRestored" as et:
