@@ -167,9 +167,7 @@ class Radarr:
         tags = self._radarr.tag.get()
         tag_for_user: dict[int, int] = {}
         for uid in user_ids:
-            tag_for_user[uid] = next(
-                (tag["id"] for tag in tags if str(uid) in tag["label"]), -1
-            )
+            tag_for_user[uid] = next((tag["id"] for tag in tags if str(uid) in tag["label"]), -1)
 
         size_for_tag: dict[int, int] = defaultdict(int)
 
