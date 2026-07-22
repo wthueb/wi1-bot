@@ -131,12 +131,6 @@ class Sonarr:
         return len(files) > 0
 
     def series_state(self, series: Series) -> MediaState:
-        """Classify a looked-up series as ABSENT, MONITORED, or DOWNLOADED.
-
-        A series lookup carries the library ``id`` (``series.db_id``) when Sonarr
-        already tracks it, but blanks ``statistics``, so each in-library result costs
-        one series fetch to see whether any episode files exist.
-        """
         if series.db_id is None:
             return MediaState.ABSENT
 
@@ -150,6 +144,11 @@ class Sonarr:
 
     def create_tag(self, tag: str) -> None:
         self._sonarr.tag.create(label=tag)
+
+    def get_tags(self) -> list[str]:
+        tags = self._sonarr.tag.get()
+        assert isinstance(tags, list)
+        return [tag["label"] for tag in tags]
 
     def add_tag(self, series: Series, user_id: int) -> bool:
         try:
@@ -201,9 +200,6 @@ class Sonarr:
         return self.get_quota_amounts([user_id])[user_id]
 
     def get_quota_amounts(self, user_ids: Iterable[int]) -> dict[int, int]:
-        """Bytes on disk attributed to each user's tag. Fetches the tag list and
-        the full library only once, so the cost is independent of how many users
-        are asked about. Users without a tag map to 0."""
         user_ids = set(user_ids)
 
         tags = self._sonarr.tag.get()

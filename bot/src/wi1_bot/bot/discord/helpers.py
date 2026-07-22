@@ -25,6 +25,15 @@ STATE_LABEL: dict[MediaState, str] = {
 }
 
 
+def parse_user_tag(label: str) -> tuple[str, int] | None:
+    match = re.search(r"(\d{15,})\s*$", label)
+    if match is None:
+        return None
+
+    name = label[: match.start()].rstrip(" :-").strip()
+    return name, int(match.group(1))
+
+
 async def member_has_role(member: discord.Member | discord.User, role: str) -> bool:
     if isinstance(member, discord.Member):
         return role in [r.name for r in member.roles]
