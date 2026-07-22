@@ -1,3 +1,5 @@
+from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urlparse
@@ -154,21 +156,29 @@ class Radarr:
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
 
     def get_quota_amount(self, user_id: int) -> int:
-        try:
-            tag_id = self._get_tag_for_user_id(user_id)
-        except ValueError:
-            return 0
+        return self.get_quota_amounts([user_id])[user_id]
 
-        total = 0
+    def get_quota_amounts(self, user_ids: Iterable[int]) -> dict[int, int]:
+        """Bytes on disk attributed to each user's tag. Fetches the tag list and
+        the full library only once, so the cost is independent of how many users
+        are asked about. Users without a tag map to 0."""
+        user_ids = set(user_ids)
+
+        tags = self._radarr.tag.get()
+        tag_for_user: dict[int, int] = {}
+        for uid in user_ids:
+            tag_for_user[uid] = next((tag["id"] for tag in tags if str(uid) in tag["label"]), -1)
+
+        size_for_tag: dict[int, int] = defaultdict(int)
 
         movies = self._radarr.movie.get()
         assert isinstance(movies, list)
 
         for movie in movies:
-            if tag_id in movie["tags"]:
-                total += movie["sizeOnDisk"]
+            for tag_id in movie["tags"]:
+                size_for_tag[tag_id] += movie["sizeOnDisk"]
 
-        return total
+        return {uid: size_for_tag[tag_for_user[uid]] for uid in user_ids}
 
     def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._radarr.quality_profile.get()

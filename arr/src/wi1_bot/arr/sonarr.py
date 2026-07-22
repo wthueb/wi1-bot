@@ -1,3 +1,5 @@
+from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urlparse
@@ -196,21 +198,30 @@ class Sonarr:
         return downloads
 
     def get_quota_amount(self, user_id: int) -> int:
-        try:
-            tag_id = self._get_tag_for_user_id(user_id)
-        except ValueError:
-            return 0
+        return self.get_quota_amounts([user_id])[user_id]
 
-        total = 0
+    def get_quota_amounts(self, user_ids: Iterable[int]) -> dict[int, int]:
+        """Bytes on disk attributed to each user's tag. Fetches the tag list and
+        the full library only once, so the cost is independent of how many users
+        are asked about. Users without a tag map to 0."""
+        user_ids = set(user_ids)
+
+        tags = self._sonarr.tag.get()
+        assert isinstance(tags, list)
+        tag_for_user: dict[int, int] = {}
+        for uid in user_ids:
+            tag_for_user[uid] = next((tag["id"] for tag in tags if str(uid) in tag["label"]), -1)
+
+        size_for_tag: dict[int, int] = defaultdict(int)
 
         all_series = self._sonarr.series.get()
         assert isinstance(all_series, list)
 
         for s in all_series:
-            if tag_id in s["tags"]:
-                total += s["statistics"]["sizeOnDisk"]
+            for tag_id in s["tags"]:
+                size_for_tag[tag_id] += s["statistics"]["sizeOnDisk"]
 
-        return total
+        return {uid: size_for_tag[tag_for_user[uid]] for uid in user_ids}
 
     def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._sonarr.quality_profile.get()
