@@ -83,11 +83,19 @@ async def downloads_cmd(ctx: commands.Context[commands.Bot]) -> None:
     await reply(ctx.message, "\n\n".join(map(str, queue)), title="download progress")
 
 
-def _used_space_gb(user_ids: set[int]) -> float:
-    return (
-        sum(radarr.get_quota_amount(uid) + sonarr.get_quota_amount(uid) for uid in user_ids)
-        / 1024**3
+async def _used_bytes_by_user(user_ids: set[int]) -> dict[int, int]:
+    """Bytes each user has added, summed across radarr and sonarr. Each instance's
+    library is fetched only once regardless of how many users are asked about, and
+    the two instances are fetched concurrently off the event loop."""
+    radarr_amounts, sonarr_amounts = await asyncio.gather(
+        asyncio.to_thread(radarr.get_quota_amounts, user_ids),
+        asyncio.to_thread(sonarr.get_quota_amounts, user_ids),
     )
+    return {uid: radarr_amounts.get(uid, 0) + sonarr_amounts.get(uid, 0) for uid in user_ids}
+
+
+async def _used_space_gb(user_ids: set[int]) -> float:
+    return sum((await _used_bytes_by_user(user_ids)).values()) / 1024**3
 
 
 @bot.command(name="quota", help="see your used space on the plex")
@@ -106,7 +114,7 @@ async def quota_cmd(ctx: commands.Context[commands.Bot]) -> None:
                 maximum = quota.amount
                 break
 
-        used = _used_space_gb(user_ids)
+        used = await _used_space_gb(user_ids)
 
         pct = used / maximum * 100 if maximum != 0 else 100
 
@@ -122,14 +130,22 @@ async def quotas_cmd(ctx: commands.Context[commands.Bot]) -> None:
 
     if not quotas:
         await reply(ctx.message, "quotas are not implemented here")
+        return
 
     async with ctx.typing():
+        # fetch each instance's library once for the whole command, then attribute
+        # the sizes to each quota group in memory
+        all_user_ids = {
+            uid for owner_id, quota in quotas.items() for uid in (owner_id, *quota.with_)
+        }
+        used_by_user = await _used_bytes_by_user(all_user_ids)
+
         msg: list[str] = []
 
         for owner_id, quota in quotas.items():
             total = quota.amount
 
-            used = _used_space_gb({owner_id, *quota.with_})
+            used = sum(used_by_user[uid] for uid in (owner_id, *quota.with_)) / 1024**3
 
             pct = used / total * 100 if total != 0 else 100
 
