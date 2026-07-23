@@ -101,14 +101,6 @@ class Radarr:
         return len(files) > 0
 
     def movie_state(self, movie: Movie) -> MediaState:
-        """Classify a looked-up movie as ABSENT, MONITORED, or DOWNLOADED.
-
-        When Radarr already tracks a movie, lookup returns the library record itself
-        (this is what :meth:`lookup_library` filters on), so ``id``, ``movieFileId``
-        and ``monitored`` are all in the lookup result — no extra API calls. Don't use
-        ``hasFile`` here: only the ``/movie`` controller populates it (from
-        statistics), so lookup results always report it null/false.
-        """
         if "id" not in movie.json:
             return MediaState.ABSENT
 
@@ -122,6 +114,11 @@ class Radarr:
 
     def create_tag(self, tag: str) -> None:
         self._radarr.tag.create(label=tag)
+
+    def get_tags(self) -> list[str]:
+        tags = self._radarr.tag.get()
+        assert isinstance(tags, list)
+        return [tag["label"] for tag in tags]
 
     def add_tag(self, movie: Movie | list[Movie], user_id: int) -> bool:
         if isinstance(movie, Movie):
@@ -159,9 +156,6 @@ class Radarr:
         return self.get_quota_amounts([user_id])[user_id]
 
     def get_quota_amounts(self, user_ids: Iterable[int]) -> dict[int, int]:
-        """Bytes on disk attributed to each user's tag. Fetches the tag list and
-        the full library only once, so the cost is independent of how many users
-        are asked about. Users without a tag map to 0."""
         user_ids = set(user_ids)
 
         tags = self._radarr.tag.get()
@@ -202,8 +196,6 @@ class Radarr:
         return movie
 
     def get_movie_credits(self, movie_id: int) -> JsonArray:
-        """Cast/crew Radarr has stored for a library movie (empty for movies it
-        doesn't track). pyarr has no credit sub-client, so go through the handler."""
         credits = self._radarr.movie.handler.request("credit", params={"movieId": movie_id})
         assert isinstance(credits, list)
         return credits

@@ -8,7 +8,7 @@ from discord.ext import commands
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.bot.config import config
 
-from .cogs import MovieCog, SeriesCog
+from .cogs import AdminCog, MovieCog, SeriesCog
 from .helpers import reply
 
 logger = logging.getLogger(__name__)
@@ -160,21 +160,11 @@ async def quotas_cmd(ctx: commands.Context[commands.Bot]) -> None:
     )
 
 
-@bot.command(name="addtag", help="add a user tag")
-@commands.has_role("plex-admin")
-async def addtag_cmd(ctx: commands.Context[commands.Bot], name: str, user: discord.Member) -> None:
-    tag = f"{name}-{user.id}"
-
-    radarr.create_tag(tag)
-    sonarr.create_tag(tag)
-
-    await reply(ctx.message, f"tag `{tag}` added for {user.display_name}")
-
-
 async def run() -> None:
     logger.info("starting bot")
 
     async with bot:
+        await bot.add_cog(AdminCog(bot))
         await bot.add_cog(MovieCog(bot))
         await bot.add_cog(SeriesCog(bot))
 
