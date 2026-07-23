@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.4.0](https://github.com/wthueb/wi1-bot/compare/v4.3.0...v4.4.0) (2026-07-23)
+
+
+### Features
+
+* new !showtags command + admin help panel ([#29](https://github.com/wthueb/wi1-bot/issues/29)) ([c8675ae](https://github.com/wthueb/wi1-bot/commit/c8675aef948040d224d2db3038d6016fec316865))
+
+
+### Bug Fixes
+
+* **perf:** optimize !quotas performance ([#28](https://github.com/wthueb/wi1-bot/issues/28)) ([e2e2549](https://github.com/wthueb/wi1-bot/commit/e2e2549713f8be9021c116dbbb243d472e8e406c))
+
 ## [4.3.0](https://github.com/wthueb/wi1-bot/compare/v4.2.2...v4.3.0) (2026-07-18)
 
 
