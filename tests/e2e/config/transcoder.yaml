@@ -1,0 +1,23 @@
+---
+# Transcoder config for the end-to-end stack. Software (libx264) encoding only, since
+# CI runners have no GPU.
+general:
+  log_format: logfmt
+  # every container mounts the media library at the same /media path, so the worker
+  # needs no remote->local mapping (identity)
+  remote_path_mappings: []
+
+worker:
+  # overridden by WB_WORKER__WEBHOOK_URL in compose; kept here so the config validates
+  webhook_url: http://wi1-bot-webhook:9000
+  # poll fast so the loop finishes quickly under test
+  poll_interval: 1
+
+transcoding:
+  profiles:
+    # the name must match the quality profile assigned to the seeded library items
+    # ("Any" avoids any resolution/quality mismatch on import).
+    # build_ffmpeg_command appends stream specifiers itself (a "-c" token becomes
+    # "-c:v:0"), so params must NOT include them: "-c libx264", not "-c:v libx264".
+    Any:
+      video_params: -c libx264 -preset ultrafast

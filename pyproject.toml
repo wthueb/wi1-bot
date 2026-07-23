@@ -9,6 +9,7 @@ arr = { workspace = true }
 dev = [
     "pre-commit>=4.6.0",
     "pytest>=9.1.1",
+    "pytest-docker>=3.2.5",
     "ruff>=0.15.20",
     "ty>=0.0.1",
 ]
@@ -28,8 +29,14 @@ select = ["E", "F", "I"]
 [tool.ruff.lint.isort]
 known-first-party = ["wi1_bot"]
 
-[tool.pytest]
-testpaths = ["common", "arr", "bot", "webhook", "transcoder"]
+[tool.pytest.ini_options]
+# Collect the end-to-end suite so `-m e2e` can select it, but keep the default test run
+# Docker-free. An explicit command-line marker expression overrides this default.
+addopts = ["-m", "not e2e"]
+testpaths = ["common", "arr", "bot", "webhook", "transcoder", "tests/e2e"]
+markers = [
+    "e2e: end-to-end pipeline tests that require Docker (run with `pytest -m e2e`)",
+]
 filterwarnings = [
     # backoff 2.2.1 pulled in by pyarr
     "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning",

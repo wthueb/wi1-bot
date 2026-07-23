@@ -40,6 +40,12 @@ Run a service locally with its config: `WB_CONFIG_PATH=… uv run wi1-bot-webhoo
 (likewise `wi1-bot`, `wi1-bot-transcoder`). Tests/type-check: `uv run pytest`,
 `uv run ty check`. Requires Python >=3.12.
 
+End-to-end tests drive the whole transcoding pipeline (seeded Radarr/Sonarr → the
+webhook → a transcoder worker) through real containers. They need Docker and are excluded
+from the default `uv run pytest`; run them with `uv run pytest -m e2e`. See
+[`tests/e2e/seed/README.md`](tests/e2e/seed/README.md) for the *arr fixtures and how to
+regenerate them.
+
 ### TODO
 
 - use seerr for search/requests
@@ -50,8 +56,6 @@ Run a service locally with its config: `WB_CONFIG_PATH=… uv run wi1-bot-webhoo
 - maybe check languages and things on new downloads via webhook
 - notify on manual import required?
 - transcode avis
-- integration testing
-  - https://pypi.org/project/pytest-docker/
 - web dashboard? django i guess?
   - transcode queue, transcode progress, quotas
   - reactivity would be nice, maybe htmx/alpinejs?

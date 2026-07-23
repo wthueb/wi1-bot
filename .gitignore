@@ -1,6 +1,9 @@
 .env
 config.yaml
 !tests/config.yaml
+# the e2e *arr seed DBs must be committed despite a global *.db ignore
+!tests/e2e/seed/radarr/radarr.db
+!tests/e2e/seed/sonarr/sonarr.db
 log/
 __pycache__/
 dist/

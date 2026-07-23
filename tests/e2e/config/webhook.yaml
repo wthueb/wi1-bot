@@ -1,0 +1,24 @@
+---
+# Webhook config for the end-to-end stack. Talks to the seeded Radarr container over
+# the compose network; the fixed api_key matches the one baked into the Radarr seed
+# (tests/e2e/seed/radarr/config.xml).
+general:
+  log_format: logfmt
+
+radarr:
+  url: http://wi1-bot-radarr:7878
+  api_key: 0123456789abcdef0123456789abcdef
+  root_folder: /media/movies
+  instance_name: Radarr
+
+sonarr:
+  url: http://wi1-bot-sonarr:8989
+  api_key: 0123456789abcdef0123456789abcdef
+  root_folder: /media/tv
+  instance_name: Sonarr
+
+webhook:
+  port: 9000
+  # short heartbeat/lease so the transcode loop completes quickly under test
+  heartbeat: 10
+  missed_heartbeats: 3
