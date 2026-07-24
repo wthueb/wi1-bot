@@ -1,6 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):
@@ -22,11 +26,13 @@ class TranscodeItem(Base):
     worker_id: Mapped[str | None] = mapped_column(default=None)
     lease_expires_at: Mapped[datetime | None] = mapped_column(default=None)
     attempts: Mapped[int] = mapped_column(default=0)
+    status_changed_at: Mapped[datetime] = mapped_column(default=_utcnow)
 
     def __repr__(self) -> str:
         return (
             f"TranscodeItem(id={self.id}, path={self.path!r}, "
             f"quality_profile={self.quality_profile!r}, "
             f"original_language={self.original_language!r}, "
-            f"status={self.status!r}, worker_id={self.worker_id!r}, attempts={self.attempts})"
+            f"status={self.status!r}, worker_id={self.worker_id!r}, attempts={self.attempts}, "
+            f"status_changed_at={self.status_changed_at!r})"
         )

@@ -1,8 +1,9 @@
 import logging
 from pathlib import Path
-from time import sleep
+from time import perf_counter, sleep
 
 from wi1_bot.arr import Radarr, Sonarr
+from wi1_bot.webhook.metrics import RESCAN_DURATION, RESCAN_OPERATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -21,19 +22,39 @@ def rescan_content(
     filename, from which the webhook rebuilds the Arr-native ``new_path``.
     """
     if new_path.is_relative_to(radarr_root):
-        for m in radarr.get_movies():
-            movie_path = Path(m["path"])
-
-            if new_path.is_relative_to(movie_path):
-                # have to rescan the movie twice: Radarr/Radarr#7668
-                radarr.rescan_movie(m["id"])
-                sleep(5)
-                radarr.rescan_movie(m["id"])
-                break
+        target = "radarr"
     elif new_path.is_relative_to(sonarr_root):
-        for s in sonarr.get_series():
-            series_path = Path(s["path"])
+        target = "sonarr"
+    else:
+        target = "unknown"
 
-            if new_path.is_relative_to(series_path):
-                sonarr.rescan_series(s["id"])
-                break
+    started_at = perf_counter()
+    try:
+        found = False
+        if target == "radarr":
+            for movie in radarr.get_movies():
+                movie_path = Path(movie["path"])
+
+                if new_path.is_relative_to(movie_path):
+                    # have to rescan the movie twice: Radarr/Radarr#7668
+                    radarr.rescan_movie(movie["id"])
+                    sleep(5)
+                    radarr.rescan_movie(movie["id"])
+                    found = True
+                    break
+        elif target == "sonarr":
+            for series in sonarr.get_series():
+                series_path = Path(series["path"])
+
+                if new_path.is_relative_to(series_path):
+                    sonarr.rescan_series(series["id"])
+                    found = True
+                    break
+
+        outcome = "success" if found else "not_found"
+        RESCAN_OPERATIONS.labels(target=target, outcome=outcome).inc()
+    except Exception:
+        RESCAN_OPERATIONS.labels(target=target, outcome="error").inc()
+        raise
+    finally:
+        RESCAN_DURATION.labels(target=target).observe(perf_counter() - started_at)
