@@ -1,14 +1,23 @@
 import json
 import logging
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
-from flask import Flask, request
+from flask import Flask, Response, g, request
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.arr.common import ImportMode
 from wi1_bot.common import push
 from wi1_bot.webhook.config import config
+from wi1_bot.webhook.metrics import (
+    CROSS_SCAN_OPERATIONS,
+    EVENTS,
+    HTTP_REQUEST_DURATION,
+    HTTP_REQUESTS,
+    HTTP_REQUESTS_IN_PROGRESS,
+)
 from wi1_bot.webhook.rescan import rescan_content
 from wi1_bot.webhook.transcode_queue import queue
 
@@ -23,6 +32,75 @@ instances = [config.radarr, config.radarr4k, config.sonarr, config.sonarr4k]
 # clients used for the post-transcode rescan (Arr-native paths, no remote mapping)
 radarr = Radarr.from_config(config.radarr)
 sonarr = Sonarr.from_config(config.sonarr)
+
+_KNOWN_HTTP_METHODS = frozenset({"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"})
+_EVENT_TYPES = {
+    "Test": "test",
+    "Download": "download",
+    "Grab": "grab",
+    "EpisodeFileDelete": "episode_file_delete",
+    "Health": "health",
+    "HealthRestored": "health_restored",
+}
+
+
+def _http_method() -> str:
+    return request.method if request.method in _KNOWN_HTTP_METHODS else "OTHER"
+
+
+def _http_route() -> str:
+    return request.url_rule.rule if request.url_rule is not None else "unmatched"
+
+
+@app.before_request
+def start_http_metrics() -> None:
+    method = _http_method()
+    route = _http_route()
+    g.http_metrics = (method, route, perf_counter())
+    HTTP_REQUESTS_IN_PROGRESS.labels(method=method, route=route).inc()
+
+
+def _finish_http_metrics(status_code: int) -> None:
+    request_metrics: tuple[str, str, float] | None = g.pop("http_metrics", None)
+    if request_metrics is None:
+        return
+
+    method, route, started_at = request_metrics
+    HTTP_REQUESTS.labels(method=method, route=route, status_code=str(status_code)).inc()
+    HTTP_REQUEST_DURATION.labels(method=method, route=route).observe(perf_counter() - started_at)
+    HTTP_REQUESTS_IN_PROGRESS.labels(method=method, route=route).dec()
+
+
+@app.after_request
+def finish_http_metrics(response: Response) -> Response:
+    _finish_http_metrics(response.status_code)
+    return response
+
+
+@app.teardown_request
+def finish_failed_http_metrics(_exception: BaseException | None) -> None:
+    # Flask normally turns exceptions into a response and runs ``after_request``.
+    # This covers exceptions propagated by testing or alternate server settings.
+    _finish_http_metrics(500)
+
+
+def _event_source(req: dict[str, Any]) -> str:
+    instance_name = req.get("instanceName")
+    configured_instances = (
+        (config.radarr, "radarr"),
+        (config.radarr4k, "radarr4k"),
+        (config.sonarr, "sonarr"),
+        (config.sonarr4k, "sonarr4k"),
+    )
+    for instance, source in configured_instances:
+        if instance is not None and instance.instance_name == instance_name:
+            return source
+
+    if "movie" in req or "movieFiles" in req:
+        return "radarr"
+    if "series" in req or "episodes" in req or "episodeFiles" in req:
+        return "sonarr"
+    return "unknown"
 
 
 def on_download(req: dict[str, Any]) -> None:
@@ -55,12 +133,18 @@ def on_download(req: dict[str, Any]) -> None:
 
         if instance is config.radarr and config.radarr4k is not None:
             radarr4k = Radarr.from_config(config.radarr4k)
-
-            if radarr4k.is_movie_monitored(movie_json["tmdbId"]):
-                logger.info("pushing download to radarr4k")
-                radarr4k.downloaded_movies_scan(path, import_mode=ImportMode.COPY)
-            else:
-                logger.debug("skipping 4k scan, movie not monitored in radarr4k")
+            try:
+                if radarr4k.is_movie_monitored(movie_json["tmdbId"]):
+                    logger.info("pushing download to radarr4k")
+                    radarr4k.downloaded_movies_scan(path, import_mode=ImportMode.COPY)
+                    cross_scan_outcome = "triggered"
+                else:
+                    logger.debug("skipping 4k scan, movie not monitored in radarr4k")
+                    cross_scan_outcome = "not_monitored"
+            except Exception:
+                CROSS_SCAN_OPERATIONS.labels(target="radarr4k", outcome="error").inc()
+                raise
+            CROSS_SCAN_OPERATIONS.labels(target="radarr4k", outcome=cross_scan_outcome).inc()
     elif "series" in req:
         instance_sonarr = Sonarr.from_config(instance)
 
@@ -80,19 +164,25 @@ def on_download(req: dict[str, Any]) -> None:
             sonarr4k = Sonarr.from_config(config.sonarr4k)
 
             tvdb_id = series_json["tvdbId"]
-
-            monitored = any(
-                sonarr4k.is_episode_monitored(
-                    tvdb_id, episode["seasonNumber"], episode["episodeNumber"]
+            try:
+                monitored = any(
+                    sonarr4k.is_episode_monitored(
+                        tvdb_id, episode["seasonNumber"], episode["episodeNumber"]
+                    )
+                    for episode in req.get("episodes", [])
                 )
-                for episode in req.get("episodes", [])
-            )
 
-            if monitored:
-                logger.info("pushing download to sonarr4k")
-                sonarr4k.downloaded_episodes_scan(path, import_mode=ImportMode.COPY)
-            else:
-                logger.debug("skipping 4k scan, episode not monitored in sonarr4k")
+                if monitored:
+                    logger.info("pushing download to sonarr4k")
+                    sonarr4k.downloaded_episodes_scan(path, import_mode=ImportMode.COPY)
+                    cross_scan_outcome = "triggered"
+                else:
+                    logger.debug("skipping 4k scan, episode not monitored in sonarr4k")
+                    cross_scan_outcome = "not_monitored"
+            except Exception:
+                CROSS_SCAN_OPERATIONS.labels(target="sonarr4k", outcome="error").inc()
+                raise
+            CROSS_SCAN_OPERATIONS.labels(target="sonarr4k", outcome=cross_scan_outcome).inc()
     else:
         raise ValueError("unknown download request")
 
@@ -112,28 +202,44 @@ def on_download(req: dict[str, Any]) -> None:
 
 @app.route("/", methods=["POST"])
 def index() -> Any:
+    req = request.get_json(silent=True)
+    if not isinstance(req, dict):
+        EVENTS.labels(event_type="invalid", source="unknown", outcome="invalid").inc()
+        return "", 400
+    if not isinstance(req.get("eventType"), str):
+        EVENTS.labels(event_type="invalid", source=_event_source(req), outcome="invalid").inc()
+        return "", 400
+
+    raw_event_type = req["eventType"]
+    event_type = _EVENT_TYPES.get(raw_event_type, "unsupported")
+    source = _event_source(req)
+
     try:
-        if request.json is None or "eventType" not in request.json:
-            return "", 400
+        logger.debug(f"got request: {json.dumps(req)}")
 
-        logger.debug(f"got request: {json.dumps(request.json)}")
-
-        match request.json["eventType"]:
+        match raw_event_type:
             case "Test":
                 logger.info("got test event from arr")
+                outcome = "ignored"
             case "Download":
-                if "movieFiles" in request.json or "episodeFiles" in request.json:
+                if "movieFiles" in req or "episodeFiles" in req:
                     logger.debug("ignoring On Import Complete event")
-                    return "", 200
-
-                on_download(request.json)
+                    outcome = "ignored"
+                else:
+                    on_download(req)
+                    outcome = "enqueued"
             case "Grab" | "EpisodeFileDelete" | "Health" | "HealthRestored" as et:
                 logger.debug(f"ignoring {et} event")
+                outcome = "ignored"
             case et:
                 logger.warning(f"handler not setup for event type {et}")
+                outcome = "unsupported"
 
     except Exception:
+        EVENTS.labels(event_type=event_type, source=source, outcome="failed_internal").inc()
         logger.warning(f"error handling request: {request.data.decode()}", exc_info=True)
+    else:
+        EVENTS.labels(event_type=event_type, source=source, outcome=outcome).inc()
 
     return "", 200
 
@@ -141,6 +247,11 @@ def index() -> Any:
 @app.route("/health", methods=["GET"])
 def health() -> Any:
     return "OK", 200
+
+
+@app.route("/metrics", methods=["GET"])
+def metrics() -> Response:
+    return Response(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
 
 @app.route("/jobs/claim", methods=["POST"])
@@ -195,7 +306,7 @@ def job_complete(item_id: int) -> Any:
     worker_id = body.get("worker_id") or "unknown"
     filename = body.get("filename")
 
-    path = queue.complete(item_id)
+    path = queue.complete(item_id, outcome="completed" if filename else "skipped")
 
     log_extra = {"job_id": item_id, "worker_id": worker_id}
 
