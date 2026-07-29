@@ -1,9 +1,10 @@
-import logging
 from pathlib import Path
+
+import structlog
 
 from wi1_bot.transcoder.config import RemotePathMapping
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def replace_remote_paths(path: Path, mappings: list[RemotePathMapping]) -> Path:
@@ -29,6 +30,10 @@ def replace_remote_paths(path: Path, mappings: list[RemotePathMapping]) -> Path:
         remote_path = path
         path = most_specific.local / path.relative_to(most_specific.remote)
 
-        logger.debug(f"replaced remote path mapping: {remote_path} -> {path}")
+        logger.debug(
+            "replaced remote path mapping",
+            remote_path=str(remote_path),
+            local_path=str(path),
+        )
 
     return path

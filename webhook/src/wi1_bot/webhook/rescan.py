@@ -1,11 +1,12 @@
-import logging
 from pathlib import Path
 from time import perf_counter, sleep
+
+import structlog
 
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.webhook.metrics import RESCAN_DURATION, RESCAN_OPERATIONS
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def rescan_content(

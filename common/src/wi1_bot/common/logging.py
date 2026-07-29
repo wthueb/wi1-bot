@@ -4,18 +4,31 @@ import os
 from pathlib import Path
 from typing import Any, Literal
 
-from pythonjsonlogger.json import JsonFormatter
+import structlog
+from structlog.contextvars import merge_contextvars
+from structlog.processors import CallsiteParameter, CallsiteParameterAdder
+from structlog.typing import EventDict, Processor, WrappedLogger
 
 
-class SrcJsonFormatter(JsonFormatter):
-    def add_fields(
-        self,
-        log_data: dict[str, Any],
-        record: logging.LogRecord,
-        message_dict: dict[str, Any],
-    ) -> None:
-        record.__dict__["src"] = f"{record.funcName}:{record.lineno}"
-        super().add_fields(log_data, record, message_dict)
+def _normalize_fields(
+    _logger: WrappedLogger,
+    _method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
+    event_dict["level"] = str(event_dict["level"]).upper()
+    event_dict["src"] = f"{event_dict.pop('func_name')}:{event_dict.pop('lineno')}"
+
+    if "exception" in event_dict:
+        event_dict["exc_info"] = event_dict.pop("exception")
+
+    # ContextVar iteration order is not guaranteed. Keep the historical feed
+    # field order so existing logfmt consumers see byte-compatible records.
+    feed_context = {
+        key: event_dict.pop(key) for key in ("job_id", "worker_id") if key in event_dict
+    }
+    event_dict.update(feed_context)
+
+    return event_dict
 
 
 def setup_logging(
@@ -32,6 +45,46 @@ def setup_logging(
     """
     if log_dir is None and (log_dir_str := os.getenv("WB_LOG_DIR")):
         log_dir = Path(log_dir_str).resolve()
+
+    shared_processors: list[Processor] = [
+        merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.TimeStamper(
+            fmt="%Y-%m-%d %H:%M:%S",
+            utc=False,
+            key="ts",
+        ),
+        CallsiteParameterAdder(
+            [
+                CallsiteParameter.FUNC_NAME,
+                CallsiteParameter.LINENO,
+            ]
+        ),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        _normalize_fields,
+        structlog.processors.EventRenamer("msg"),
+    ]
+
+    structlog.configure(
+        processors=[
+            *shared_processors,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        wrapper_class=structlog.stdlib.BoundLogger,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=False,
+    )
+
+    renderers: dict[str, Processor] = {
+        "logfmt": structlog.processors.LogfmtRenderer(
+            key_order=["ts", "level", "logger", "src", "msg"],
+            drop_missing=True,
+            bool_as_flag=False,
+        ),
+        "json": structlog.processors.JSONRenderer(),
+    }
 
     handlers: dict[str, Any] = {
         "console": {
@@ -71,22 +124,15 @@ def setup_logging(
         "version": 1,
         "disable_existing_loggers": True,
         "formatters": {
-            "logfmt": {
-                "()": "logfmter.Logfmter",
-                "keys": ["ts", "level", "logger", "src"],
-                "mapping": {
-                    "ts": "asctime",
-                    "level": "levelname",
-                    "logger": "name",
-                },
-                "defaults": {"src": "{funcName}:{lineno}"},
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
-            "json": {
-                "()": SrcJsonFormatter,
-                "format": "%(asctime)s %(levelname)s %(name)s %(src)s %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
+            output_format: {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "foreign_pre_chain": shared_processors,
+                "processors": [
+                    structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                    renderer,
+                ],
+            }
+            for output_format, renderer in renderers.items()
         },
         "handlers": handlers,
         "loggers": {

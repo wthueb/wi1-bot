@@ -1,11 +1,11 @@
-import json
-import logging
 from pathlib import Path
 from time import perf_counter
 from typing import Any
 
+import structlog
 from flask import Flask, Response, g, request
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from structlog.contextvars import bound_contextvars, clear_contextvars
 
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.arr.common import ImportMode
@@ -23,9 +23,13 @@ from wi1_bot.webhook.transcode_queue import queue
 
 app = Flask(__name__)
 
-logging.getLogger("werkzeug").disabled = True
+logger = structlog.get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+
+@app.before_request
+def clear_log_context() -> None:
+    clear_contextvars()
+
 
 instances = [config.radarr, config.radarr4k, config.sonarr, config.sonarr4k]
 
@@ -193,11 +197,13 @@ def on_download(req: dict[str, Any]) -> None:
         quality_profile=quality_profile,
         original_language=original_language,
     )
-    logger.info(
-        f"enqueued transcode job {job_id} for {path} "
-        f"(profile {quality_profile!r}, queue size {queue.size})",
-        extra={"job_id": job_id},
-    )
+    with bound_contextvars(job_id=job_id):
+        logger.info(
+            "transcode job enqueued",
+            path=str(path),
+            quality_profile=quality_profile,
+            queue_size=queue.size,
+        )
 
 
 @app.route("/", methods=["POST"])
@@ -215,7 +221,7 @@ def index() -> Any:
     source = _event_source(req)
 
     try:
-        logger.debug(f"got request: {json.dumps(req)}")
+        logger.debug("arr webhook request received", payload=request.json)
 
         match raw_event_type:
             case "Test":
@@ -229,15 +235,20 @@ def index() -> Any:
                     on_download(req)
                     outcome = "enqueued"
             case "Grab" | "EpisodeFileDelete" | "Health" | "HealthRestored" as et:
-                logger.debug(f"ignoring {et} event")
+                logger.debug("ignoring arr event", event_type=et)
                 outcome = "ignored"
             case et:
-                logger.warning(f"handler not setup for event type {et}")
+                logger.warning("handler not setup for arr event", event_type=et)
                 outcome = "unsupported"
 
     except Exception:
         EVENTS.labels(event_type=event_type, source=source, outcome="failed_internal").inc()
         logger.warning(f"error handling request: {request.data.decode()}", exc_info=True)
+        logger.warning(
+            "error handling arr request",
+            request_body=request.data.decode(),
+            exc_info=True,
+        )
     else:
         EVENTS.labels(event_type=event_type, source=source, outcome=outcome).inc()
 
@@ -264,11 +275,12 @@ def job_claim() -> Any:
     if item is None:
         return "", 204
 
-    logger.info(
-        f"dispatched job {item.id} ({Path(item.path).name}) to worker {worker_id!r} "
-        f"(attempt {item.attempts})",
-        extra={"job_id": item.id, "worker_id": worker_id},
-    )
+    with bound_contextvars(job_id=item.id, worker_id=worker_id):
+        logger.info(
+            "transcode job dispatched",
+            filename=Path(item.path).name,
+            attempt=item.attempts,
+        )
 
     return {
         "id": item.id,
@@ -284,20 +296,15 @@ def job_heartbeat(item_id: int) -> Any:
     body: dict[str, Any] = request.get_json(silent=True) or {}
     worker_id = body.get("worker_id") or "unknown"
 
-    log_extra = {"job_id": item_id, "worker_id": worker_id}
+    with bound_contextvars(job_id=item_id, worker_id=worker_id):
+        logger.debug("heartbeat received")
 
-    logger.debug(f"got heartbeat for job {item_id} from worker {worker_id!r}", extra=log_extra)
+        if queue.heartbeat(item_id, worker_id):
+            return "", 200
 
-    if queue.heartbeat(item_id, worker_id):
-        return "", 200
-
-    # the lease was lost (reclaimed/expired/finished) or belongs to another worker
-    logger.warning(
-        f"rejected heartbeat for job {item_id} from worker {worker_id!r} "
-        "(lease expired, reclaimed, or held by another worker)",
-        extra=log_extra,
-    )
-    return "", 409
+        # the lease was lost (reclaimed/expired/finished) or belongs to another worker
+        logger.warning("heartbeat rejected because lease was lost")
+        return "", 409
 
 
 @app.route("/jobs/<int:item_id>/complete", methods=["POST"])
@@ -306,38 +313,35 @@ def job_complete(item_id: int) -> Any:
     worker_id = body.get("worker_id") or "unknown"
     filename = body.get("filename")
 
-    path = queue.complete(item_id, outcome="completed" if filename else "skipped")
+    with bound_contextvars(job_id=item_id, worker_id=worker_id):
+        path = queue.complete(item_id, outcome="completed" if filename else "skipped")
 
-    log_extra = {"job_id": item_id, "worker_id": worker_id}
+        if path is None:
+            logger.warning("completion received for unknown or expired job")
+            return "", 404
 
-    if path is None:
-        logger.warning(
-            f"got completion for unknown job {item_id} from worker {worker_id!r} "
-            "(already completed or expired)",
-            extra=log_extra,
-        )
-        return "", 404
+        if filename:
+            logger.info("transcode job completed", filename=filename)
+            try:
+                new_path = Path(path).parent / filename
+                rescan_content(
+                    radarr,
+                    sonarr,
+                    config.radarr.root_folder,
+                    config.sonarr.root_folder,
+                    new_path,
+                )
+            except Exception:
+                logger.warning(
+                    "error rescanning after transcode",
+                    filename=filename,
+                    exc_info=True,
+                )
+        else:
+            # no filename -> the worker skipped this job (e.g. unknown profile); just drop it
+            logger.info("transcode job skipped and dropped")
 
-    if filename:
-        logger.info(f"job {item_id} completed by worker {worker_id!r}: {filename}", extra=log_extra)
-        try:
-            new_path = Path(path).parent / filename
-            rescan_content(
-                radarr,
-                sonarr,
-                config.radarr.root_folder,
-                config.sonarr.root_folder,
-                new_path,
-            )
-        except Exception:
-            logger.warning(
-                f"error rescanning after transcode of {filename}", exc_info=True, extra=log_extra
-            )
-    else:
-        # no filename -> the worker skipped this job (e.g. unknown profile); just drop it
-        logger.info(f"job {item_id} skipped by worker {worker_id!r}, dropped", extra=log_extra)
-
-    return "", 200
+        return "", 200
 
 
 @app.route("/jobs/<int:item_id>/fail", methods=["POST"])
@@ -348,23 +352,25 @@ def job_fail(item_id: int) -> Any:
     retry = bool(body.get("retry", False))
     log_tail = body.get("log_tail")
 
-    path = queue.fail(item_id, retry=retry)
+    with bound_contextvars(job_id=item_id, worker_id=worker_id):
+        path = queue.fail(item_id, retry=retry)
 
-    log_extra = {"job_id": item_id, "worker_id": worker_id}
+        if path is not None:
+            # terminal failure (not requeued) -> notify
+            msg = f"{Path(path).name} failed to transcode: {reason}"
+            if log_tail:
+                msg = f"{msg}\n{log_tail}"
+            logger.error(
+                "transcode job failed",
+                filename=Path(path).name,
+                reason=reason,
+                log_tail=log_tail,
+            )
+            push.send(config.pushover, msg, title="transcoding error")
+        else:
+            logger.warning("transcode job failed and was requeued", reason=reason)
 
-    if path is not None:
-        # terminal failure (not requeued) -> notify
-        msg = f"{Path(path).name} failed to transcode: {reason}"
-        if log_tail:
-            msg = f"{msg}\n{log_tail}"
-        logger.error(msg, extra=log_extra)
-        push.send(config.pushover, msg, title="transcoding error")
-    else:
-        logger.warning(
-            f"job {item_id} from worker {worker_id!r} failed, requeued: {reason}", extra=log_extra
-        )
-
-    return "", 200
+        return "", 200
 
 
 if __name__ == "__main__":
