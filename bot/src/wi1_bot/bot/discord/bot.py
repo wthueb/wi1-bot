@@ -1,17 +1,18 @@
 import asyncio
-import logging
 import traceback
 
 import discord
+import structlog
 from discord.ext import commands
 
 from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.bot.config import config
+from wi1_bot.common import setup_logging
 
 from .cogs import AdminCog, MovieCog, SeriesCog
 from .helpers import reply
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix=["!", "."])
 
@@ -41,7 +42,10 @@ async def on_command_error(
             await reply(ctx.message, str(error))
         case _:
             logger.error(
-                "".join(traceback.format_exception(type(error), error, error.__traceback__))
+                "command failed",
+                traceback="".join(
+                    traceback.format_exception(type(error), error, error.__traceback__)
+                ),
             )
 
             await reply(
@@ -65,7 +69,11 @@ async def on_ready() -> None:
 
 @bot.before_invoke
 async def before_invoke(ctx: commands.Context[commands.Bot]) -> None:
-    logger.info(f"got command from {ctx.message.author}: {ctx.message.content}")
+    logger.info(
+        "got command",
+        author=str(ctx.message.author),
+        content=ctx.message.content,
+    )
 
 
 @bot.command(name="downloads", aliases=["queue", "q"], help="see the status of movie downloads")
@@ -172,6 +180,6 @@ async def run() -> None:
 
 
 if __name__ == "__main__":
-    logger.addHandler(logging.StreamHandler())
+    setup_logging(config.general.log_format)
 
     asyncio.run(run())

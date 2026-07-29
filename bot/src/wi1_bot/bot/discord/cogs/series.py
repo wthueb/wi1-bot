@@ -1,8 +1,8 @@
 import asyncio
-import logging
 
 import discord
 import requests
+import structlog
 from discord.ext import commands
 
 from wi1_bot.arr import MediaState
@@ -29,7 +29,7 @@ from ..helpers import (
 class SeriesCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
         self.sonarr = Sonarr.from_config(config.sonarr)
         self.tmdb = Tmdb.from_config(config.tmdb)
 
@@ -102,7 +102,11 @@ class SeriesCog(commands.Cog):
                     await reply(resp, f"{series} is already on the plex (idiot)")
                 continue
 
-            self.logger.info(f"{requester.name} has added the show {series.full_title}")
+            self.logger.info(
+                "series added",
+                requester=requester.name,
+                series=series.full_title,
+            )
 
             push.send(
                 config.pushover,
@@ -220,7 +224,11 @@ class SeriesCog(commands.Cog):
             )
             return
 
-        self.logger.info(f"{user.name} requested the show {series.full_title} via reaction")
+        self.logger.info(
+            "series requested via reaction",
+            requester=user.name,
+            series=series.full_title,
+        )
 
         await self._add_series(info_msg, [series], user, announce_requester=True)
 
@@ -232,7 +240,9 @@ class SeriesCog(commands.Cog):
             return self.tmdb.series_details(series.tvdb_id)
         except requests.RequestException:
             self.logger.warning(
-                f"failed to fetch tmdb details for {series.full_title}", exc_info=True
+                "failed to fetch tmdb details",
+                series=series.full_title,
+                exc_info=True,
             )
             return None
 
@@ -373,7 +383,11 @@ class SeriesCog(commands.Cog):
         for series in to_delete:
             self.sonarr.del_series(series)
 
-            self.logger.info(f"{ctx.message.author.name} has deleted the show {series.full_title}")
+            self.logger.info(
+                "series deleted",
+                requester=ctx.message.author.name,
+                series=series.full_title,
+            )
 
             push.send(
                 config.pushover,

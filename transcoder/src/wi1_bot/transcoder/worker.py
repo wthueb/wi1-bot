@@ -1,14 +1,15 @@
-import logging
 import threading
 import time
 from typing import Any
 
 import requests
+import structlog
+from structlog.contextvars import bound_contextvars
 
 from wi1_bot.transcoder.config import config
 from wi1_bot.transcoder.transcoder import JobResult, Transcoder
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class _Heartbeat:
@@ -22,41 +23,37 @@ class _Heartbeat:
     def __init__(self, base_url: str, job_id: int, worker_name: str, interval: float) -> None:
         self._url = f"{base_url}/jobs/{job_id}/heartbeat"
         self._job_id = job_id
+        self._worker_name = worker_name
         self._payload = {"worker_id": worker_name}
-        self._log_extra = {"job_id": job_id, "worker_id": worker_name}
         self._interval = interval
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
 
     def _run(self) -> None:
-        while not self._stop.wait(self._interval):
-            logger.debug(f"sending heartbeat for job {self._job_id}", extra=self._log_extra)
+        with bound_contextvars(job_id=self._job_id, worker_id=self._worker_name):
+            while not self._stop.wait(self._interval):
+                logger.debug("sending heartbeat")
 
-            try:
-                resp = requests.post(self._url, json=self._payload, timeout=30)
-            except requests.RequestException:
-                logger.warning(
-                    f"heartbeat for job {self._job_id} failed to send",
-                    exc_info=True,
-                    extra=self._log_extra,
-                )
-                continue
+                try:
+                    resp = requests.post(self._url, json=self._payload, timeout=30)
+                except requests.RequestException:
+                    logger.warning(
+                        "heartbeat failed to send",
+                        exc_info=True,
+                    )
+                    continue
 
-            if resp.status_code == 409:
-                # the webhook no longer thinks we hold the lease; the job may have been
-                # reclaimed and re-dispatched to another worker while we keep transcoding
-                logger.warning(
-                    f"heartbeat for job {self._job_id} rejected (409): lease lost, "
-                    "job may have been reclaimed by another worker",
-                    extra=self._log_extra,
-                )
-            elif not resp.ok:
-                logger.error(
-                    f"heartbeat for job {self._job_id} got unexpected {resp.status_code}",
-                    extra=self._log_extra,
-                )
-            else:
-                logger.debug(f"heartbeat for job {self._job_id} ok", extra=self._log_extra)
+                if resp.status_code == 409:
+                    # the webhook no longer thinks we hold the lease; the job may have been
+                    # reclaimed and re-dispatched to another worker while we keep transcoding
+                    logger.warning("heartbeat rejected because lease was lost")
+                elif not resp.ok:
+                    logger.error(
+                        "heartbeat received unexpected response",
+                        status_code=resp.status_code,
+                    )
+                else:
+                    logger.debug("heartbeat accepted")
 
     def __enter__(self) -> "_Heartbeat":
         self._thread.start()
@@ -66,24 +63,27 @@ class _Heartbeat:
         self._stop.set()
 
 
-def _post(url: str, payload: dict[str, Any], log_extra: dict[str, Any]) -> None:
+def _post(url: str, payload: dict[str, Any]) -> None:
     try:
         resp = requests.post(url, json=payload, timeout=30)
     except requests.RequestException:
         # if the report doesn't land, the lease will expire and the job is re-dispatched
         logger.warning(
-            f"failed to report job outcome to {url}, lease will expire",
+            "failed to report job outcome; lease will expire",
+            url=url,
             exc_info=True,
-            extra=log_extra,
         )
         return
 
     if not resp.ok:
         logger.warning(
-            f"webhook returned {resp.status_code} for {url}: {resp.text!r}", extra=log_extra
+            "webhook returned unsuccessful response",
+            url=url,
+            status_code=resp.status_code,
+            response=resp.text,
         )
     else:
-        logger.debug(f"reported to {url} -> {resp.status_code}", extra=log_extra)
+        logger.debug("job outcome reported", url=url, status_code=resp.status_code)
 
 
 def _claim(base_url: str, worker_name: str) -> dict[str, Any] | None:
@@ -99,8 +99,9 @@ def _claim(base_url: str, worker_name: str) -> dict[str, Any] | None:
 
     if not resp.ok:
         logger.error(
-            f"unexpected claim response {resp.status_code}: {resp.text}",
-            extra={"worker_id": worker_name},
+            "unexpected job claim response",
+            status_code=resp.status_code,
+            response=resp.text,
         )
         return None
 
@@ -108,24 +109,20 @@ def _claim(base_url: str, worker_name: str) -> dict[str, Any] | None:
 
 
 def _report(base_url: str, job_id: int, worker_name: str, result: JobResult) -> None:
-    log_extra = {"job_id": job_id, "worker_id": worker_name}
-
-    logger.debug(f"reporting job {job_id} as {result.action}", extra=log_extra)
+    logger.debug("reporting job outcome", action=result.action)
 
     if result.action == "complete":
         _post(
             f"{base_url}/jobs/{job_id}/complete",
             {"worker_id": worker_name, "filename": result.filename},
-            log_extra,
         )
     elif result.action == "skip":
         # a skip drops the job with no rescan/notification
-        _post(f"{base_url}/jobs/{job_id}/complete", {"worker_id": worker_name}, log_extra)
+        _post(f"{base_url}/jobs/{job_id}/complete", {"worker_id": worker_name})
     elif result.action == "retry":
         _post(
             f"{base_url}/jobs/{job_id}/fail",
             {"worker_id": worker_name, "retry": True, "reason": result.reason},
-            log_extra,
         )
     else:  # fail
         _post(
@@ -136,7 +133,6 @@ def _report(base_url: str, job_id: int, worker_name: str, result: JobResult) -> 
                 "reason": result.reason,
                 "log_tail": result.log_tail,
             },
-            log_extra,
         )
 
 
@@ -147,50 +143,48 @@ def run() -> None:
 
     transcoder = Transcoder()
 
-    worker_extra = {"worker_id": worker_name}
+    with bound_contextvars(worker_id=worker_name):
+        logger.info("polling for transcode jobs", base_url=base_url)
 
-    logger.info(f"worker {worker_name!r} polling {base_url} for transcode jobs", extra=worker_extra)
-
-    while True:
-        try:
-            job = _claim(base_url, worker_name)
-        except requests.RequestException:
-            logger.warning(
-                "failed to reach webhook to claim a job, will retry",
-                exc_info=True,
-                extra=worker_extra,
-            )
-            time.sleep(poll_interval)
-            continue
-
-        if job is None:
-            time.sleep(poll_interval)
-            continue
-
-        job_id = job["id"]
-        log_extra = {"job_id": job_id, "worker_id": worker_name}
-
-        logger.info(f"claimed job {job_id}: {job['path']}", extra=log_extra)
-
-        started = time.monotonic()
-        try:
-            # the webhook owns the cadence and tells us how often to heartbeat
-            with _Heartbeat(base_url, job_id, worker_name, job["heartbeat"]):
-                result = transcoder.transcode(
-                    job["path"], job["quality_profile"], job.get("original_language"), log_extra
+        while True:
+            try:
+                job = _claim(base_url, worker_name)
+            except requests.RequestException:
+                logger.warning(
+                    "failed to reach webhook to claim a job, will retry",
+                    exc_info=True,
                 )
-        except Exception:
-            logger.warning(
-                f"unhandled error on job {job_id}, will retry", exc_info=True, extra=log_extra
-            )
-            result = JobResult("retry", reason="unhandled worker error")
+                time.sleep(poll_interval)
+                continue
 
-        elapsed = time.monotonic() - started
-        detail = f" ({result.reason})" if result.reason else ""
-        logger.info(
-            f"job {job_id} finished in {elapsed:.1f}s: {result.action}{detail}", extra=log_extra
-        )
+            if job is None:
+                time.sleep(poll_interval)
+                continue
 
-        _report(base_url, job_id, worker_name, result)
+            job_id = job["id"]
 
-        time.sleep(poll_interval)
+            with bound_contextvars(job_id=job_id):
+                logger.info("transcode job claimed", path=job["path"])
+
+                started = time.monotonic()
+                try:
+                    # the webhook owns the cadence and tells us how often to heartbeat
+                    with _Heartbeat(base_url, job_id, worker_name, job["heartbeat"]):
+                        result = transcoder.transcode(
+                            job["path"], job["quality_profile"], job.get("original_language")
+                        )
+                except Exception:
+                    logger.warning("unhandled job error; will retry", exc_info=True)
+                    result = JobResult("retry", reason="unhandled worker error")
+
+                elapsed = time.monotonic() - started
+                logger.info(
+                    "transcode job finished",
+                    elapsed_seconds=round(elapsed, 1),
+                    action=result.action,
+                    reason=result.reason,
+                )
+
+                _report(base_url, job_id, worker_name, result)
+
+            time.sleep(poll_interval)

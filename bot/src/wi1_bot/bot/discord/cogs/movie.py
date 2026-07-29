@@ -1,8 +1,8 @@
 import asyncio
-import logging
 
 import discord
 import requests
+import structlog
 from discord.ext import commands
 
 from wi1_bot.arr import MediaState
@@ -29,7 +29,7 @@ from ..helpers import (
 class MovieCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.logger = logging.getLogger(__name__)
+        self.logger = structlog.get_logger(__name__)
         self.radarr = Radarr.from_config(config.radarr)
         self.tmdb = Tmdb.from_config(config.tmdb)
 
@@ -93,7 +93,11 @@ class MovieCog(commands.Cog):
                     await reply(resp, f"{movie} is already on the plex (idiot)")
                 continue
 
-            self.logger.info(f"{requester.name} has added the movie {movie.full_title}")
+            self.logger.info(
+                "movie added",
+                requester=requester.name,
+                movie=movie.full_title,
+            )
 
             push.send(
                 config.pushover,
@@ -189,7 +193,11 @@ class MovieCog(commands.Cog):
         if user is None:
             return
 
-        self.logger.info(f"{user.name} requested the movie {movie.full_title} via reaction")
+        self.logger.info(
+            "movie requested via reaction",
+            requester=user.name,
+            movie=movie.full_title,
+        )
 
         await self._add_movies(info_msg, [movie], user, announce_requester=True)
 
@@ -199,7 +207,9 @@ class MovieCog(commands.Cog):
                 return self.tmdb.movie_credits(movie.tmdb_id)
             except requests.RequestException:
                 self.logger.warning(
-                    f"failed to fetch tmdb credits for {movie.full_title}", exc_info=True
+                    "failed to fetch tmdb credits",
+                    movie=movie.full_title,
+                    exc_info=True,
                 )
 
         # without tmdb, radarr itself stores credits for library movies (only tmdb
@@ -338,7 +348,11 @@ class MovieCog(commands.Cog):
         for movie in to_delete:
             self.radarr.del_movie(movie)
 
-            self.logger.info(f"{ctx.message.author.name} has deleted the movie {movie.full_title}")
+            self.logger.info(
+                "movie deleted",
+                requester=ctx.message.author.name,
+                movie=movie.full_title,
+            )
 
             push.send(
                 config.pushover,
