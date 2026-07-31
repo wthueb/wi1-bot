@@ -243,7 +243,6 @@ def index() -> Any:
 
     except Exception:
         EVENTS.labels(event_type=event_type, source=source, outcome="failed_internal").inc()
-        logger.warning(f"error handling request: {request.data.decode()}", exc_info=True)
         logger.warning(
             "error handling arr request",
             request_body=request.data.decode(),
