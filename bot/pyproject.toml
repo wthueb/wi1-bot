@@ -7,6 +7,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.18.5",
     "arr",
     "common",
     "discord-py>=2.7.1",
@@ -14,11 +15,14 @@ dependencies = [
     "pydantic-settings>=2.14.2",
     "pyyaml>=6.0.3",
     "requests>=2.31.0",
+    "sqlalchemy>=2.0.51",
 ]
 
 [project.scripts]
 wi1-bot = "wi1_bot.bot.scripts.start:main"
 add-tag = "wi1_bot.bot.scripts.add_tag:main"
+# not `migrate` -- that console-script name is already the webhook's
+wi1-bot-migrate = "wi1_bot.bot.scripts.migrate:main"
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]

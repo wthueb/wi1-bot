@@ -1474,6 +1474,7 @@ wheels = [
 name = "wi1-bot"
 source = { editable = "bot" }
 dependencies = [
+    { name = "alembic" },
     { name = "arr" },
     { name = "common" },
     { name = "discord-py" },
@@ -1481,10 +1482,12 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "sqlalchemy" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "alembic", specifier = ">=1.18.5" },
     { name = "arr", editable = "arr" },
     { name = "common", editable = "common" },
     { name = "discord-py", specifier = ">=2.7.1" },
@@ -1492,6 +1495,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "requests", specifier = ">=2.31.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.51" },
 ]
 
 [[package]]
