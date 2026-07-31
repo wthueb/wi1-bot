@@ -9,7 +9,7 @@ from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.bot.config import config
 from wi1_bot.common import setup_logging
 
-from .cogs import AdminCog, LeaderboardCog, MovieCog, NotifyCog, SeriesCog
+from .cogs import AdminCog, LeaderboardCog, MovieCog, NotifyCog, SeriesCog, SettingsCog
 from .helpers import reply
 
 logger = structlog.get_logger(__name__)
@@ -184,6 +184,7 @@ async def run() -> None:
         await bot.add_cog(SeriesCog(bot))
         await bot.add_cog(LeaderboardCog(bot))
         await bot.add_cog(NotifyCog(bot))
+        await bot.add_cog(SettingsCog(bot))
 
         await bot.start(config.discord.bot_token)
 

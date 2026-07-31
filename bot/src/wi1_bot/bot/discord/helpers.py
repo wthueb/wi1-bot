@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 
 from wi1_bot.arr import MediaState
+from wi1_bot.bot.settings import get_settings
 
 # suffix appended to a choice in an add-list so users can see, before they pick, whether
 # a title is already downloaded ("on plex") or monitored (queued to download). ABSENT
@@ -23,6 +24,10 @@ STATE_LABEL: dict[MediaState, str] = {
     MediaState.MONITORED: "monitored, not downloaded yet",
     MediaState.DOWNLOADED: "on plex",
 }
+
+# valid replies to a select_from_list prompt: c (cancel), indexes (comma-separated,
+# optional surrounding spaces), or a new command
+_SELECT_REPLY_REGEX = re.compile(r"^(c|\d+(\s*,\s*\d+)*|[!.].+ .*)$", re.IGNORECASE)
 
 
 def parse_user_tag(label: str) -> tuple[str, int] | None:
@@ -179,7 +184,15 @@ async def select_from_list(
     msg: discord.Message,
     choices: list[T],
     render: Callable[[T], str] = str,
+    allow_auto_select: bool = True,
 ) -> tuple[list[T], discord.Message]:
+    # a lone result is picked automatically unless the user turned that off or the
+    # caller is destructive (allow_auto_select=False) and needs an explicit pick
+    if allow_auto_select and len(choices) == 1:
+        prefs = await asyncio.to_thread(get_settings, msg.author.id)
+        if prefs.auto_select_single:
+            return [choices[0]], msg
+
     choices_text = "\n".join(f"{i + 1}. {render(choice)}" for i, choice in enumerate(choices))
 
     await reply(
@@ -195,10 +208,7 @@ async def select_from_list(
         if resp.author != msg.author or resp.channel != msg.channel:
             return False
 
-        # c, idxs, or new command
-        regex = re.compile(r"^(c|(\d+,?)+|[!.].+ .*)$", re.IGNORECASE)
-
-        return bool(re.match(regex, resp.content.strip()))
+        return bool(_SELECT_REPLY_REGEX.match(resp.content.strip()))
 
     try:
         resp = await bot.wait_for("message", check=check, timeout=30)
@@ -217,7 +227,7 @@ async def select_from_list(
 
     selected: list[T] = []
 
-    for i in content.split(","):
+    for i in (part.strip() for part in content.split(",")):
         if not i.isdigit():
             continue
 
