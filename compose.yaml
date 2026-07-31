@@ -5,9 +5,12 @@ services:
     environment:
       - WB_CONFIG_PATH=/config/config.yaml
       - WB_LOG_DIR=/logs
+      # the bot's own db (requests + leaderboard cache), separate from the webhook's
+      - WB_DB_PATH=/data/wi1_bot_discord.db
     volumes:
       - ./bot:/config
       - ./logs:/logs
+      - bot-db:/data
     restart: unless-stopped
 
   wi1-bot-webhook:
@@ -55,3 +58,5 @@ services:
 volumes:
   # the transcode queue, owned by the webhook; workers reach it over HTTP, not the DB
   queue-db:
+  # the bot's requests + leaderboard cache, owned by the bot alone
+  bot-db:
