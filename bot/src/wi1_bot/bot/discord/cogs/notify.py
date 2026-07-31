@@ -8,7 +8,7 @@ from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.arr.radarr import Movie
 from wi1_bot.arr.sonarr import Series, SonarrError
 from wi1_bot.bot.config import config
-from wi1_bot.bot.models import RequestKind
+from wi1_bot.bot.models import NotifyMethod, RequestKind
 from wi1_bot.bot.notifications import (
     PendingRequest,
     mark_notified,
@@ -16,6 +16,7 @@ from wi1_bot.bot.notifications import (
     record_request,
     remove_request,
 )
+from wi1_bot.bot.settings import DEFAULT_NOTIFY_METHOD, get_notify_methods
 
 from ..helpers import (
     NOTIFY_EMOJI,
@@ -168,10 +169,12 @@ class NotifyCog(commands.Cog):
         if not pending:
             return
 
-        # one library fetch per instance covers every pending request
-        movie_ids, series_ids = await asyncio.gather(
+        # one library fetch per instance covers every pending request; likewise fetch
+        # each subscriber's delivery preference once instead of per-notification
+        movie_ids, series_ids, methods = await asyncio.gather(
             asyncio.to_thread(self.radarr.downloaded_movie_tmdb_ids),
             asyncio.to_thread(self.sonarr.downloaded_series_tvdb_ids),
+            asyncio.to_thread(get_notify_methods, [req.discord_id for req in pending]),
         )
 
         notified: list[int] = []
@@ -183,18 +186,45 @@ class NotifyCog(commands.Cog):
             if not downloaded:
                 continue
 
-            if await self._notify(req):
+            method = methods.get(req.discord_id, DEFAULT_NOTIFY_METHOD)
+            if await self._notify(req, method):
                 notified.append(req.id)
 
         if notified:
             await asyncio.to_thread(mark_notified, notified)
 
-    async def _notify(self, req: PendingRequest) -> bool:
+    async def _notify(
+        self, req: PendingRequest, method: NotifyMethod = DEFAULT_NOTIFY_METHOD
+    ) -> bool:
         message = f"**{req.title}** is now on plex!"
 
+        # honour the subscriber's preference; "channel" pings them in the request channel
+        # rather than opening a DM
+        if method == NotifyMethod.CHANNEL:
+            return await self._notify_in_channel(req, message)
+
+        user = self.bot.get_user(req.discord_id)
+        if user is None:
+            try:
+                user = await self.bot.fetch_user(req.discord_id)
+            except discord.NotFound:
+                logger.warning("cannot notify unknown user", user=req.discord_id, title=req.title)
+                return True
+
+        try:
+            await user.send(message)
+            return True
+        except discord.Forbidden:
+            # the user has DMs closed; fall back to a mention in the request's channel
+            return await self._notify_in_channel(req, message)
+        except discord.HTTPException:
+            logger.warning("failed to DM, will retry", user=req.discord_id, exc_info=True)
+            return False
+
+    async def _notify_in_channel(self, req: PendingRequest, message: str) -> bool:
         channel = self.bot.get_channel(req.channel_id)
         if not isinstance(channel, discord.abc.Messageable):
-            logger.warning("no usable channel for notification", user=req.discord_id)
+            logger.warning("no usable fallback channel", user=req.discord_id)
             return True  # nowhere to send it; don't retry forever
 
         try:

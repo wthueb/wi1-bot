@@ -10,6 +10,7 @@ from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.bot.config import config
 from wi1_bot.bot.models import RequestKind
 from wi1_bot.bot.notifications import record_request
+from wi1_bot.bot.settings import get_settings
 from wi1_bot.bot.tmdb import MAX_CAST, Credits, Person, Tmdb
 from wi1_bot.common import push
 
@@ -90,6 +91,12 @@ class MovieCog(commands.Cog):
     ) -> None:
         added: list[Movie] = []
 
+        # auto-notify subscribes the requester to their own adds without the bell react
+        auto_notify = (
+            config.notifications.enabled
+            and (await asyncio.to_thread(get_settings, requester.id)).auto_notify
+        )
+
         for movie in to_add:
             if not self.radarr.add_movie(movie):
                 if self.radarr.movie_downloaded(movie):
@@ -121,6 +128,15 @@ class MovieCog(commands.Cog):
             added_msg = await reply(resp, msg)
 
             if config.notifications.enabled:
+                if auto_notify:
+                    await asyncio.to_thread(
+                        record_request,
+                        discord_id=requester.id,
+                        kind=RequestKind.MOVIE,
+                        tmdb_id=movie.tmdb_id,
+                        title=movie.full_title,
+                        channel_id=added_msg.channel.id,
+                    )
                 self._offer_notify(added_msg, movie)
 
             added.append(movie)
@@ -362,7 +378,9 @@ class MovieCog(commands.Cog):
                     return
 
         try:
-            to_delete, resp = await select_from_list(self.bot, ctx.message, potential)
+            to_delete, resp = await select_from_list(
+                self.bot, ctx.message, potential, allow_auto_select=False
+            )
         except SelectTimeout:
             await reply(ctx.message, "timed out, delmovie cancelled", error=True)
             return

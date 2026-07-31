@@ -10,6 +10,7 @@ from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
 from wi1_bot.bot.config import config
 from wi1_bot.bot.models import RequestKind
 from wi1_bot.bot.notifications import record_request
+from wi1_bot.bot.settings import get_settings
 from wi1_bot.bot.tmdb import SeriesDetails, Tmdb
 from wi1_bot.common import push
 
@@ -99,6 +100,12 @@ class SeriesCog(commands.Cog):
     ) -> None:
         added: list[Series] = []
 
+        # auto-notify subscribes the requester to their own adds without the bell react
+        auto_notify = (
+            config.notifications.enabled
+            and (await asyncio.to_thread(get_settings, requester.id)).auto_notify
+        )
+
         for series in to_add:
             if not self.sonarr.add_series(series):
                 if self.sonarr.series_downloaded(series):
@@ -130,6 +137,15 @@ class SeriesCog(commands.Cog):
             added_msg = await reply(resp, msg)
 
             if config.notifications.enabled:
+                if auto_notify:
+                    await asyncio.to_thread(
+                        record_request,
+                        discord_id=requester.id,
+                        kind=RequestKind.SERIES,
+                        tvdb_id=series.tvdb_id,
+                        title=series.full_title,
+                        channel_id=added_msg.channel.id,
+                    )
                 self._offer_notify(added_msg, series)
 
             added.append(series)
@@ -397,7 +413,9 @@ class SeriesCog(commands.Cog):
                     return
 
         try:
-            to_delete, resp = await select_from_list(self.bot, ctx.message, potential)
+            to_delete, resp = await select_from_list(
+                self.bot, ctx.message, potential, allow_auto_select=False
+            )
         except SelectTimeout:
             await reply(ctx.message, "timed out, delshow cancelled", error=True)
             return

@@ -42,6 +42,27 @@ class Request(Base):
         )
 
 
+class NotifyMethod(enum.StrEnum):
+    DM = "dm"
+    CHANNEL = "channel"
+
+
+class UserSettings(Base):
+    __tablename__ = "user_settings"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    notify_method: Mapped[NotifyMethod] = mapped_column(
+        Enum(NotifyMethod, values_callable=lambda enum_type: [kind.value for kind in enum_type]),
+        default=NotifyMethod.CHANNEL,
+    )
+    auto_select_single: Mapped[bool] = mapped_column(default=True)
+    auto_notify: Mapped[bool] = mapped_column(default=False)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+    def __repr__(self) -> str:
+        return f"UserSettings(discord_id={self.discord_id}, notify_method={self.notify_method!r})"
+
+
 class LeaderboardEntry(Base):
     __tablename__ = "leaderboard"
 
