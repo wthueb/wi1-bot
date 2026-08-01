@@ -21,7 +21,7 @@ dependencies = [
 
 [project.scripts]
 wi1-bot-webhook = "wi1_bot.webhook.scripts.serve:main"
-migrate = "wi1_bot.webhook.scripts.migrate:main"
+wi1-bot-webhook-migrate = "wi1_bot.webhook.scripts.migrate:main"
 transcode-item = "wi1_bot.webhook.scripts.transcode_item:main"
 rescan = "wi1_bot.webhook.scripts.rescan:main"
 
