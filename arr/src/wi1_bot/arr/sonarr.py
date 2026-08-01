@@ -243,6 +243,16 @@ class Sonarr:
 
         return counts
 
+    def downloaded_series_tvdb_ids(self) -> set[int]:
+        all_series = self._sonarr.series.get()
+        assert isinstance(all_series, list)
+
+        return {
+            s["tvdbId"]
+            for s in all_series
+            if (s.get("statistics") or {}).get("episodeFileCount", 0) > 0
+        }
+
     def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._sonarr.quality_profile.get()
         assert isinstance(profiles, list)

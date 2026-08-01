@@ -1,6 +1,6 @@
 import asyncio
 import re
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
 import discord
@@ -89,6 +89,54 @@ async def wait_for_request_reaction(
             pass
 
         return None
+
+
+NOTIFY_EMOJI = "🔔"
+UNNOTIFY_EMOJI = "🔕"
+
+ReactionHandler = Callable[[discord.Member | discord.User], Awaitable[None]]
+
+
+async def collect_reaction_choices(
+    bot: commands.Bot,
+    msg: discord.Message,
+    handlers: dict[str, ReactionHandler],
+    timeout: float = 120,
+) -> None:
+    """Seed msg with each handler's emoji and dispatch reactions to handlers.
+
+    Runs until timeout, calling a handler at most once per (user, emoji); the
+    seeded reactions are removed at the end to show the offer expired.
+    """
+    for emoji in handlers:
+        await msg.add_reaction(emoji)
+
+    def check(reaction: discord.Reaction, user: discord.Member | discord.User) -> bool:
+        return reaction.message.id == msg.id and str(reaction.emoji) in handlers and not user.bot
+
+    seen: set[tuple[int, str]] = set()
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+
+    while (remaining := deadline - loop.time()) > 0:
+        try:
+            reaction, user = await bot.wait_for("reaction_add", check=check, timeout=remaining)
+        except asyncio.TimeoutError:
+            break
+
+        emoji = str(reaction.emoji)
+        if (user.id, emoji) in seen:
+            continue
+
+        seen.add((user.id, emoji))
+        await handlers[emoji](user)
+
+    assert bot.user is not None
+    for emoji in handlers:
+        try:
+            await msg.remove_reaction(emoji, bot.user)
+        except discord.HTTPException:
+            pass
 
 
 def format_runtime(minutes: int) -> str:

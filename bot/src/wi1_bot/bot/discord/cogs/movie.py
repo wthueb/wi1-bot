@@ -8,16 +8,20 @@ from discord.ext import commands
 from wi1_bot.arr import MediaState
 from wi1_bot.arr.radarr import Movie, Radarr
 from wi1_bot.bot.config import config
+from wi1_bot.bot.models import RequestKind
+from wi1_bot.bot.notifications import record_request
 from wi1_bot.bot.tmdb import MAX_CAST, Credits, Person, Tmdb
 from wi1_bot.common import push
 
 from ..helpers import (
+    NOTIFY_EMOJI,
     REQUEST_EMOJI,
     STATE_LABEL,
     STATE_SUFFIX,
     SelectCancelled,
     SelectInvalidIndex,
     SelectTimeout,
+    collect_reaction_choices,
     format_runtime,
     member_has_role,
     reply,
@@ -32,6 +36,7 @@ class MovieCog(commands.Cog):
         self.logger = structlog.get_logger(__name__)
         self.radarr = Radarr.from_config(config.radarr)
         self.tmdb = Tmdb.from_config(config.tmdb)
+        self._notify_tasks: set[asyncio.Task[None]] = set()
 
     @commands.command(name="addmovie", help="add a movie to the plex")
     async def addmovie_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:
@@ -110,7 +115,13 @@ class MovieCog(commands.Cog):
             if announce_requester:
                 msg += f" (requested by {requester.display_name})"
 
-            await reply(resp, msg)
+            if config.notifications.enabled:
+                msg += "\n\nreact with the bell to be notified when it's ready to watch"
+
+            added_msg = await reply(resp, msg)
+
+            if config.notifications.enabled:
+                self._offer_notify(added_msg, movie)
 
             added.append(movie)
 
@@ -128,6 +139,26 @@ class MovieCog(commands.Cog):
             )
 
             await resp.channel.send(f"hey <@!{config.discord.admin_id}> get this guy a tag")
+
+    def _offer_notify(self, msg: discord.Message, movie: Movie) -> None:
+        async def record(user: discord.Member | discord.User) -> None:
+            await asyncio.to_thread(
+                record_request,
+                discord_id=user.id,
+                kind=RequestKind.MOVIE,
+                tmdb_id=movie.tmdb_id,
+                title=movie.full_title,
+                channel_id=msg.channel.id,
+            )
+            self.logger.info(
+                "user opted in to notifications",
+                user=user.name,
+                movie=movie.full_title,
+            )
+
+        task = asyncio.create_task(collect_reaction_choices(self.bot, msg, {NOTIFY_EMOJI: record}))
+        self._notify_tasks.add(task)
+        task.add_done_callback(self._notify_tasks.discard)
 
     @commands.command(name="movieinfo", help="get information about a movie")
     async def movieinfo_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:
