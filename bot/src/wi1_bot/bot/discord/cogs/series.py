@@ -8,16 +8,20 @@ from discord.ext import commands
 from wi1_bot.arr import MediaState
 from wi1_bot.arr.sonarr import Series, Sonarr, SonarrError
 from wi1_bot.bot.config import config
+from wi1_bot.bot.models import RequestKind
+from wi1_bot.bot.notifications import record_request
 from wi1_bot.bot.tmdb import SeriesDetails, Tmdb
 from wi1_bot.common import push
 
 from ..helpers import (
+    NOTIFY_EMOJI,
     REQUEST_EMOJI,
     STATE_LABEL,
     STATE_SUFFIX,
     SelectCancelled,
     SelectInvalidIndex,
     SelectTimeout,
+    collect_reaction_choices,
     format_runtime,
     member_has_role,
     reply,
@@ -32,6 +36,7 @@ class SeriesCog(commands.Cog):
         self.logger = structlog.get_logger(__name__)
         self.sonarr = Sonarr.from_config(config.sonarr)
         self.tmdb = Tmdb.from_config(config.tmdb)
+        self._notify_tasks: set[asyncio.Task[None]] = set()
 
     @commands.command(name="addshow", help="add a show to the plex")
     @commands.has_any_role("plex-admin", "plex-shows")
@@ -119,7 +124,13 @@ class SeriesCog(commands.Cog):
             if announce_requester:
                 msg += f" (requested by {requester.display_name})"
 
-            await reply(resp, msg)
+            if config.notifications.enabled:
+                msg += "\n\nreact with the bell to be notified when it's ready to watch"
+
+            added_msg = await reply(resp, msg)
+
+            if config.notifications.enabled:
+                self._offer_notify(added_msg, series)
 
             added.append(series)
 
@@ -140,6 +151,26 @@ class SeriesCog(commands.Cog):
                 await resp.channel.send(f"hey <@!{config.discord.admin_id}> get this guy a tag")
 
                 return
+
+    def _offer_notify(self, msg: discord.Message, series: Series) -> None:
+        async def record(user: discord.Member | discord.User) -> None:
+            await asyncio.to_thread(
+                record_request,
+                discord_id=user.id,
+                kind=RequestKind.SERIES,
+                tvdb_id=series.tvdb_id,
+                title=series.full_title,
+                channel_id=msg.channel.id,
+            )
+            self.logger.info(
+                "user opted in to notifications",
+                user=user.name,
+                series=series.full_title,
+            )
+
+        task = asyncio.create_task(collect_reaction_choices(self.bot, msg, {NOTIFY_EMOJI: record}))
+        self._notify_tasks.add(task)
+        task.add_done_callback(self._notify_tasks.discard)
 
     @commands.command(name="showinfo", help="get information about a show")
     async def showinfo_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:

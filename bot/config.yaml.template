@@ -44,6 +44,14 @@ discord:
         - OTHER_USER_ID1
         - OTHER_USER_ID2
 
+# download notifications, optional (defaults to enabled)
+notifications:
+  # let users react on an "added" message (or use !notify) to be pinged in the request
+  # channel when a title finishes downloading
+  enabled: true
+  # seconds between checks of radarr/sonarr for requested titles that have downloaded
+  poll_interval: 60
+
 # leaderboard settings, optional
 leaderboard:
   # minutes between rebuilds of the !leaderboard cache from radarr/sonarr tags

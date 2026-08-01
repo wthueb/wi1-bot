@@ -17,6 +17,18 @@ class TmdbConfig(BaseModel):
     api_key: str = Field(min_length=1, description="TMDB API key (v3)")
 
 
+class NotificationsConfig(BaseModel):
+    enabled: bool = Field(
+        default=True,
+        description="Notify users when a title they requested finishes downloading to plex",
+    )
+    poll_interval: float = Field(
+        default=60,
+        gt=0,
+        description="Seconds between checks of *arr for requested titles that have downloaded",
+    )
+
+
 class LeaderboardConfig(BaseModel):
     refresh_interval: float = Field(
         default=15,
@@ -77,6 +89,7 @@ class Config(BaseServiceConfig):
     radarr: ArrConfig
     sonarr: ArrConfig
     discord: DiscordConfig
+    notifications: NotificationsConfig = Field(default_factory=NotificationsConfig)
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     pushover: PushoverConfig | None = None
     tmdb: TmdbConfig | None = None

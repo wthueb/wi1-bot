@@ -182,6 +182,12 @@ class Radarr:
 
         return {detail["label"]: len(detail["movieIds"]) for detail in details}
 
+    def downloaded_movie_tmdb_ids(self) -> set[int]:
+        movies = self._radarr.movie.get()
+        assert isinstance(movies, list)
+
+        return {movie["tmdbId"] for movie in movies if movie.get("hasFile")}
+
     def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._radarr.quality_profile.get()
         assert isinstance(profiles, list)
