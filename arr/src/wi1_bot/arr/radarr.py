@@ -9,7 +9,7 @@ from pyarr.types import JsonArray, JsonObject
 
 from wi1_bot.arr.config import ArrConfig
 
-from .common import Download, ImportMode, MediaState
+from .common import Download, ImportMode, MediaState, user_id_from_tag
 from .movie import Movie
 
 __all__ = ["Movie", "Radarr"]
@@ -161,7 +161,9 @@ class Radarr:
         tags = self._radarr.tag.get()
         tag_for_user: dict[int, int] = {}
         for uid in user_ids:
-            tag_for_user[uid] = next((tag["id"] for tag in tags if str(uid) in tag["label"]), -1)
+            tag_for_user[uid] = next(
+                (tag["id"] for tag in tags if user_id_from_tag(tag["label"]) == uid), -1
+            )
 
         size_for_tag: dict[int, int] = defaultdict(int)
 
@@ -173,6 +175,12 @@ class Radarr:
                 size_for_tag[tag_id] += movie["sizeOnDisk"]
 
         return {uid: size_for_tag[tag_for_user[uid]] for uid in user_ids}
+
+    def get_tag_title_counts(self) -> dict[str, int]:
+        details = self._radarr.tag.get_detail()
+        assert isinstance(details, list)
+
+        return {detail["label"]: len(detail["movieIds"]) for detail in details}
 
     def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._radarr.quality_profile.get()
@@ -233,9 +241,10 @@ class Radarr:
 
     def _get_tag_for_user_id(self, user_id: int) -> int:
         tags = self._radarr.tag.get()
+        assert isinstance(tags, list)
 
         for tag in tags:
-            if str(user_id) in tag["label"]:
+            if user_id_from_tag(tag["label"]) == user_id:
                 tag_id: int = tag["id"]
                 return tag_id
 

@@ -9,7 +9,7 @@ from pyarr.types import JsonArray, JsonObject
 
 from wi1_bot.arr.config import ArrConfig
 
-from .common import Download, ImportMode, MediaState
+from .common import Download, ImportMode, MediaState, user_id_from_tag
 
 
 class Series:
@@ -206,7 +206,9 @@ class Sonarr:
         assert isinstance(tags, list)
         tag_for_user: dict[int, int] = {}
         for uid in user_ids:
-            tag_for_user[uid] = next((tag["id"] for tag in tags if str(uid) in tag["label"]), -1)
+            tag_for_user[uid] = next(
+                (tag["id"] for tag in tags if user_id_from_tag(tag["label"]) == uid), -1
+            )
 
         size_for_tag: dict[int, int] = defaultdict(int)
 
@@ -218,6 +220,28 @@ class Sonarr:
                 size_for_tag[tag_id] += s["statistics"]["sizeOnDisk"]
 
         return {uid: size_for_tag[tag_for_user[uid]] for uid in user_ids}
+
+    def get_tag_title_counts(self) -> dict[str, int]:
+        # sonarr's tag detail carries no seriesIds, so counts come from one series scan
+        tags = self._sonarr.tag.get()
+        assert isinstance(tags, list)
+
+        if not tags:
+            return {}
+
+        label_for_id: dict[int, str] = {tag["id"]: tag["label"] for tag in tags}
+        counts: dict[str, int] = dict.fromkeys(label_for_id.values(), 0)
+
+        all_series = self._sonarr.series.get()
+        assert isinstance(all_series, list)
+
+        for s in all_series:
+            for tag_id in s["tags"]:
+                label = label_for_id.get(tag_id)
+                if label is not None:
+                    counts[label] += 1
+
+        return counts
 
     def get_quality_profile_name(self, profile_id: int) -> str:
         profiles = self._sonarr.quality_profile.get()
@@ -285,7 +309,7 @@ class Sonarr:
         assert isinstance(tags, list)
 
         for tag in tags:
-            if str(user_id) in tag["label"]:
+            if user_id_from_tag(tag["label"]) == user_id:
                 tag_id: int = tag["id"]
                 return tag_id
 

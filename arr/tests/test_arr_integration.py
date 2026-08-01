@@ -126,20 +126,22 @@ class TestRadarr:
     def test_get_tag_for_user_id_exists(self, radarr: Radarr) -> None:
         radarr._radarr.tag.get = MagicMock(
             return_value=[
-                {"id": 1, "label": "user-123456"},
-                {"id": 2, "label": "user-789012"},
+                {"id": 1, "label": "user-123456789012345678"},
+                {"id": 2, "label": "user-234567890123456789"},
             ]
         )
 
-        tag_id = radarr._get_tag_for_user_id(123456)
+        tag_id = radarr._get_tag_for_user_id(123456789012345678)
 
         assert tag_id == 1
 
     def test_get_tag_for_user_id_not_exists(self, radarr: Radarr) -> None:
-        radarr._radarr.tag.get = MagicMock(return_value=[{"id": 1, "label": "user-789012"}])
+        radarr._radarr.tag.get = MagicMock(
+            return_value=[{"id": 1, "label": "user-234567890123456789"}]
+        )
 
-        with pytest.raises(ValueError, match="no tag with the user id 123456"):
-            radarr._get_tag_for_user_id(123456)
+        with pytest.raises(ValueError, match="no tag with the user id 123456789012345678"):
+            radarr._get_tag_for_user_id(123456789012345678)
 
     def test_get_quality_profile_id_exists(self, radarr: Radarr) -> None:
         radarr._radarr.quality_profile.get = MagicMock(
@@ -297,17 +299,19 @@ class TestSonarr:
     def test_get_tag_for_user_id_exists(self, sonarr: Sonarr) -> None:
         sonarr._sonarr.tag.get = MagicMock(
             return_value=[
-                {"id": 1, "label": "user-123456"},
-                {"id": 2, "label": "user-789012"},
+                {"id": 1, "label": "user-123456789012345678"},
+                {"id": 2, "label": "user-234567890123456789"},
             ]
         )
 
-        tag_id = sonarr._get_tag_for_user_id(123456)
+        tag_id = sonarr._get_tag_for_user_id(123456789012345678)
 
         assert tag_id == 1
 
     def test_get_tag_for_user_id_not_exists(self, sonarr: Sonarr) -> None:
-        sonarr._sonarr.tag.get = MagicMock(return_value=[{"id": 1, "label": "user-789012"}])
+        sonarr._sonarr.tag.get = MagicMock(
+            return_value=[{"id": 1, "label": "user-234567890123456789"}]
+        )
 
-        with pytest.raises(ValueError, match="no tag with the user id 123456"):
-            sonarr._get_tag_for_user_id(123456)
+        with pytest.raises(ValueError, match="no tag with the user id 123456789012345678"):
+            sonarr._get_tag_for_user_id(123456789012345678)

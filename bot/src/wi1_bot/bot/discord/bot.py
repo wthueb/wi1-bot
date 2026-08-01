@@ -9,7 +9,7 @@ from wi1_bot.arr import Radarr, Sonarr
 from wi1_bot.bot.config import config
 from wi1_bot.common import setup_logging
 
-from .cogs import AdminCog, MovieCog, SeriesCog
+from .cogs import AdminCog, LeaderboardCog, MovieCog, SeriesCog
 from .helpers import reply
 
 logger = structlog.get_logger(__name__)
@@ -157,7 +157,14 @@ async def quotas_cmd(ctx: commands.Context[commands.Bot]) -> None:
 
             pct = used / total * 100 if total != 0 else 100
 
-            user = await bot.fetch_user(owner_id)
+            # resolve from cache first; skip an owner id that no longer maps to an account
+            # rather than letting fetch_user's NotFound blow up the whole command
+            user = bot.get_user(owner_id)
+            if user is None:
+                try:
+                    user = await bot.fetch_user(owner_id)
+                except discord.NotFound:
+                    continue
 
             msg.append(f"{user.display_name}: {used:.2f}/{total:.2f} GB ({pct:.1f}%)")
 
@@ -175,6 +182,7 @@ async def run() -> None:
         await bot.add_cog(AdminCog(bot))
         await bot.add_cog(MovieCog(bot))
         await bot.add_cog(SeriesCog(bot))
+        await bot.add_cog(LeaderboardCog(bot))
 
         await bot.start(config.discord.bot_token)
 
