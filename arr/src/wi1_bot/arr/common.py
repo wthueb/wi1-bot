@@ -1,8 +1,16 @@
+import re
 from enum import IntEnum
 from typing import Any
 
 from .episode import Episode
 from .movie import Movie
+
+SNOWFLAKE_REGEX = re.compile(r"(\d{15,})\s*$")
+
+
+def user_id_from_tag(label: str) -> int | None:
+    match = SNOWFLAKE_REGEX.search(label)
+    return int(match.group(1)) if match is not None else None
 
 
 class ImportMode(IntEnum):
@@ -42,7 +50,8 @@ class Download:
         self.timeleft = data["timeleft"] if "timeleft" in data else "unknown"
         self.status = data["status"]
 
-        self.pct_done = (self.size - self.sizeleft) / self.size * 100
+        # a queued/stalled item can report size 0 before the download is sized
+        self.pct_done = (self.size - self.sizeleft) / self.size * 100 if self.size else 0.0
 
     def __str__(self) -> str:
         downloaded = (self.size - self.sizeleft) / 1024**3

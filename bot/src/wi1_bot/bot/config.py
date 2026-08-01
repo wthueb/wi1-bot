@@ -17,6 +17,14 @@ class TmdbConfig(BaseModel):
     api_key: str = Field(min_length=1, description="TMDB API key (v3)")
 
 
+class LeaderboardConfig(BaseModel):
+    refresh_interval: float = Field(
+        default=15,
+        gt=0,
+        description="Minutes between rebuilds of the leaderboard cache from *arr tags",
+    )
+
+
 class Quota(BaseModel):
     amount: float = Field(gt=0, description="Quota amount in GB")
     with_: list[int] = Field(
@@ -69,6 +77,7 @@ class Config(BaseServiceConfig):
     radarr: ArrConfig
     sonarr: ArrConfig
     discord: DiscordConfig
+    leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     pushover: PushoverConfig | None = None
     tmdb: TmdbConfig | None = None
 

@@ -225,6 +225,18 @@ class TestDownload:
         assert download.timeleft == "unknown"
         assert download.pct_done == 90.0
 
+    def test_download_with_zero_size(self) -> None:
+        # a freshly queued item can report size 0 before it's sized; must not divide by zero
+        data = {
+            "title": "Queued Release",
+            "sizeleft": 0,
+            "size": 0,
+            "status": "queued",
+        }
+        download = Download(data)
+
+        assert download.pct_done == 0.0
+
     def test_download_str_representation(self) -> None:
         data = {
             "movie": {
