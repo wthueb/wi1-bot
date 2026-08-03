@@ -232,7 +232,7 @@ class NotifyCog(commands.Cog):
             count = len(episodes)
             for req in (r for r in reqs if not r.notified):
                 message = (
-                    f"there {'are' if count > 1 else 'is'} {count}"
+                    f"There {'are' if count > 1 else 'is'} {count}"
                     f" episode{'s' if count > 1 else ''} of **{req.title}** already on plex!"
                 )
                 method = methods.get(req.discord_id, DEFAULT_NOTIFY_METHOD)
