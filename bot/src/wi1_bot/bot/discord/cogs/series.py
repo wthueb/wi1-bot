@@ -132,7 +132,10 @@ class SeriesCog(commands.Cog):
                 msg += f" (requested by {requester.display_name})"
 
             if config.notifications.enabled:
-                msg += "\n\nreact with the bell to be notified when it's ready to watch"
+                msg += (
+                    "\n\nreact with the bell to be notified when it's ready to watch"
+                    " and as new episodes are added"
+                )
 
             added_msg = await reply(resp, msg)
 

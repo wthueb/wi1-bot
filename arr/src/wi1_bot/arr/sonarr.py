@@ -10,6 +10,7 @@ from pyarr.types import JsonArray, JsonObject
 from wi1_bot.arr.config import ArrConfig
 
 from .common import Download, ImportMode, MediaState, user_id_from_tag
+from .episode import Episode
 
 
 class Series:
@@ -242,6 +243,42 @@ class Sonarr:
                     counts[label] += 1
 
         return counts
+
+    def downloaded_episodes_by_tvdb_id(self, tvdb_ids: Iterable[int]) -> dict[int, list[Episode]]:
+        wanted = set(tvdb_ids)
+        if not wanted:
+            return {}
+
+        all_series = self._sonarr.series.get()
+        assert isinstance(all_series, list)
+
+        result: dict[int, list[Episode]] = {}
+
+        for s in all_series:
+            tvdb_id: int = s["tvdbId"]
+            if tvdb_id not in wanted:
+                continue
+
+            result[tvdb_id] = []
+
+            if (s.get("statistics") or {}).get("episodeFileCount", 0) == 0:
+                continue
+
+            episodes = self._sonarr.episode.get(series_id=s["id"])
+            assert isinstance(episodes, list)
+
+            result[tvdb_id] = [
+                Episode(
+                    ep,
+                    series_title=s["title"],
+                    series_tvdb_id=tvdb_id,
+                    series_imdb_id=s.get("imdbId") or "",
+                )
+                for ep in episodes
+                if ep.get("hasFile")
+            ]
+
+        return result
 
     def downloaded_series_tvdb_ids(self) -> set[int]:
         all_series = self._sonarr.series.get()

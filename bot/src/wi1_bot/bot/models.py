@@ -42,6 +42,17 @@ class Request(Base):
         )
 
 
+class SeenEpisode(Base):
+    __tablename__ = "seen_episodes"
+
+    tvdb_id: Mapped[int] = mapped_column(primary_key=True)
+    episode_id: Mapped[int] = mapped_column(primary_key=True)
+    first_seen_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+    def __repr__(self) -> str:
+        return f"SeenEpisode(tvdb_id={self.tvdb_id}, episode_id={self.episode_id})"
+
+
 class NotifyMethod(enum.StrEnum):
     DM = "dm"
     CHANNEL = "channel"
