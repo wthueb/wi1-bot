@@ -73,12 +73,15 @@ jobs:
           - service: bot
             image: wi1-bot
             dockerfile: Dockerfile.bot
+            description: Discord bot for Radarr/Sonarr integration
           - service: webhook
             image: wi1-bot-webhook
             dockerfile: Dockerfile.webhook
+            description: Radarr/Sonarr download webhook and transcode job server for wi1-bot
           - service: transcoder
             image: wi1-bot-transcoder
             dockerfile: Dockerfile.transcoder
+            description: Replicable ffmpeg transcode worker for wi1-bot
 
     steps:
       - name: Checkout
@@ -110,6 +113,8 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
           images: |
             wthueb/${{ matrix.image }}
@@ -120,6 +125,12 @@ jobs:
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
             type=semver,pattern=v{{major}}
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.description=${{ matrix.description }}
+          annotations: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.description=${{ matrix.description }}
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -129,6 +140,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}

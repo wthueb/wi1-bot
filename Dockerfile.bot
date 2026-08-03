@@ -16,8 +16,11 @@ FROM python:3.12-slim
 COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-LABEL org.opencontainers.image.source="https://github.com/wthueb/wi1-bot"
-LABEL org.opencontainers.image.maintainer="wilhueb@gmail.com"
+LABEL org.opencontainers.image.title="wi1-bot" \
+    org.opencontainers.image.description="Discord bot for Radarr/Sonarr integration" \
+    org.opencontainers.image.source="https://github.com/wthueb/wi1-bot" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.authors="William Huebner <wilhueb@gmail.com>"
 
 ENV WB_CONFIG_PATH=/config/config.yaml
 ENV WB_LOG_DIR=/logs
