@@ -352,7 +352,7 @@ def test_new_subscriber_to_established_show_gets_initial_message(bot_db: None) -
     call = cog._notify.await_args
     assert call is not None
     assert call.args[0].discord_id == 2
-    assert call.args[1] == "there is 1 episode of **Show (2019)** already on plex!"
+    assert call.args[1] == "There is 1 episode of **Show (2019)** already on plex!"
 
 
 def test_series_episode_send_failure_still_marks_seen(bot_db: None) -> None:
