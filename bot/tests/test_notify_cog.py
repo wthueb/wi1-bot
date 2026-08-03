@@ -230,7 +230,7 @@ def test_series_first_notification_announces_the_show(bot_db: None) -> None:
 
     call = cog._notify.await_args
     assert call is not None
-    assert call.args[1] == "there are 2 episodes of **Show (2019)** already on plex!"
+    assert call.args[1] == "There are 2 episodes of **Show (2019)** already on plex!"
 
     # the subscription stays active, flagged notified, with current episodes seeded
     active = active_requests()
