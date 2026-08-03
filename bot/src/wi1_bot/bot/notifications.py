@@ -1,25 +1,28 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from wi1_bot.bot.db import get_engine
-from wi1_bot.bot.models import Request, RequestKind, utcnow
+from wi1_bot.bot.models import Request, RequestKind, SeenEpisode, utcnow
 
 
 def _title_match(kind: RequestKind, tmdb_id: int | None, tvdb_id: int | None):
-    # a pending (not-yet-notified) request from a user for one specific title
-    return (
+    # a movie request completes once notified, so only un-notified rows count as
+    # active; a series request is a standing subscription that survives notification
+    conditions = [
         Request.kind == kind,
         Request.tmdb_id == tmdb_id,
         Request.tvdb_id == tvdb_id,
-        Request.notified_at.is_(None),
-    )
+    ]
+    if kind == RequestKind.MOVIE:
+        conditions.append(Request.notified_at.is_(None))
+    return conditions
 
 
 @dataclass
-class PendingRequest:
+class ActiveRequest:
     id: int
     discord_id: int
     kind: RequestKind
@@ -27,6 +30,7 @@ class PendingRequest:
     tvdb_id: int | None
     title: str
     channel_id: int
+    notified: bool = False
 
 
 def record_request(
@@ -83,11 +87,15 @@ def remove_request(
         return removed
 
 
-def pending_requests() -> list[PendingRequest]:
+def active_requests() -> list[ActiveRequest]:
     with Session(get_engine()) as session:
-        rows = session.execute(select(Request).where(Request.notified_at.is_(None))).scalars()
+        rows = session.execute(
+            select(Request).where(
+                (Request.kind == RequestKind.SERIES) | Request.notified_at.is_(None)
+            )
+        ).scalars()
         return [
-            PendingRequest(
+            ActiveRequest(
                 id=r.id,
                 discord_id=r.discord_id,
                 kind=RequestKind(r.kind),
@@ -95,6 +103,7 @@ def pending_requests() -> list[PendingRequest]:
                 tvdb_id=r.tvdb_id,
                 title=r.title,
                 channel_id=r.channel_id,
+                notified=r.notified_at is not None,
             )
             for r in rows
         ]
@@ -107,4 +116,39 @@ def mark_notified(request_ids: Iterable[int]) -> None:
 
     with Session(get_engine()) as session:
         session.execute(update(Request).where(Request.id.in_(ids)).values(notified_at=utcnow()))
+        session.commit()
+
+
+def seen_episode_ids(tvdb_id: int) -> set[int]:
+    with Session(get_engine()) as session:
+        rows = session.execute(
+            select(SeenEpisode.episode_id).where(SeenEpisode.tvdb_id == tvdb_id)
+        ).scalars()
+        return set(rows)
+
+
+def mark_episodes_seen(tvdb_id: int, episode_ids: Iterable[int]) -> None:
+    ids = set(episode_ids)
+    if not ids:
+        return
+
+    with Session(get_engine()) as session:
+        existing = set(
+            session.execute(
+                select(SeenEpisode.episode_id).where(
+                    SeenEpisode.tvdb_id == tvdb_id, SeenEpisode.episode_id.in_(ids)
+                )
+            ).scalars()
+        )
+        for episode_id in ids - existing:
+            session.add(SeenEpisode(tvdb_id=tvdb_id, episode_id=episode_id))
+        session.commit()
+
+
+def prune_seen_episodes(subscribed_tvdb_ids: Iterable[int]) -> None:
+    # drop episode state for shows nobody follows anymore so the table stays bounded
+    ids = set(subscribed_tvdb_ids)
+
+    with Session(get_engine()) as session:
+        session.execute(delete(SeenEpisode).where(SeenEpisode.tvdb_id.not_in(ids)))
         session.commit()

@@ -12,11 +12,14 @@ class Episode:
     ) -> None:
         self._json = ep_json
 
+        self.db_id: int | None = ep_json.get("id")
+
         self.series_title: str = series_title
         self.season_num: int = ep_json["seasonNumber"]
         self.ep_num: int = ep_json["episodeNumber"]
         self.ep_title: str = ep_json["title"]
-        self.air_date: str = ep_json["airDate"]
+        # specials and some unaired episodes have no airDate
+        self.air_date: str = ep_json.get("airDate", "")
         self.tvdb_id: int = series_tvdb_id
         self.imdb_id: str = series_imdb_id
 

@@ -1,20 +1,25 @@
 import asyncio
+from collections import defaultdict
 
 import discord
 import structlog
 from discord.ext import commands, tasks
 
 from wi1_bot.arr import Radarr, Sonarr
+from wi1_bot.arr.episode import Episode
 from wi1_bot.arr.radarr import Movie
 from wi1_bot.arr.sonarr import Series, SonarrError
 from wi1_bot.bot.config import config
 from wi1_bot.bot.models import NotifyMethod, RequestKind
 from wi1_bot.bot.notifications import (
-    PendingRequest,
+    ActiveRequest,
+    active_requests,
+    mark_episodes_seen,
     mark_notified,
-    pending_requests,
+    prune_seen_episodes,
     record_request,
     remove_request,
+    seen_episode_ids,
 )
 from wi1_bot.bot.settings import DEFAULT_NOTIFY_METHOD, get_notify_methods
 
@@ -165,39 +170,96 @@ class NotifyCog(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def _reconcile(self) -> None:
-        pending = await asyncio.to_thread(pending_requests)
-        if not pending:
+        active = await asyncio.to_thread(active_requests)
+
+        subscribed_tvdb_ids = {
+            req.tvdb_id
+            for req in active
+            if req.kind == RequestKind.SERIES and req.tvdb_id is not None
+        }
+        await asyncio.to_thread(prune_seen_episodes, subscribed_tvdb_ids)
+
+        if not active:
             return
 
-        # one library fetch per instance covers every pending request; likewise fetch
+        # one library fetch per instance covers every active request; likewise fetch
         # each subscriber's delivery preference once instead of per-notification
-        movie_ids, series_ids, methods = await asyncio.gather(
+        movie_ids, episodes_by_tvdb, methods = await asyncio.gather(
             asyncio.to_thread(self.radarr.downloaded_movie_tmdb_ids),
-            asyncio.to_thread(self.sonarr.downloaded_series_tvdb_ids),
-            asyncio.to_thread(get_notify_methods, [req.discord_id for req in pending]),
+            asyncio.to_thread(self.sonarr.downloaded_episodes_by_tvdb_id, subscribed_tvdb_ids),
+            asyncio.to_thread(get_notify_methods, [req.discord_id for req in active]),
         )
 
         notified: list[int] = []
 
-        for req in pending:
-            downloaded = (req.kind == RequestKind.MOVIE and req.tmdb_id in movie_ids) or (
-                req.kind == RequestKind.SERIES and req.tvdb_id in series_ids
-            )
-            if not downloaded:
+        for req in active:
+            if req.kind != RequestKind.MOVIE or req.tmdb_id not in movie_ids:
                 continue
 
             method = methods.get(req.discord_id, DEFAULT_NOTIFY_METHOD)
-            if await self._notify(req, method):
+            if await self._notify(req, f"**{req.title}** is now on plex!", method):
                 notified.append(req.id)
+
+        by_tvdb: dict[int, list[ActiveRequest]] = defaultdict(list)
+        for req in active:
+            if req.kind == RequestKind.SERIES and req.tvdb_id is not None:
+                by_tvdb[req.tvdb_id].append(req)
+
+        for tvdb_id, reqs in by_tvdb.items():
+            episodes = episodes_by_tvdb.get(tvdb_id)
+            if episodes is None:
+                # the show is gone from sonarr; keep the subscription in case it returns
+                continue
+
+            notified.extend(await self._reconcile_series(tvdb_id, reqs, episodes, methods))
 
         if notified:
             await asyncio.to_thread(mark_notified, notified)
 
-    async def _notify(
-        self, req: PendingRequest, method: NotifyMethod = DEFAULT_NOTIFY_METHOD
-    ) -> bool:
-        message = f"**{req.title}** is now on plex!"
+    async def _reconcile_series(
+        self,
+        tvdb_id: int,
+        reqs: list[ActiveRequest],
+        episodes: list[Episode],
+        methods: dict[int, NotifyMethod],
+    ) -> list[int]:
+        seen = await asyncio.to_thread(seen_episode_ids, tvdb_id)
+        new = [ep for ep in episodes if ep.db_id is not None and ep.db_id not in seen]
 
+        notified: list[int] = []
+
+        if episodes:
+            count = len(episodes)
+            for req in (r for r in reqs if not r.notified):
+                message = (
+                    f"there {'are' if count > 1 else 'is'} {count}"
+                    f" episode{'s' if count > 1 else ''} of **{req.title}** already on plex!"
+                )
+                method = methods.get(req.discord_id, DEFAULT_NOTIFY_METHOD)
+                if await self._notify(req, message, method):
+                    notified.append(req.id)
+
+        if new and seen:
+            newest = max(new, key=lambda ep: (ep.season_num, ep.ep_num))
+            extra = len(new) - 1
+            message = f"**{newest.full_title}** is now on plex!"
+            if extra:
+                message += f" (+{extra} more episode{'s' if extra > 1 else ''})"
+
+            for req in (r for r in reqs if r.notified):
+                method = methods.get(req.discord_id, DEFAULT_NOTIFY_METHOD)
+                await self._notify(req, message, method)
+
+        if new:
+            await asyncio.to_thread(
+                mark_episodes_seen, tvdb_id, [ep.db_id for ep in new if ep.db_id is not None]
+            )
+
+        return notified
+
+    async def _notify(
+        self, req: ActiveRequest, message: str, method: NotifyMethod = DEFAULT_NOTIFY_METHOD
+    ) -> bool:
         # honour the subscriber's preference; "channel" pings them in the request channel
         # rather than opening a DM
         if method == NotifyMethod.CHANNEL:
@@ -221,7 +283,7 @@ class NotifyCog(commands.Cog):
             logger.warning("failed to DM, will retry", user=req.discord_id, exc_info=True)
             return False
 
-    async def _notify_in_channel(self, req: PendingRequest, message: str) -> bool:
+    async def _notify_in_channel(self, req: ActiveRequest, message: str) -> bool:
         channel = self.bot.get_channel(req.channel_id)
         if not isinstance(channel, discord.abc.Messageable):
             logger.warning("no usable fallback channel", user=req.discord_id)
