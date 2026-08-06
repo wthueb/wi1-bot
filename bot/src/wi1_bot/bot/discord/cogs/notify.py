@@ -19,6 +19,7 @@ from wi1_bot.bot.notifications import (
     prune_seen_episodes,
     record_request,
     remove_request,
+    requests_for_user,
     seen_episode_ids,
 )
 from wi1_bot.bot.settings import DEFAULT_NOTIFY_METHOD, get_notify_methods
@@ -57,13 +58,15 @@ class NotifyCog(commands.Cog):
         name="notify", help="get notified (or stop) when titles on the plex finish downloading"
     )
     async def notify_cmd(self, ctx: commands.Context[commands.Bot], *, query: str = "") -> None:
+        # a bare !notify shows what the user is already waiting on; listing works even
+        # when polling is off, so it runs before the disabled check
+        if not query:
+            await self._show_subscriptions(ctx)
+            return
+
         if not config.notifications.enabled:
             # nothing polls *arr when disabled, so a subscription would never fire
             await reply(ctx.message, "notifications are disabled on this bot", error=True)
-            return
-
-        if not query:
-            await reply(ctx.message, "usage: !notify KEYWORDS...")
             return
 
         async with ctx.typing():
@@ -130,6 +133,40 @@ class NotifyCog(commands.Cog):
         )
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+
+    @commands.command(
+        name="subscriptions",
+        aliases=["subs"],
+        help="see what you're waiting on notifications for",
+    )
+    async def subscriptions_cmd(self, ctx: commands.Context[commands.Bot]) -> None:
+        await self._show_subscriptions(ctx)
+
+    async def _show_subscriptions(self, ctx: commands.Context[commands.Bot]) -> None:
+        subs = await asyncio.to_thread(requests_for_user, ctx.author.id)
+
+        if not subs:
+            await reply(ctx.message, "you aren't waiting on anything", title="your notifications")
+            return
+
+        lines: list[str] = []
+
+        if not config.notifications.enabled:
+            lines.append("**notifications are disabled on this bot — nothing will be sent**\n")
+
+        movies = [sub for sub in subs if sub.kind == RequestKind.MOVIE]
+        if movies:
+            lines.append("**movies**")
+            lines.extend(f"- {sub.title}" for sub in movies)
+
+        shows = [sub for sub in subs if sub.kind == RequestKind.SERIES]
+        if shows:
+            if movies:
+                lines.append("")
+            lines.append("**shows**")
+            lines.extend(f"- {sub.title}" for sub in shows)
+
+        await reply(ctx.message, "\n".join(lines), title="your notifications")
 
     def _record_item(
         self, user: discord.Member | discord.User, item: Movie | Series, channel_id: int

@@ -6,6 +6,7 @@ from wi1_bot.bot.notifications import (
     prune_seen_episodes,
     record_request,
     remove_request,
+    requests_for_user,
     seen_episode_ids,
 )
 
@@ -162,3 +163,36 @@ def test_prune_seen_episodes_empty_drops_all(bot_db: None) -> None:
     prune_seen_episodes(set())
 
     assert seen_episode_ids(10) == set()
+
+
+def test_requests_for_user_only_returns_that_user(bot_db: None) -> None:
+    record_request(discord_id=1, kind=RequestKind.MOVIE, tmdb_id=1, title="Mine", channel_id=1)
+    record_request(discord_id=2, kind=RequestKind.MOVIE, tmdb_id=2, title="Theirs", channel_id=1)
+
+    assert [r.title for r in requests_for_user(1)] == ["Mine"]
+    assert [r.title for r in requests_for_user(2)] == ["Theirs"]
+    assert requests_for_user(3) == []
+
+
+def test_requests_for_user_sorted_case_insensitively(bot_db: None) -> None:
+    for i, title in enumerate(["zulu (2020)", "Alpha (2020)", "beta (2020)"]):
+        record_request(discord_id=1, kind=RequestKind.MOVIE, tmdb_id=i, title=title, channel_id=1)
+
+    assert [r.title for r in requests_for_user(1)] == [
+        "Alpha (2020)",
+        "beta (2020)",
+        "zulu (2020)",
+    ]
+
+
+def test_requests_for_user_drops_notified_movies_keeps_series(bot_db: None) -> None:
+    record_request(discord_id=1, kind=RequestKind.MOVIE, tmdb_id=1, title="Movie", channel_id=1)
+    record_request(discord_id=1, kind=RequestKind.SERIES, tvdb_id=2, title="Show", channel_id=1)
+
+    mark_notified([r.id for r in requests_for_user(1)])
+
+    subs = requests_for_user(1)
+    assert [(r.kind, r.title) for r in subs] == [(RequestKind.SERIES, "Show")]
+    # the flag distinguishes "already announced, watching for new episodes" from
+    # "still waiting for the first download"
+    assert subs[0].notified is True
