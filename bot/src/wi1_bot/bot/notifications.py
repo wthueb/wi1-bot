@@ -87,26 +87,39 @@ def remove_request(
         return removed
 
 
+def _is_active():
+    # a movie leaves the active set once its notification lands; a series subscription
+    # stands until the user removes it
+    return (Request.kind == RequestKind.SERIES) | Request.notified_at.is_(None)
+
+
+def _to_active(row: Request) -> ActiveRequest:
+    return ActiveRequest(
+        id=row.id,
+        discord_id=row.discord_id,
+        kind=RequestKind(row.kind),
+        tmdb_id=row.tmdb_id,
+        tvdb_id=row.tvdb_id,
+        title=row.title,
+        channel_id=row.channel_id,
+        notified=row.notified_at is not None,
+    )
+
+
 def active_requests() -> list[ActiveRequest]:
     with Session(get_engine()) as session:
+        rows = session.execute(select(Request).where(_is_active())).scalars()
+        return [_to_active(r) for r in rows]
+
+
+def requests_for_user(discord_id: int) -> list[ActiveRequest]:
+    with Session(get_engine()) as session:
         rows = session.execute(
-            select(Request).where(
-                (Request.kind == RequestKind.SERIES) | Request.notified_at.is_(None)
-            )
+            select(Request).where(Request.discord_id == discord_id, _is_active())
         ).scalars()
-        return [
-            ActiveRequest(
-                id=r.id,
-                discord_id=r.discord_id,
-                kind=RequestKind(r.kind),
-                tmdb_id=r.tmdb_id,
-                tvdb_id=r.tvdb_id,
-                title=r.title,
-                channel_id=r.channel_id,
-                notified=r.notified_at is not None,
-            )
-            for r in rows
-        ]
+        # sort here rather than in SQL: sqlite orders TEXT case-sensitively, which reads
+        # as an arbitrary shuffle in a user-facing list
+        return sorted((_to_active(r) for r in rows), key=lambda r: r.title.lower())
 
 
 def mark_notified(request_ids: Iterable[int]) -> None:

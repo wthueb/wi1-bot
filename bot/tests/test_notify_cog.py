@@ -2,13 +2,16 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
+import pytest
 
 from wi1_bot.arr.episode import Episode
+from wi1_bot.bot.discord.cogs import notify as notify_cog
 from wi1_bot.bot.discord.cogs.notify import NotifyCog
 from wi1_bot.bot.models import NotifyMethod, RequestKind
 from wi1_bot.bot.notifications import (
     ActiveRequest,
     active_requests,
+    mark_notified,
     record_request,
     remove_request,
     seen_episode_ids,
@@ -403,3 +406,124 @@ def test_reconcile_prunes_seen_state_of_unsubscribed_shows(bot_db: None) -> None
     asyncio.run(cog._reconcile())
 
     assert seen_episode_ids(30) == set()
+
+
+def _ctx() -> MagicMock:
+    ctx = MagicMock()
+    ctx.author.id = 100
+    ctx.author.name = "tester"
+    return ctx
+
+
+@pytest.fixture
+def replies(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    stub = AsyncMock()
+    monkeypatch.setattr(notify_cog, "reply", stub)
+    return stub
+
+
+def _body(replies: AsyncMock) -> str:
+    call = replies.await_args
+    assert call is not None
+    return call.args[1]
+
+
+def test_subscriptions_lists_movies_and_shows(bot_db: None, replies: AsyncMock) -> None:
+    record_request(
+        discord_id=100, kind=RequestKind.MOVIE, tmdb_id=1, title="Dune (2021)", channel_id=5
+    )
+    record_request(
+        discord_id=100, kind=RequestKind.SERIES, tvdb_id=2, title="Andor (2022)", channel_id=5
+    )
+    record_request(
+        discord_id=100, kind=RequestKind.SERIES, tvdb_id=3, title="Severance (2022)", channel_id=5
+    )
+    # already-announced shows are listed the same as ones still waiting
+    mark_notified([r.id for r in active_requests() if r.tvdb_id == 3])
+
+    asyncio.run(_cog()._show_subscriptions(_ctx()))
+
+    body = _body(replies)
+    assert body == "\n".join(
+        [
+            "**movies**",
+            "- Dune (2021)",
+            "",
+            "**shows**",
+            "- Andor (2022)",
+            "- Severance (2022)",
+        ]
+    )
+
+
+def test_subscriptions_excludes_other_users(bot_db: None, replies: AsyncMock) -> None:
+    record_request(
+        discord_id=999, kind=RequestKind.MOVIE, tmdb_id=1, title="Not Yours (2021)", channel_id=5
+    )
+
+    asyncio.run(_cog()._show_subscriptions(_ctx()))
+
+    body = _body(replies)
+    assert "Not Yours" not in body
+    assert "you aren't waiting on anything" in body
+
+
+def test_subscriptions_warns_when_notifications_disabled(
+    bot_db: None, replies: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    record_request(
+        discord_id=100, kind=RequestKind.MOVIE, tmdb_id=1, title="Dune (2021)", channel_id=5
+    )
+    monkeypatch.setattr(notify_cog.config.notifications, "enabled", False)
+
+    asyncio.run(_cog()._show_subscriptions(_ctx()))
+
+    assert "notifications are disabled" in _body(replies)
+
+
+def test_bare_notify_lists_subscriptions(bot_db: None, replies: AsyncMock) -> None:
+    record_request(
+        discord_id=100, kind=RequestKind.MOVIE, tmdb_id=1, title="Dune (2021)", channel_id=5
+    )
+
+    cog = _cog()
+    cog.notify_cmd.cog = cog  # normally set when the cog is added to a bot
+    asyncio.run(cog.notify_cmd(_ctx()))
+
+    assert "- Dune (2021)" in _body(replies)
+
+
+def test_bare_notify_lists_subscriptions_when_disabled(
+    bot_db: None, replies: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # listing needs no polling, so it runs even with notifications off
+    record_request(
+        discord_id=100, kind=RequestKind.MOVIE, tmdb_id=1, title="Dune (2021)", channel_id=5
+    )
+    monkeypatch.setattr(notify_cog.config.notifications, "enabled", False)
+
+    cog = _cog()
+    cog.notify_cmd.cog = cog
+    asyncio.run(cog.notify_cmd(_ctx()))
+
+    body = _body(replies)
+    assert "- Dune (2021)" in body
+    assert "notifications are disabled" in body
+
+
+def test_notify_with_query_refused_when_disabled(
+    bot_db: None, replies: AsyncMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # subscribing would never fire, so it is still rejected
+    monkeypatch.setattr(notify_cog.config.notifications, "enabled", False)
+
+    cog = _cog()
+    cog.notify_cmd.cog = cog
+    cog.radarr.lookup_library = MagicMock()
+    asyncio.run(cog.notify_cmd(_ctx(), query="dune"))
+
+    call = replies.await_args
+    assert call is not None
+    assert call.args[1] == "notifications are disabled on this bot"
+    assert call.kwargs["error"] is True
+    cog.radarr.lookup_library.assert_not_called()
