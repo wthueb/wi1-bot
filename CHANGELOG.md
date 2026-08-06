@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.5.0](https://github.com/wthueb/wi1-bot/compare/v4.4.0...v4.5.0) (2026-08-06)
+
+
+### Features
+
+* !leaderboard command ([00d5790](https://github.com/wthueb/wi1-bot/commit/00d57901501fbca57339539cda3b23c2640e3f5e))
+* !notify command + bell-react download notifications ([4f92b42](https://github.com/wthueb/wi1-bot/commit/4f92b4298e61dcbda7fa2dbf17106fdf778e65a0))
+* !settings command for per-user preferences ([20ae37e](https://github.com/wthueb/wi1-bot/commit/20ae37ead3616fa7a04c6a144cc94c09868d15ef))
+* per-bot sqlite database with alembic migrations ([10e6cee](https://github.com/wthueb/wi1-bot/commit/10e6cee9aa0a86f006bb43200d7c36be07135c25))
+* per-episode notifications for subscribed shows ([#41](https://github.com/wthueb/wi1-bot/issues/41)) ([f843d6b](https://github.com/wthueb/wi1-bot/commit/f843d6bfe9f2ae669e240a1047fb163f6c694210))
+* view your notification subscriptions ([9356645](https://github.com/wthueb/wi1-bot/commit/9356645eeaadf7693c6813b02c9cbc7a6d8e7b18))
+
 ## [4.4.0](https://github.com/wthueb/wi1-bot/compare/v4.3.0...v4.4.0) (2026-07-31)
 
 
