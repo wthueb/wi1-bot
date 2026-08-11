@@ -490,6 +490,7 @@ class TestTranscodeFallback:
         fallback.video_params = "-c:v sw"
         fallback.audio_params = "-c:a copy"
         config = self._config(self._profile(fallback=fallback))
+        config.worker.tmp_dir = tmp_path
 
         with (
             patch.object(t_mod, "config", config),
@@ -511,13 +512,27 @@ class TestTranscodeFallback:
         fallback_params = mock_run.call_args_list[1].args[0]
         assert fallback_params.video_params == "-c:v sw"
         assert fallback_params.audio_params == "-c:a copy"
-        mock_shutil.copy.assert_called_once()
+        assert [copy_call.args[1] for copy_call in mock_shutil.copy.call_args_list] == [
+            tmp_path / "logs" / "transcoder-errors" / "The Movie.log",
+            tmp_path / "logs" / "transcoder-errors" / "The Movie-fallback.log",
+        ]
+        assert result.reason is not None
+        assert result.reason.endswith("transcoder-errors/The Movie-fallback.log")
 
-    def test_fallback_succeeds(self, transcoder: Transcoder, source_file: Path) -> None:
+    def test_fallback_succeeds_and_preserves_initial_failure_log(
+        self,
+        transcoder: Transcoder,
+        source_file: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        log_dir = tmp_path / "logs"
+        monkeypatch.setenv("WB_LOG_DIR", str(log_dir))
         fallback = MagicMock()
         fallback.video_params = "-c:v sw"
         fallback.audio_params = "-c:a copy"
         config = self._config(self._profile(fallback=fallback))
+        config.worker.tmp_dir = tmp_path
 
         with (
             patch.object(t_mod, "config", config),
@@ -538,7 +553,40 @@ class TestTranscodeFallback:
         assert result.action == "complete"
         assert result.filename is not None
         assert mock_run.call_count == 2
+        mock_shutil.copy.assert_called_once_with(
+            tmp_path / "wi1_bot.transcoder.log",
+            log_dir / "transcoder-errors" / "The Movie.log",
+        )
         mock_shutil.move.assert_called_once()
+
+    def test_retry_preserves_failure_log(
+        self,
+        transcoder: Transcoder,
+        source_file: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        log_dir = tmp_path / "logs"
+        monkeypatch.setenv("WB_LOG_DIR", str(log_dir))
+        config = self._config(self._profile())
+        config.worker.tmp_dir = tmp_path
+
+        with (
+            patch.object(t_mod, "config", config),
+            patch.object(
+                Transcoder,
+                "_run_ffmpeg",
+                return_value=(TranscodeResult.RETRY, 255, "received signal 15"),
+            ),
+            patch.object(t_mod, "shutil") as mock_shutil,
+        ):
+            result = transcoder.transcode(str(source_file), "good", None)
+
+        assert result.action == "retry"
+        mock_shutil.copy.assert_called_once_with(
+            tmp_path / "wi1_bot.transcoder.log",
+            log_dir / "transcoder-errors" / "The Movie.log",
+        )
 
     def test_resolves_languages_with_original_language(
         self, transcoder: Transcoder, source_file: Path

@@ -275,6 +275,11 @@ class Transcoder:
 
         try:
             result, status, last_output = self._run_ffmpeg(params, transcode_to, tmp_log_path)
+            failure_log_path = None
+            if result in {TranscodeResult.FAILED, TranscodeResult.RETRY}:
+                failure_log_path = self._save_failure_log(
+                    path, tmp_folder, tmp_log_path, attempt="primary"
+                )
 
             if result is TranscodeResult.FAILED and profile.fallback is not None:
                 self.logger.warning(
@@ -295,6 +300,10 @@ class Transcoder:
                 result, status, last_output = self._run_ffmpeg(
                     fallback_params, transcode_to, tmp_log_path
                 )
+                if result in {TranscodeResult.FAILED, TranscodeResult.RETRY}:
+                    failure_log_path = self._save_failure_log(
+                        path, tmp_folder, tmp_log_path, attempt="fallback"
+                    )
         except FfprobeException:
             self.logger.warning("ffprobe failed, will not retry", exc_info=True)
             return JobResult("fail", reason="ffprobe error")
@@ -306,22 +315,13 @@ class Transcoder:
             return JobResult("retry", reason=last_output or "transcode interrupted")
 
         if result is TranscodeResult.FAILED:
-            perm_log_path = tmp_folder / f"{path.stem}.log"
-
-            if log_dir_str := os.getenv("WB_LOG_DIR"):
-                log_dir = Path(log_dir_str).resolve()
-
-                perm_log_path = log_dir / "transcoder-errors" / f"{path.stem}.log"
-                perm_log_path.parent.mkdir(parents=True, exist_ok=True)
-
-            shutil.copy(tmp_log_path, perm_log_path)
+            assert failure_log_path is not None
 
             self.logger.error("ffmpeg failed", status=status, last_output=last_output)
-            self.logger.error("ffmpeg failure log saved", log_path=str(perm_log_path))
 
             return JobResult(
                 "fail",
-                reason=f"ffmpeg failed (status {status}), log: {perm_log_path}",
+                reason=f"ffmpeg failed (status {status}), log: {failure_log_path}",
                 log_tail=last_output,
             )
 
@@ -345,6 +345,23 @@ class Transcoder:
         )
 
         return JobResult("complete", filename=new_path.name)
+
+    def _save_failure_log(
+        self,
+        path: Path,
+        tmp_folder: Path,
+        tmp_log_path: Path,
+        *,
+        attempt: Literal["primary", "fallback"],
+    ) -> Path:
+        log_dir_str = os.getenv("WB_LOG_DIR")
+        log_dir = Path(log_dir_str).resolve() if log_dir_str else tmp_folder.resolve()
+        suffix = "" if attempt == "primary" else "-fallback"
+        failure_log_path = log_dir / "transcoder-errors" / f"{path.stem}{suffix}.log"
+        failure_log_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(tmp_log_path, failure_log_path)
+        self.logger.error("ffmpeg failure log saved", log_path=str(failure_log_path))
+        return failure_log_path
 
     def _run_ffmpeg(
         self,
