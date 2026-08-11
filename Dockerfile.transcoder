@@ -1,4 +1,4 @@
-FROM linuxserver/ffmpeg:latest AS base
+FROM ghcr.io/linuxserver/ffmpeg:8.1.2 AS base
 
 RUN apt-get update && apt-get install -yqq --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
 
