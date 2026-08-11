@@ -8,11 +8,12 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from structlog.contextvars import bound_contextvars, clear_contextvars
 
 from wi1_bot.arr import Radarr, Sonarr
-from wi1_bot.arr.common import ImportMode
 from wi1_bot.common import push
+from wi1_bot.webhook.autobrr import ArrTarget
+from wi1_bot.webhook.autobrr import blueprint as autobrr_blueprint
+from wi1_bot.webhook.autobrr import configure_targets as configure_autobrr_targets
 from wi1_bot.webhook.config import config
 from wi1_bot.webhook.metrics import (
-    CROSS_SCAN_OPERATIONS,
     EVENTS,
     HTTP_REQUEST_DURATION,
     HTTP_REQUESTS,
@@ -36,6 +37,20 @@ instances = [config.radarr, config.radarr4k, config.sonarr, config.sonarr4k]
 # clients used for the post-transcode rescan (Arr-native paths, no remote mapping)
 radarr = Radarr.from_config(config.radarr)
 sonarr = Sonarr.from_config(config.sonarr)
+
+autobrr_targets = [
+    ArrTarget("radarr", "radarr", radarr),
+    ArrTarget("sonarr", "sonarr", sonarr),
+]
+if config.radarr4k is not None:
+    autobrr_targets.insert(
+        1,
+        ArrTarget("radarr4k", "radarr", Radarr.from_config(config.radarr4k)),
+    )
+if config.sonarr4k is not None:
+    autobrr_targets.append(ArrTarget("sonarr4k", "sonarr", Sonarr.from_config(config.sonarr4k)))
+configure_autobrr_targets(autobrr_targets)
+app.register_blueprint(autobrr_blueprint)
 
 _KNOWN_HTTP_METHODS = frozenset({"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"})
 _EVENT_TYPES = {
@@ -135,20 +150,6 @@ def on_download(req: dict[str, Any]) -> None:
 
         path = Path(movie_folder) / relative_path
 
-        if instance is config.radarr and config.radarr4k is not None:
-            radarr4k = Radarr.from_config(config.radarr4k)
-            try:
-                if radarr4k.is_movie_monitored(movie_json["tmdbId"]):
-                    logger.info("pushing download to radarr4k")
-                    radarr4k.downloaded_movies_scan(path, import_mode=ImportMode.COPY)
-                    cross_scan_outcome = "triggered"
-                else:
-                    logger.debug("skipping 4k scan, movie not monitored in radarr4k")
-                    cross_scan_outcome = "not_monitored"
-            except Exception:
-                CROSS_SCAN_OPERATIONS.labels(target="radarr4k", outcome="error").inc()
-                raise
-            CROSS_SCAN_OPERATIONS.labels(target="radarr4k", outcome=cross_scan_outcome).inc()
     elif "series" in req:
         instance_sonarr = Sonarr.from_config(instance)
 
@@ -164,29 +165,6 @@ def on_download(req: dict[str, Any]) -> None:
 
         path = Path(series_folder) / relative_path
 
-        if instance is config.sonarr and config.sonarr4k is not None:
-            sonarr4k = Sonarr.from_config(config.sonarr4k)
-
-            tvdb_id = series_json["tvdbId"]
-            try:
-                monitored = any(
-                    sonarr4k.is_episode_monitored(
-                        tvdb_id, episode["seasonNumber"], episode["episodeNumber"]
-                    )
-                    for episode in req.get("episodes", [])
-                )
-
-                if monitored:
-                    logger.info("pushing download to sonarr4k")
-                    sonarr4k.downloaded_episodes_scan(path, import_mode=ImportMode.COPY)
-                    cross_scan_outcome = "triggered"
-                else:
-                    logger.debug("skipping 4k scan, episode not monitored in sonarr4k")
-                    cross_scan_outcome = "not_monitored"
-            except Exception:
-                CROSS_SCAN_OPERATIONS.labels(target="sonarr4k", outcome="error").inc()
-                raise
-            CROSS_SCAN_OPERATIONS.labels(target="sonarr4k", outcome=cross_scan_outcome).inc()
     else:
         raise ValueError("unknown download request")
 

@@ -76,12 +76,6 @@ RESCAN_DURATION = Histogram(
     "Time spent performing a post-transcode rescan.",
     ["target"],
 )
-CROSS_SCAN_OPERATIONS = Counter(
-    "wi1_bot_webhook_cross_scan_operations_total",
-    "Arr 4K cross-scan outcomes.",
-    ["target", "outcome"],
-)
-
 BUILD = Info("wi1_bot_webhook_build", "Webhook build information.")
 BUILD.info({"version": __version__})
 

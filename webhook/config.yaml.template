@@ -13,7 +13,7 @@ radarr:
   # radarr instance name (Settings->General->Instance Name)
   instance_name: Radarr
 
-# optional 4k radarr instance; downloads monitored here are cross-scanned
+# optional 4k radarr instance; included in Autobrr's Radarr release fan-out
 radarr4k:
   url: http://localhost:7878/radarr4k
   api_key: XXX
@@ -26,7 +26,7 @@ sonarr:
   root_folder: /full/path/shows
   instance_name: Sonarr
 
-# optional 4k sonarr instance
+# optional 4k sonarr instance; included in Autobrr's Sonarr release fan-out
 sonarr4k:
   url: http://localhost:8989/sonarr4k
   api_key: XXX

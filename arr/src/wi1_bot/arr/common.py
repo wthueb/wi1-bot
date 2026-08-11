@@ -13,12 +13,6 @@ def user_id_from_tag(label: str) -> int | None:
     return int(match.group(1)) if match is not None else None
 
 
-class ImportMode(IntEnum):
-    AUTO = 0
-    MOVE = 1
-    COPY = 2
-
-
 class MediaState(IntEnum):
     ABSENT = 0
     MONITORED = 1

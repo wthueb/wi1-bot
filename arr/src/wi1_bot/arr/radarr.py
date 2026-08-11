@@ -1,16 +1,23 @@
 from collections import defaultdict
 from collections.abc import Iterable
-from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urlparse
 
+from pyarr import PyarrBadRequest
 from pyarr import Radarr as RadarrClient
 from pyarr.types import JsonArray, JsonObject
 
 from wi1_bot.arr.config import ArrConfig
 
-from .common import Download, ImportMode, MediaState, user_id_from_tag
+from .common import Download, MediaState, user_id_from_tag
 from .movie import Movie
+from .release import (
+    ReleasePushConfigurationError,
+    ReleasePushRequest,
+    ReleasePushResult,
+    parse_release_push_bad_request,
+    validate_release_push_results,
+)
 
 __all__ = ["Movie", "Radarr"]
 
@@ -214,11 +221,28 @@ class Radarr:
         assert isinstance(credits, list)
         return credits
 
-    def is_movie_monitored(self, tmdb_id: int) -> bool:
-        movies = self._radarr.movie.get(tmdb_id=tmdb_id)
-        assert isinstance(movies, list)
-
-        return bool(movies) and bool(movies[0]["monitored"])
+    def push_release(self, release: ReleasePushRequest) -> list[ReleasePushResult]:
+        try:
+            response = self._radarr.release.handler.request(
+                "release/push",
+                method="POST",
+                json_data=release.as_arr_payload(),
+            )
+        except PyarrBadRequest as exc:
+            rejections, invalid_download_client = parse_release_push_bad_request(str(exc))
+            if invalid_download_client:
+                raise ReleasePushConfigurationError(
+                    "radarr push has invalid download client configuration"
+                ) from exc
+            return [
+                ReleasePushResult(
+                    approved=False,
+                    rejected=True,
+                    temporarilyRejected=False,
+                    rejections=rejections,
+                )
+            ]
+        return validate_release_push_results(response)
 
     def rescan_movie(self, movie_id: int) -> None:
         self._radarr.command.execute(name="RescanMovie", movieId=movie_id)
@@ -228,11 +252,6 @@ class Radarr:
 
     def search_missing(self) -> None:
         self._radarr.command.execute(name="MissingMoviesSearch")
-
-    def downloaded_movies_scan(self, path: Path, import_mode: ImportMode = ImportMode.AUTO) -> None:
-        self._radarr.command.execute(
-            name="DownloadedMoviesScan", path=str(path), importMode=import_mode
-        )
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._radarr.quality_profile.get()
