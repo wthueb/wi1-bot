@@ -36,8 +36,14 @@ ENV WB_CONFIG_PATH=/config/config.yaml
 ENV WB_LOG_DIR=/logs
 ENV WB_DB_PATH=/data/wi1_bot.db
 
-RUN mkdir -p /config /logs /data
+RUN apt-get update \
+    && apt-get install -yqq --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /config /logs /data
 
 EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:9000/health"]
 
 ENTRYPOINT ["wi1-bot-webhook"]
