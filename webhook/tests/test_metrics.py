@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 import wi1_bot.webhook.app as app_mod
 import wi1_bot.webhook.metrics as metrics_mod
 import wi1_bot.webhook.rescan as rescan_mod
-from wi1_bot.arr.common import ImportMode
 from wi1_bot.webhook.config import config
 from wi1_bot.webhook.db import get_engine
 from wi1_bot.webhook.models import TranscodeItem
@@ -295,46 +294,6 @@ def test_rescan_metrics_record_success_not_found_and_error() -> None:
     )
     assert _sample("wi1_bot_webhook_rescan_operations_total", error_labels) == error_before + 1
     assert _sample("wi1_bot_webhook_rescan_duration_seconds_count", {"target": "radarr"}) >= 2
-
-
-@pytest.mark.parametrize(
-    ("monitored", "outcome"),
-    [(True, "triggered"), (False, "not_monitored")],
-)
-def test_cross_scan_metrics_use_bounded_outcomes(monitored: bool, outcome: str) -> None:
-    movie_request = {
-        "eventType": "Download",
-        "instanceName": "Radarr",
-        "movie": {"id": 1, "folderPath": "/movies/a"},
-        "movieFile": {"relativePath": "a.mkv"},
-    }
-    mock_radarr = MagicMock()
-    mock_radarr.get_movie_by_id.return_value = {"qualityProfileId": 1, "tmdbId": 42}
-    mock_radarr.get_quality_profile_name.return_value = "good"
-    mock_radarr.is_movie_monitored.return_value = monitored
-    mock_config = MagicMock()
-    mock_config.radarr.instance_name = "Radarr"
-    mock_config.sonarr4k = None
-    labels = {"target": "radarr4k", "outcome": outcome}
-    before = _sample("wi1_bot_webhook_cross_scan_operations_total", labels)
-
-    with (
-        patch.object(app_mod, "instances", [mock_config.radarr]),
-        patch.object(app_mod, "config", mock_config),
-        patch.object(app_mod, "queue"),
-        patch.object(app_mod, "Radarr") as mock_radarr_cls,
-    ):
-        mock_radarr_cls.from_config.return_value = mock_radarr
-        app_mod.on_download(movie_request)
-
-    assert _sample("wi1_bot_webhook_cross_scan_operations_total", labels) == before + 1
-    if monitored:
-        mock_radarr.downloaded_movies_scan.assert_called_once_with(
-            config.radarr.root_folder / "a" / "a.mkv",
-            import_mode=ImportMode.COPY,
-        )
-    else:
-        mock_radarr.downloaded_movies_scan.assert_not_called()
 
 
 def test_database_metric_reports_query_failure(client: FlaskClient) -> None:

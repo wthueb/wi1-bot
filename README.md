@@ -12,7 +12,7 @@ and Docker image):
 | `common` | `wi1_bot.common` | shared logging + pushover helpers (library) |
 | `arr` | `wi1_bot.arr` | Radarr/Sonarr (pyarr) wrapper (library) |
 | `wi1-bot` | `wi1_bot.bot` | the Discord bot → image `wthueb/wi1-bot` |
-| `webhook` | `wi1_bot.webhook` | Radarr/Sonarr download webhook; owns the transcode queue and dispatches jobs → image `wthueb/wi1-bot-webhook` |
+| `webhook` | `wi1_bot.webhook` | Arr download and Autobrr proxy API; owns the transcode queue and dispatches jobs → image `wthueb/wi1-bot-webhook` |
 | `transcoder` | `wi1_bot.transcoder` | replicable ffmpeg worker that pulls jobs from the webhook → image `wthueb/wi1-bot-transcoder` |
 
 The three services all share one top-level `wi1_bot` namespace but ship as separate

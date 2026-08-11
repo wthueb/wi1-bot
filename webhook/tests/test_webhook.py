@@ -1,11 +1,9 @@
-from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 import wi1_bot.webhook.app as app_mod
-from wi1_bot.arr.common import ImportMode
 
 
 class TestOnDownload:
@@ -62,13 +60,8 @@ class TestOnDownload:
         }
         mock_radarr.get_quality_profile_name.return_value = "good"
 
-        mock_config = MagicMock()
-        mock_config.radarr4k = None
-        mock_config.sonarr4k = None
-
         with (
             patch.object(app_mod, "instances", [radarr_instance]),
-            patch.object(app_mod, "config", mock_config),
             patch.object(app_mod, "queue") as mock_queue,
             patch.object(app_mod, "Radarr") as mock_radarr_cls,
         ):
@@ -81,6 +74,7 @@ class TestOnDownload:
             quality_profile="good",
             original_language="English",
         )
+        mock_radarr_cls.from_config.assert_called_once_with(radarr_instance)
 
     def test_movie_passes_original_language(
         self, radarr_instance: MagicMock, movie_download_request: dict[str, Any]
@@ -92,13 +86,8 @@ class TestOnDownload:
         }
         mock_radarr.get_quality_profile_name.return_value = "good"
 
-        mock_config = MagicMock()
-        mock_config.radarr4k = None
-        mock_config.sonarr4k = None
-
         with (
             patch.object(app_mod, "instances", [radarr_instance]),
-            patch.object(app_mod, "config", mock_config),
             patch.object(app_mod, "queue") as mock_queue,
             patch.object(app_mod, "Radarr") as mock_radarr_cls,
         ):
@@ -114,13 +103,8 @@ class TestOnDownload:
         mock_sonarr.get_series_by_id.return_value = {"qualityProfileId": 1}
         mock_sonarr.get_quality_profile_name.return_value = "good"
 
-        mock_config = MagicMock()
-        mock_config.radarr4k = None
-        mock_config.sonarr4k = None
-
         with (
             patch.object(app_mod, "instances", [sonarr_instance]),
-            patch.object(app_mod, "config", mock_config),
             patch.object(app_mod, "queue") as mock_queue,
             patch.object(app_mod, "Sonarr") as mock_sonarr_cls,
         ):
@@ -132,78 +116,7 @@ class TestOnDownload:
             quality_profile="good",
             original_language=None,
         )
-
-    def test_movie_triggers_4k_scan(self, movie_download_request: dict[str, Any]) -> None:
-        mock_radarr = MagicMock()
-        mock_radarr.get_movie_by_id.return_value = {"qualityProfileId": 1, "tmdbId": 603}
-        mock_radarr.get_quality_profile_name.return_value = "good"
-        mock_radarr.is_movie_monitored.return_value = True
-
-        mock_config = MagicMock()
-        mock_config.sonarr4k = None
-        # the matched instance must be config.radarr itself for the 4k scan to fire
-        mock_config.radarr.instance_name = "Radarr"
-
-        with (
-            patch.object(app_mod, "instances", [mock_config.radarr]),
-            patch.object(app_mod, "config", mock_config),
-            patch.object(app_mod, "queue"),
-            patch.object(app_mod, "Radarr") as mock_radarr_cls,
-        ):
-            mock_radarr_cls.from_config.return_value = mock_radarr
-            app_mod.on_download(movie_download_request)
-
-        mock_radarr.is_movie_monitored.assert_called_once_with(603)
-        mock_radarr.downloaded_movies_scan.assert_called_once_with(
-            Path("/movies/The Matrix (1999)/The Matrix (1999).mkv"), import_mode=ImportMode.COPY
-        )
-
-    def test_movie_skips_4k_scan_when_not_monitored(
-        self, movie_download_request: dict[str, Any]
-    ) -> None:
-        mock_radarr = MagicMock()
-        mock_radarr.get_movie_by_id.return_value = {"qualityProfileId": 1, "tmdbId": 603}
-        mock_radarr.get_quality_profile_name.return_value = "good"
-        mock_radarr.is_movie_monitored.return_value = False
-
-        mock_config = MagicMock()
-        mock_config.sonarr4k = None
-        mock_config.radarr.instance_name = "Radarr"
-
-        with (
-            patch.object(app_mod, "instances", [mock_config.radarr]),
-            patch.object(app_mod, "config", mock_config),
-            patch.object(app_mod, "queue"),
-            patch.object(app_mod, "Radarr") as mock_radarr_cls,
-        ):
-            mock_radarr_cls.from_config.return_value = mock_radarr
-            app_mod.on_download(movie_download_request)
-
-        mock_radarr.downloaded_movies_scan.assert_not_called()
-
-    def test_series_triggers_4k_scan(self, series_download_request: dict[str, Any]) -> None:
-        mock_sonarr = MagicMock()
-        mock_sonarr.get_series_by_id.return_value = {"qualityProfileId": 1, "tvdbId": 121361}
-        mock_sonarr.get_quality_profile_name.return_value = "good"
-        mock_sonarr.is_episode_monitored.return_value = True
-
-        mock_config = MagicMock()
-        mock_config.radarr4k = None
-        mock_config.sonarr.instance_name = "Sonarr"
-
-        with (
-            patch.object(app_mod, "instances", [mock_config.sonarr]),
-            patch.object(app_mod, "config", mock_config),
-            patch.object(app_mod, "queue"),
-            patch.object(app_mod, "Sonarr") as mock_sonarr_cls,
-        ):
-            mock_sonarr_cls.from_config.return_value = mock_sonarr
-            app_mod.on_download(series_download_request)
-
-        mock_sonarr.is_episode_monitored.assert_called_once_with(121361, 1, 1)
-        mock_sonarr.downloaded_episodes_scan.assert_called_once_with(
-            Path("/tv/Game of Thrones/Season 01/S01E01.mkv"), import_mode=ImportMode.COPY
-        )
+        mock_sonarr_cls.from_config.assert_called_once_with(sonarr_instance)
 
     def test_unknown_instance(self) -> None:
         request = {"eventType": "Download", "instanceName": "Nonexistent", "isUpgrade": False}

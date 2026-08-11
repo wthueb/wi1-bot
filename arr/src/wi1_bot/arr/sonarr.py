@@ -1,16 +1,23 @@
 from collections import defaultdict
 from collections.abc import Iterable
-from pathlib import Path
 from shutil import rmtree
 from urllib.parse import urlparse
 
+from pyarr import PyarrBadRequest
 from pyarr import Sonarr as SonarrClient
 from pyarr.types import JsonArray, JsonObject
 
 from wi1_bot.arr.config import ArrConfig
 
-from .common import Download, ImportMode, MediaState, user_id_from_tag
+from .common import Download, MediaState, user_id_from_tag
 from .episode import Episode
+from .release import (
+    ReleasePushConfigurationError,
+    ReleasePushRequest,
+    ReleasePushResult,
+    parse_release_push_bad_request,
+    validate_release_push_results,
+)
 
 
 class Series:
@@ -311,34 +318,31 @@ class Sonarr:
         assert isinstance(series, dict)
         return series
 
-    def is_episode_monitored(self, tvdb_id: int, season_number: int, episode_number: int) -> bool:
-        series = self._sonarr.series.get(item_id=tvdb_id, tvdb=True)
-        assert isinstance(series, list)
-
-        if not series:
-            return False
-
-        episodes = self._sonarr.episode.get(series_id=series[0]["id"])
-        assert isinstance(episodes, list)
-
-        for episode in episodes:
-            if (
-                episode["seasonNumber"] == season_number
-                and episode["episodeNumber"] == episode_number
-            ):
-                return bool(episode["monitored"])
-
-        return False
+    def push_release(self, release: ReleasePushRequest) -> list[ReleasePushResult]:
+        try:
+            response = self._sonarr.release.handler.request(
+                "release/push",
+                method="POST",
+                json_data=release.as_arr_payload(),
+            )
+        except PyarrBadRequest as exc:
+            rejections, invalid_download_client = parse_release_push_bad_request(str(exc))
+            if invalid_download_client:
+                raise ReleasePushConfigurationError(
+                    "sonarr push has invalid download client configuration"
+                ) from exc
+            return [
+                ReleasePushResult(
+                    approved=False,
+                    rejected=True,
+                    temporarilyRejected=False,
+                    rejections=rejections,
+                )
+            ]
+        return validate_release_push_results(response)
 
     def rescan_series(self, series_id: int) -> None:
         self._sonarr.command.execute(name="RescanSeries", seriesId=series_id)
-
-    def downloaded_episodes_scan(
-        self, path: Path, import_mode: ImportMode = ImportMode.AUTO
-    ) -> None:
-        self._sonarr.command.execute(
-            name="DownloadedEpisodesScan", path=str(path), importMode=import_mode
-        )
 
     def _get_quality_profile_id(self, name: str) -> int:
         profiles = self._sonarr.quality_profile.get()
