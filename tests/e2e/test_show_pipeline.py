@@ -18,17 +18,31 @@ TIMEOUT = 240.0
 POLL = 3.0
 
 
-def _has_transcoded_file(sonarr: Sonarr, series_id: int) -> bool:
-    """Whether any of the series' episode files is a transcoded one."""
-    # pyarr returns loosely-typed JSON here, hence Any
-    files: Any = sonarr._sonarr.episode_file.get(series_id=series_id)
-    return any("TRANSCODED" in f.get("relativePath", "") for f in files)
+def _episode_file_relpath(
+    sonarr: Sonarr,
+    series_id: int,
+    season_number: int,
+    episode_number: int,
+) -> str | None:
+    """Return one episode's current file path without relying on other series files."""
+    episodes: Any = sonarr._sonarr.episode.get(series_id=series_id)
+    episode = next(
+        ep
+        for ep in episodes
+        if ep.get("seasonNumber") == season_number and ep.get("episodeNumber") == episode_number
+    )
+    file_id = int(episode.get("episodeFileId", 0))
+    if file_id == 0:
+        return None
+
+    episode_file: Any = sonarr._sonarr.episode_file.get(item_id=file_id)
+    return str(episode_file.get("relativePath", ""))
 
 
 @pytest.mark.e2e
 def test_episode_transcode_pipeline(sonarr: Sonarr, series_id: int, series_scan_path: str) -> None:
-    # the seeded series starts with no episode files
-    assert sonarr.get_series_by_id(series_id)["statistics"]["episodeFileCount"] == 0
+    # S01E01 starts with no file; other e2e tests may independently use S01E02
+    assert _episode_file_relpath(sonarr, series_id, 1, 1) is None
 
     # simulate a completed download: Sonarr copies the blacked-out file into the library
     # (from the read-only /fixtures mount) and fires its On Import webhook
@@ -38,7 +52,8 @@ def test_episode_transcode_pipeline(sonarr: Sonarr, series_id: int, series_scan_
 
     deadline = time.monotonic() + TIMEOUT
     while time.monotonic() < deadline:
-        if _has_transcoded_file(sonarr, series_id):
+        relpath = _episode_file_relpath(sonarr, series_id, 1, 1)
+        if relpath is not None and "TRANSCODED" in relpath:
             return
         time.sleep(POLL)
 

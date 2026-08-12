@@ -59,9 +59,15 @@ _EPISODE_LOOPS = 179  # ~15 min
 # downloads named so each *arr's filename parser matches the seeded library item on scan
 _MOVIE_DOWNLOAD_REL = Path("downloads/Big Buck Bunny (2008)/Big Buck Bunny (2008) Bluray-1080p.mkv")
 _EPISODE_DOWNLOAD_REL = Path(f"tv/{SERIES_TITLE}/{SERIES_TITLE} - S01E01 Bluray-1080p.mkv")
+_CF_HIGH_REL = Path(
+    f"custom-format/high/{SERIES_TITLE}/{SERIES_TITLE} - S01E02 Bluray-1080p E2EHIGH.mkv"
+)
+_CF_LOW_REL = Path(f"custom-format/low/{SERIES_TITLE}.S01E02.Bluray-1080p.E2ELOW.mkv")
 # scan paths INSIDE the containers (E2E_FIXTURES_DIR is mounted at /fixtures)
 MOVIE_SCAN_PATH = "/fixtures/downloads/Big Buck Bunny (2008)"
 SERIES_SCAN_PATH = f"/fixtures/tv/{SERIES_TITLE}"
+CF_HIGH_SCAN_PATH = f"/fixtures/custom-format/high/{SERIES_TITLE}"
+CF_LOW_SOURCE_PATH = f"/fixtures/{_CF_LOW_REL}"
 
 
 @pytest.fixture(autouse=True)
@@ -113,11 +119,15 @@ def e2e_env() -> Generator[dict[str, str], None, None]:
     shutil.copytree(_SEED_SONARR, sonarr_config)
 
     fixtures = work / "fixtures"
-    for out_name, loops, rel in (
-        ("movie.mkv", _MOVIE_LOOPS, _MOVIE_DOWNLOAD_REL),
-        ("episode.mkv", _EPISODE_LOOPS, _EPISODE_DOWNLOAD_REL),
-    ):
+    for out_name, loops in (("movie.mkv", _MOVIE_LOOPS), ("episode.mkv", _EPISODE_LOOPS)):
         _loop_clip(work, out_name, loops)
+
+    for out_name, rel in (
+        ("movie.mkv", _MOVIE_DOWNLOAD_REL),
+        ("episode.mkv", _EPISODE_DOWNLOAD_REL),
+        ("episode.mkv", _CF_HIGH_REL),
+        ("episode.mkv", _CF_LOW_REL),
+    ):
         dest = fixtures / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(work / out_name, dest)
@@ -192,6 +202,41 @@ def sonarr(services: dict[str, str]) -> Sonarr:
     return Sonarr(services["sonarr_url"], API_KEY)
 
 
+def _configure_usenet_blackhole(arr_url: str, folder: str) -> None:
+    headers = {"X-Api-Key": API_KEY}
+    schema_response = requests.get(
+        f"{arr_url}/api/v3/downloadclient/schema",
+        headers=headers,
+        timeout=30,
+    )
+    schema_response.raise_for_status()
+    schemas: Any = schema_response.json()
+    blackhole = next(
+        schema for schema in schemas if schema.get("implementation") == "UsenetBlackhole"
+    )
+    blackhole["name"] = "e2e-usenet-blackhole"
+    blackhole["enable"] = True
+    for field in blackhole["fields"]:
+        if field.get("name") == "nzbFolder":
+            field["value"] = f"{folder}/nzb"
+        elif field.get("name") == "watchFolder":
+            field["value"] = f"{folder}/watch"
+
+    create_response = requests.post(
+        f"{arr_url}/api/v3/downloadclient",
+        headers=headers,
+        json=blackhole,
+        timeout=30,
+    )
+    create_response.raise_for_status()
+
+
+@pytest.fixture(scope="session")
+def usenet_blackhole_clients(services: dict[str, str]) -> None:
+    for kind in ("radarr", "sonarr"):
+        _configure_usenet_blackhole(services[f"{kind}_url"], f"/media/blackhole/{kind}")
+
+
 @pytest.fixture(scope="session")
 def movie_id(radarr: Radarr) -> int:
     movies = radarr.get_movies()
@@ -216,6 +261,14 @@ def movie_scan_path() -> str:
 @pytest.fixture(scope="session")
 def series_scan_path() -> str:
     return SERIES_SCAN_PATH
+
+
+@pytest.fixture(scope="session")
+def custom_format_paths() -> dict[str, str]:
+    return {
+        "high_scan": CF_HIGH_SCAN_PATH,
+        "low_source": CF_LOW_SOURCE_PATH,
+    }
 
 
 @pytest.hookimpl(hookwrapper=True)

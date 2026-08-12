@@ -43,6 +43,12 @@ webhook:
   # duration is heartbeat * (missed_heartbeats + 0.5), the extra half-interval leaving
   # room for the last heartbeat to arrive (default 3, i.e. a 420s lease)
   missed_heartbeats: 3
+  queue_cleanup:
+    # opt in to resolving completed downloads that Arr rejects because they are custom
+    # format downgrades (default false)
+    enabled: false
+    # seconds between Radarr/Sonarr queue scans (default 60)
+    poll_interval: 60
 
 # pushover settings, optional (used for transcode failure notifications)
 pushover:

@@ -1,48 +1,9 @@
 """End-to-end tests for Autobrr release pushes through the webhook Arr facade."""
 
-from collections.abc import Generator
 from typing import Any
 
 import pytest
 import requests
-
-# Must match the committed Arr seeds and the webhook e2e configuration.
-_ARR_HEADERS = {"X-Api-Key": "0123456789abcdef0123456789abcdef"}
-
-
-def _configure_usenet_blackhole(arr_url: str, folder: str) -> None:
-    schema_response = requests.get(
-        f"{arr_url}/api/v3/downloadclient/schema",
-        headers=_ARR_HEADERS,
-        timeout=30,
-    )
-    schema_response.raise_for_status()
-    schemas: Any = schema_response.json()
-    blackhole = next(
-        schema for schema in schemas if schema.get("implementation") == "UsenetBlackhole"
-    )
-    blackhole["name"] = "e2e-usenet-blackhole"
-    blackhole["enable"] = True
-    for field in blackhole["fields"]:
-        if field.get("name") == "nzbFolder":
-            field["value"] = f"{folder}/nzb"
-        elif field.get("name") == "watchFolder":
-            field["value"] = f"{folder}/watch"
-
-    create_response = requests.post(
-        f"{arr_url}/api/v3/downloadclient",
-        headers=_ARR_HEADERS,
-        json=blackhole,
-        timeout=30,
-    )
-    create_response.raise_for_status()
-
-
-@pytest.fixture(scope="session")
-def autobrr_download_clients(services: dict[str, str]) -> Generator[None, None, None]:
-    for kind in ("radarr", "sonarr"):
-        _configure_usenet_blackhole(services[f"{kind}_url"], f"/media/blackhole/{kind}")
-    yield
 
 
 def _push(services: dict[str, str], kind: str, title: str) -> requests.Response:
@@ -72,7 +33,7 @@ def _push(services: dict[str, str], kind: str, title: str) -> requests.Response:
 )
 def test_autobrr_release_push_is_approved_by_real_arr(
     services: dict[str, str],
-    autobrr_download_clients: None,
+    usenet_blackhole_clients: None,
     kind: str,
     title: str,
 ) -> None:
