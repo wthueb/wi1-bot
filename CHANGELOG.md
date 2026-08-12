@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.7.0](https://github.com/wthueb/wi1-bot/compare/v4.6.0...v4.7.0) (2026-08-12)
+
+
+### Features
+
+* automatically ignore custom format downgrades ([aa23cea](https://github.com/wthueb/wi1-bot/commit/aa23cea20beac223ab5503811875aee27e58f6c3))
+
 ## [4.6.0](https://github.com/wthueb/wi1-bot/compare/v4.5.0...v4.6.0) (2026-08-12)
 
 
