@@ -220,7 +220,7 @@ def _push(kind: TargetKind) -> PushResponse:
 
         for target in targets:
             with bound_contextvars(target=target.name):
-                logger.info("autobrr release push started")
+                logger.debug("autobrr release push started")
                 try:
                     responses = target.client.push_release(target_release)
                     if not responses:
@@ -239,7 +239,7 @@ def _push(kind: TargetKind) -> PushResponse:
                 for result_index, response in enumerate(responses):
                     outcome = _push_outcome(response)
                     target_outcomes.append(outcome)
-                    logger.info(
+                    logger.debug(
                         "autobrr release push result received",
                         result_index=result_index,
                         outcome=outcome,
@@ -295,7 +295,7 @@ def _push(kind: TargetKind) -> PushResponse:
             ),
             rejections=rejection_reasons,
         )
-        logger.info(
+        logger.debug(
             "autobrr release fan-out rejected",
             rejected_targets=[target.name for target, _result in rejected_results],
             rejection_reasons=rejection_reasons,

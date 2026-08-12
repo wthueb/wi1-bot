@@ -20,6 +20,9 @@ class CapturingLogger:
     def info(self, event: str, **context: object) -> None:
         self._record("info", event, context)
 
+    def debug(self, event: str, **context: object) -> None:
+        self._record("debug", event, context)
+
     def warning(self, event: str, **context: object) -> None:
         self._record("warning", event, context)
 
@@ -321,6 +324,7 @@ def test_any_approval_wins_and_pushes_only_to_requested_kind(
             "outcomes": {pushed[0]: ["approved"], pushed[1]: ["rejected"]},
         },
     )
+    assert [level for level, _event, _context in audit_logger.records].count("info") == 1
 
 
 def test_all_rejections_are_combined_and_secrets_are_redacted(
@@ -354,6 +358,11 @@ def test_all_rejections_are_combined_and_secrets_are_redacted(
     ]
     assert "passkey=secret" not in response.get_data(as_text=True)
     assert "passkey=secret" not in repr(audit_logger.records)
+    assert not any(level == "info" for level, _event, _context in audit_logger.records)
+    assert audit_logger.records[-1][0:2] == (
+        "debug",
+        "autobrr release fan-out rejected",
+    )
 
 
 def test_mixed_permanent_and_temporary_rejections_are_not_temporary(
@@ -409,6 +418,11 @@ def test_approval_wins_even_when_another_target_fails(
     assert response.status_code == 200
     assert response.get_json()[0]["approved"] is True
     assert audit_logger.records[-1][2]["failed_targets"] == ["radarr4k"]
+    assert any(
+        level == "warning" and event == "autobrr release push failed"
+        for level, event, _context in audit_logger.records
+    )
+    assert [level for level, _event, _context in audit_logger.records].count("info") == 1
     assert "passkey=secret" not in repr(audit_logger.records)
 
 
