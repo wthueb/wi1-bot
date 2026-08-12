@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.6.0](https://github.com/wthueb/wi1-bot/compare/v4.5.0...v4.6.0) (2026-08-12)
+
+
+### Features
+
+* proxy autobrr pushes ([672af72](https://github.com/wthueb/wi1-bot/commit/672af7207bf2f28ca9f8e09e09bda851ffaab98e))
+* wi1-bot-webhook docker healthcheck ([95551bb](https://github.com/wthueb/wi1-bot/commit/95551bbdff3c6f8e226a98c93468d7c2162c14df))
+
+
+### Bug Fixes
+
+* pin linuxserver/ffmpeg to 8.1.2 ([9d01c44](https://github.com/wthueb/wi1-bot/commit/9d01c4412e69cdbadfc68fc6d26943237762493d))
+* save transcoder logs on all failures ([ebf0724](https://github.com/wthueb/wi1-bot/commit/ebf0724d438807a68b91bcd4b3c8b256f1a7f7b4))
+
 ## [4.5.0](https://github.com/wthueb/wi1-bot/compare/v4.4.0...v4.5.0) (2026-08-06)
 
 
