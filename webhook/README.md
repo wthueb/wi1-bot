@@ -5,6 +5,25 @@ Part of the wi1-bot workspace. See the repo root README.
 The service exposes Prometheus metrics, including HTTP, Arr event, transcode queue,
 worker lifecycle, and rescan metrics, at `GET /metrics`.
 
+## Custom-format downgrade cleanup
+
+The webhook can poll every configured Radarr and Sonarr instance for completed downloads
+that require manual interaction because they are no longer custom-format upgrades. Enable
+the worker in `webhook/config.yaml`:
+
+```yaml
+webhook:
+  queue_cleanup:
+    enabled: true
+    poll_interval: 60
+```
+
+For torrents, cleanup makes Arr ignore the queue item but leaves the torrent and its data
+in the download client so it can satisfy seed requirements. For usenet, cleanup removes
+the item from both Arr and the download client, including its downloaded content. Neither
+action blocklists the release or starts a replacement search. Other import warnings and
+ordinary quality or revision downgrades are left for manual review.
+
 ## Autobrr Arr façade
 
 The webhook presents the small part of the Radarr and Sonarr APIs used by Autobrr's

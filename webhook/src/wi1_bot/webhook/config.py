@@ -13,6 +13,18 @@ class GeneralConfig(BaseModel):
     )
 
 
+class QueueCleanupConfig(BaseModel):
+    enabled: bool = Field(
+        default=False,
+        description="Whether to remove completed custom-format downgrade downloads",
+    )
+    poll_interval: float = Field(
+        default=60,
+        gt=0,
+        description="Seconds between Arr download queue cleanup scans",
+    )
+
+
 class WebhookConfig(BaseModel):
     port: int = Field(default=9000, gt=0, description="Port for the webhook/job API")
     heartbeat: float = Field(
@@ -31,6 +43,7 @@ class WebhookConfig(BaseModel):
             " reclaim it; the lease is heartbeat * (missed_heartbeats + 0.5) seconds"
         ),
     )
+    queue_cleanup: QueueCleanupConfig = Field(default_factory=QueueCleanupConfig)
 
     @property
     def lease_secs(self) -> float:

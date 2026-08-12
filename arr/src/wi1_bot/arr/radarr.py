@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from shutil import rmtree
 from urllib.parse import urlparse
 
-from pyarr import PyarrBadRequest
+from pyarr import PyarrBadRequest, PyarrResourceNotFound
 from pyarr import Radarr as RadarrClient
 from pyarr.types import JsonArray, JsonObject
 
@@ -11,6 +11,7 @@ from wi1_bot.arr.config import ArrConfig
 
 from .common import Download, MediaState, user_id_from_tag
 from .movie import Movie
+from .queue import ArrQueueItem, ArrQueueItemNotFound, ArrQueuePage
 from .release import (
     ReleasePushConfigurationError,
     ReleasePushRequest,
@@ -158,6 +159,35 @@ class Radarr:
         downloads = [Download(d) for d in records]
 
         return sorted(downloads, key=lambda d: (d.timeleft, -d.pct_done))
+
+    def get_queue_items(self, page_size: int = 100) -> list[ArrQueueItem]:
+        items: list[ArrQueueItem] = []
+        page_number = 1
+
+        while True:
+            response = self._radarr.queue.get(page=page_number, page_size=page_size)
+            page = ArrQueuePage.model_validate(response)
+            items.extend(page.records)
+
+            if not page.records:
+                break
+            if page.total_records is not None and len(items) >= page.total_records:
+                break
+            if len(page.records) < page_size:
+                break
+            page_number += 1
+
+        return items
+
+    def remove_queue_item(self, item_id: int, *, remove_from_client: bool) -> None:
+        try:
+            self._radarr.queue.delete(
+                item_id,
+                remove_from_client=remove_from_client,
+                blocklist=False,
+            )
+        except PyarrResourceNotFound as exc:
+            raise ArrQueueItemNotFound(item_id) from exc
 
     def get_quota_amount(self, user_id: int) -> int:
         return self.get_quota_amounts([user_id])[user_id]

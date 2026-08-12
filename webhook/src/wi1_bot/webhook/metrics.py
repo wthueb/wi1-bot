@@ -35,6 +35,17 @@ EVENTS = Counter(
     ["event_type", "source", "outcome"],
 )
 
+QUEUE_CLEANUP_POLLS = Counter(
+    "wi1_bot_webhook_queue_cleanup_polls_total",
+    "Arr download queue cleanup polls.",
+    ["target", "outcome"],
+)
+QUEUE_CLEANUP_ITEMS = Counter(
+    "wi1_bot_webhook_queue_cleanup_items_total",
+    "Custom-format downgrade queue cleanup outcomes.",
+    ["target", "protocol", "outcome"],
+)
+
 JOB_CLAIMS = Counter(
     "wi1_bot_webhook_job_claims_total",
     "Transcode jobs claimed by workers.",

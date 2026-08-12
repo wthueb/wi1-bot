@@ -22,3 +22,6 @@ webhook:
   # short heartbeat/lease so the transcode loop completes quickly under test
   heartbeat: 10
   missed_heartbeats: 3
+  queue_cleanup:
+    enabled: true
+    poll_interval: 1
