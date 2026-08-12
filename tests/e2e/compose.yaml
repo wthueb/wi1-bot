@@ -4,8 +4,8 @@
 #
 # The webhook and transcoder services carry both `image:` and `build:` so this single
 # file works everywhere: locally `docker compose up` builds the image if the :e2e tag
-# is missing, while in CI the e2e job pre-builds the :e2e tags from the shared GHA
-# layer cache so the same `up` reuses them without rebuilding.
+# is missing, while CI loads the exact build artifacts selected for the test before
+# Compose starts the stack.
 
 services:
   # create the Radarr/Sonarr root folders inside the shared volume before they boot

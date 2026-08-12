@@ -46,6 +46,12 @@ from the default `uv run pytest`; run them with `uv run pytest -m e2e`. See
 [`tests/e2e/seed/README.md`](tests/e2e/seed/README.md) for the *arr fixtures and how to
 regenerate them.
 
+CI runs the Python checks before building containers. Container builds are distributed
+across native amd64 and arm64 runners; pull requests and manual runs exercise the exact
+amd64 webhook/transcoder images in the end-to-end suite. Successful branch, internal-PR,
+and version-tag runs assemble those immutable platform results into multi-platform images
+on Docker Hub and GHCR without rebuilding them.
+
 ### TODO
 
 - use seerr for search/requests
