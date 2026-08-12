@@ -142,8 +142,8 @@ def docker_compose_file(e2e_env: dict[str, str]) -> str:
 
 @pytest.fixture(scope="session")
 def docker_setup() -> list[str]:
-    # no --build: compose builds the :e2e images only when missing (local dev), and
-    # reuses the CI-prebuilt ones otherwise
+    # no --build: compose builds the :e2e images only when missing locally and reuses
+    # the exact CI build artifacts when the workflow has loaded them
     return ["up -d"]
 
 

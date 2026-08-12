@@ -8,13 +8,80 @@ on:
     tags:
       - 'v*'
   pull_request: {}
+  workflow_dispatch: {}
 
 permissions:
-  packages: write
   contents: read
 
+concurrency:
+  group: >-
+    ${{
+      format(
+        'ci-{0}-{1}-{2}',
+        github.event_name,
+        github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name
+          || github.repository,
+        github.event_name == 'workflow_dispatch'
+          && github.run_id
+          || github.head_ref
+          || github.ref_name
+      )
+    }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
 jobs:
-  test:
+  route:
+    name: Route event
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      publish: ${{ steps.route.outputs.publish }}
+      run: ${{ steps.route.outputs.run }}
+
+    steps:
+      - name: Select pipeline
+        id: route
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const isPullRequest = context.eventName === "pull_request";
+            const isManual = context.eventName === "workflow_dispatch";
+            const isBranchPush = context.eventName === "push"
+              && context.ref.startsWith("refs/heads/");
+            const isInternalPullRequest = isPullRequest
+              && context.payload.pull_request.head.repo?.full_name
+                === context.payload.repository.full_name
+              && context.actor !== "dependabot[bot]";
+
+            let run = true;
+            if (isBranchPush) {
+              const branch = context.ref.slice("refs/heads/".length);
+              const pulls = await github.paginate(
+                github.rest.pulls.list,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head: `${context.repo.owner}:${branch}`,
+                  state: "open",
+                  per_page: 100,
+                },
+              );
+              run = !pulls.some((pull) =>
+                pull.head.repo?.full_name === context.payload.repository.full_name
+                && pull.head.ref === branch
+              );
+            }
+
+            core.setOutput("run", String(run));
+            core.setOutput("publish", String(!isManual && (!isPullRequest || isInternalPullRequest)));
+
+  python:
+    name: Python checks
+    if: needs.route.outputs.run == 'true'
+    needs: route
     runs-on: ubuntu-latest
 
     steps:
@@ -44,50 +111,118 @@ jobs:
       - name: Run tests
         run: uv run pytest
 
-  # build all three images (multi-arch) and warm the shared layer cache, but publish
-  # nothing yet; the e2e job validates the real images before docker-push pushes them
-  docker-build:
-    needs: test
-    runs-on: ubuntu-latest
+  build_e2e_images:
+    name: Build ${{ matrix.service }} (${{ matrix.platform_key }})
+    if: needs.route.outputs.run == 'true'
+    needs:
+      - route
+      - python
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: webhook
+            image: wi1-bot-webhook
+            dockerfile: Dockerfile.webhook
+            description: Radarr/Sonarr download webhook and transcode job server for wi1-bot
+            platform: linux/amd64
+            platform_key: amd64
+            runner: ubuntu-24.04
+          - service: transcoder
+            image: wi1-bot-transcoder
+            dockerfile: Dockerfile.transcoder
+            description: Replicable ffmpeg transcode worker for wi1-bot
+            platform: linux/amd64
+            platform_key: amd64
+            runner: ubuntu-24.04
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      service: ${{ matrix.service }}
+      image: ${{ matrix.image }}
+      dockerfile: ${{ matrix.dockerfile }}
+      description: ${{ matrix.description }}
+      platform: ${{ matrix.platform }}
+      platform_key: ${{ matrix.platform_key }}
+      runner: ${{ matrix.runner }}
+      publish: ${{ needs.route.outputs.publish == 'true' }}
+      export_e2e: true
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
+  build_remaining_images:
+    name: Build ${{ matrix.service }} (${{ matrix.platform_key }})
+    if: needs.route.outputs.run == 'true'
+    needs:
+      - route
+      - python
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - service: bot
+            image: wi1-bot
             dockerfile: Dockerfile.bot
+            description: Discord bot for Radarr/Sonarr integration
+            platform: linux/amd64
+            platform_key: amd64
+            runner: ubuntu-24.04
+          - service: bot
+            image: wi1-bot
+            dockerfile: Dockerfile.bot
+            description: Discord bot for Radarr/Sonarr integration
+            platform: linux/arm64
+            platform_key: arm64
+            runner: ubuntu-24.04-arm
           - service: webhook
+            image: wi1-bot-webhook
             dockerfile: Dockerfile.webhook
+            description: Radarr/Sonarr download webhook and transcode job server for wi1-bot
+            platform: linux/arm64
+            platform_key: arm64
+            runner: ubuntu-24.04-arm
           - service: transcoder
+            image: wi1-bot-transcoder
             dockerfile: Dockerfile.transcoder
+            description: Replicable ffmpeg transcode worker for wi1-bot
+            platform: linux/arm64
+            platform_key: arm64
+            runner: ubuntu-24.04-arm
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      service: ${{ matrix.service }}
+      image: ${{ matrix.image }}
+      dockerfile: ${{ matrix.dockerfile }}
+      description: ${{ matrix.description }}
+      platform: ${{ matrix.platform }}
+      platform_key: ${{ matrix.platform_key }}
+      runner: ${{ matrix.runner }}
+      publish: ${{ needs.route.outputs.publish == 'true' }}
+      export_e2e: false
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build (no push)
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          push: false
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-
-  # run the end-to-end transcoding pipeline against real containers. Reuses the layers
-  # docker-build cached (so the amd64 builds below are cache hits, not rebuilds).
   e2e:
-    needs: docker-build
-    runs-on: ubuntu-latest
+    name: End-to-end tests
+    if: >-
+      ${{
+        needs.route.outputs.run == 'true' &&
+        (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+      }}
+    needs:
+      - route
+      - python
+      - build_e2e_images
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout
@@ -101,87 +236,140 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build webhook image (amd64, from cache)
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: Dockerfile.webhook
-          platforms: linux/amd64
-          load: true
-          tags: wi1-bot-webhook:e2e
-          cache-from: type=gha,scope=webhook
-
-      - name: Build transcoder image (amd64, from cache)
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: Dockerfile.transcoder
-          platforms: linux/amd64
-          load: true
-          tags: wi1-bot-transcoder:e2e
-          cache-from: type=gha,scope=transcoder
-
-      - name: Run e2e tests
-        run: uv run --locked pytest -m e2e -v
-
-  # publish the images only after e2e passes; every layer is a cache hit from
-  # docker-build, so this just assembles the manifests and pushes them
-  docker-push:
-    needs: e2e
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: bot
-            image: wi1-bot
-            dockerfile: Dockerfile.bot
-            description: Discord bot for Radarr/Sonarr integration
-          - service: webhook
-            image: wi1-bot-webhook
-            dockerfile: Dockerfile.webhook
-            description: Radarr/Sonarr download webhook and transcode job server for wi1-bot
-          - service: transcoder
-            image: wi1-bot-transcoder
-            dockerfile: Dockerfile.transcoder
-            description: Replicable ffmpeg transcode worker for wi1-bot
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Login to Docker Hub
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: docker/login-action@v4
-        with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      - name: Log in to GitHub Container Registry
+        if: needs.route.outputs.publish == 'true'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+      - name: Download webhook digest
+        if: needs.route.outputs.publish == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: webhook-amd64-digest
+          path: ${{ runner.temp }}/digests/webhook
+
+      - name: Download transcoder digest
+        if: needs.route.outputs.publish == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: transcoder-amd64-digest
+          path: ${{ runner.temp }}/digests/transcoder
+
+      - name: Load images from registry digests
+        if: needs.route.outputs.publish == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          webhook_digest="sha256:$(basename "$(find "${RUNNER_TEMP}/digests/webhook" -type f -print -quit)")"
+          transcoder_digest="sha256:$(basename "$(find "${RUNNER_TEMP}/digests/transcoder" -type f -print -quit)")"
+
+          docker pull "ghcr.io/${GITHUB_REPOSITORY_OWNER}/wi1-bot-webhook@${webhook_digest}"
+          docker tag \
+            "ghcr.io/${GITHUB_REPOSITORY_OWNER}/wi1-bot-webhook@${webhook_digest}" \
+            wi1-bot-webhook:e2e
+          docker pull "ghcr.io/${GITHUB_REPOSITORY_OWNER}/wi1-bot-transcoder@${transcoder_digest}"
+          docker tag \
+            "ghcr.io/${GITHUB_REPOSITORY_OWNER}/wi1-bot-transcoder@${transcoder_digest}" \
+            wi1-bot-transcoder:e2e
+
+      - name: Download webhook image
+        if: needs.route.outputs.publish != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: e2e-webhook-amd64-image
+          path: ${{ runner.temp }}/images
+
+      - name: Download transcoder image
+        if: needs.route.outputs.publish != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: e2e-transcoder-amd64-image
+          path: ${{ runner.temp }}/images
+
+      - name: Load image artifacts
+        if: needs.route.outputs.publish != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker load --input "${RUNNER_TEMP}/images/webhook.tar"
+          docker load --input "${RUNNER_TEMP}/images/transcoder.tar"
+
+      - name: Run e2e tests
+        run: uv run --locked pytest -m e2e -v
+
+  publish:
+    name: Publish ${{ matrix.service }}
+    if: >-
+      ${{
+        always() &&
+        needs.route.outputs.publish == 'true' &&
+        needs.python.result == 'success' &&
+        needs.build_e2e_images.result == 'success' &&
+        needs.build_remaining_images.result == 'success' &&
+        (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
+      }}
+    needs:
+      - route
+      - python
+      - build_e2e_images
+      - build_remaining_images
+      - e2e
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: bot
+            image: wi1-bot
+            description: Discord bot for Radarr/Sonarr integration
+          - service: webhook
+            image: wi1-bot-webhook
+            description: Radarr/Sonarr download webhook and transcode job server for wi1-bot
+          - service: transcoder
+            image: wi1-bot-transcoder
+            description: Replicable ffmpeg transcode worker for wi1-bot
+
+    steps:
+      - name: Download amd64 digest
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.service }}-amd64-digest
+          path: ${{ runner.temp }}/digests/amd64
+
+      - name: Download arm64 digest
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.service }}-arm64-digest
+          path: ${{ runner.temp }}/digests/arm64
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Docker meta
+      - name: Generate image metadata
         id: meta
         uses: docker/metadata-action@v6
         env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
         with:
           images: |
             wthueb/${{ matrix.image }}
@@ -189,6 +377,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
+            type=raw,value=${{ github.head_ref }},enable=${{ github.event_name == 'pull_request' }}
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
             type=semver,pattern=v{{major}}
@@ -199,15 +388,69 @@ jobs:
             org.opencontainers.image.title=${{ matrix.image }}
             org.opencontainers.image.description=${{ matrix.description }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && format('type=gha,mode=max,scope={0}', matrix.service) || '' }}
+      - name: Assemble and verify multi-platform images
+        shell: bash
+        env:
+          ANNOTATIONS: ${{ steps.meta.outputs.annotations }}
+          IMAGE: ${{ matrix.image }}
+          METADATA_JSON: ${{ steps.meta.outputs.json }}
+        run: |
+          set -euo pipefail
+
+          amd64_digest="sha256:$(basename "$(find "${RUNNER_TEMP}/digests/amd64" -type f -print -quit)")"
+          arm64_digest="sha256:$(basename "$(find "${RUNNER_TEMP}/digests/arm64" -type f -print -quit)")"
+
+          annotation_args=()
+          while IFS= read -r annotation; do
+            if [[ -n "${annotation}" ]]; then
+              annotation_args+=(--annotation "${annotation}")
+            fi
+          done <<< "${ANNOTATIONS}"
+
+          create_index() {
+            local image_name="$1"
+            local metadata_file="$2"
+            local tag_args=()
+
+            while IFS= read -r image_tag; do
+              tag_args+=(--tag "${image_tag}")
+            done < <(
+              jq -r --arg prefix "${image_name}:" \
+                '.tags[] | select(startswith($prefix))' <<< "${METADATA_JSON}"
+            )
+
+            if (( ${#tag_args[@]} == 0 )); then
+              echo "No tags generated for ${image_name}" >&2
+              return 1
+            fi
+
+            docker buildx imagetools create \
+              "${tag_args[@]}" \
+              "${annotation_args[@]}" \
+              --metadata-file "${metadata_file}" \
+              "${image_name}@${amd64_digest}" \
+              "${image_name}@${arm64_digest}"
+          }
+
+          verify_index() {
+            local image_name="$1"
+            local metadata_file="$2"
+            local image_digest
+            local image_index
+
+            image_digest="$(jq -r '."containerimage.descriptor".digest' "${metadata_file}")"
+            image_index="$(docker buildx imagetools inspect --raw "${image_name}@${image_digest}")"
+            jq -e '
+              any(.manifests[]?; .platform.os == "linux" and .platform.architecture == "amd64")
+              and any(.manifests[]?; .platform.os == "linux" and .platform.architecture == "arm64")
+            ' <<< "${image_index}"
+          }
+
+          create_index "wthueb/${IMAGE}" "${RUNNER_TEMP}/dockerhub-metadata.json"
+          create_index \
+            "ghcr.io/${GITHUB_REPOSITORY_OWNER}/${IMAGE}" \
+            "${RUNNER_TEMP}/ghcr-metadata.json"
+          verify_index "wthueb/${IMAGE}" "${RUNNER_TEMP}/dockerhub-metadata.json"
+          verify_index \
+            "ghcr.io/${GITHUB_REPOSITORY_OWNER}/${IMAGE}" \
+            "${RUNNER_TEMP}/ghcr-metadata.json"
