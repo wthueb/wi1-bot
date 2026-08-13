@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.8.0](https://github.com/wthueb/wi1-bot/compare/v4.7.0...v4.8.0) (2026-08-13)
+
+
+### Features
+
+* transcode-item looks up content information ([eae0e2f](https://github.com/wthueb/wi1-bot/commit/eae0e2f6509a6d46d36f4c6d476f31f22de4affd))
+
 ## [4.7.0](https://github.com/wthueb/wi1-bot/compare/v4.6.0...v4.7.0) (2026-08-12)
 
 
