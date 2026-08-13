@@ -161,6 +161,19 @@ class TestRadarr:
         with pytest.raises(ValueError, match="no quality profile with the name bad"):
             radarr._get_quality_profile_id("bad")
 
+    def test_get_root_folders(self, radarr: Radarr) -> None:
+        root_folders = [{"id": 1, "path": "/movies"}]
+        radarr._radarr.root_folder.get = MagicMock(return_value=root_folders)
+
+        assert radarr.get_root_folders() == root_folders
+
+    def test_get_movie_files(self, radarr: Radarr) -> None:
+        movie_files = [{"id": 2, "path": "/movies/The Matrix/movie.mkv"}]
+        radarr._radarr.movie_file.get = MagicMock(return_value=movie_files)
+
+        assert radarr.get_movie_files(1) == movie_files
+        radarr._radarr.movie_file.get.assert_called_once_with(movie_id=1)
+
     def test_get_movie_credits(self, radarr: Radarr) -> None:
         credits = [
             {"personName": "Keanu Reeves", "personTmdbId": 6384, "type": "cast", "order": 0},
@@ -307,6 +320,19 @@ class TestSonarr:
         tag_id = sonarr._get_tag_for_user_id(123456789012345678)
 
         assert tag_id == 1
+
+    def test_get_root_folders(self, sonarr: Sonarr) -> None:
+        root_folders = [{"id": 1, "path": "/tv"}]
+        sonarr._sonarr.root_folder.get = MagicMock(return_value=root_folders)
+
+        assert sonarr.get_root_folders() == root_folders
+
+    def test_get_episode_files(self, sonarr: Sonarr) -> None:
+        episode_files = [{"id": 2, "path": "/tv/Show/Season 01/episode.mkv"}]
+        sonarr._sonarr.episode_file.get = MagicMock(return_value=episode_files)
+
+        assert sonarr.get_episode_files(1) == episode_files
+        sonarr._sonarr.episode_file.get.assert_called_once_with(series_id=1)
 
     def test_get_tag_for_user_id_not_exists(self, sonarr: Sonarr) -> None:
         sonarr._sonarr.tag.get = MagicMock(

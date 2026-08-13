@@ -338,10 +338,20 @@ class Sonarr:
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
+    def get_root_folders(self) -> JsonArray:
+        root_folders = self._sonarr.root_folder.get()
+        assert isinstance(root_folders, list)
+        return root_folders
+
     def get_series(self) -> JsonArray:
         series = self._sonarr.series.get()
         assert isinstance(series, list)
         return series
+
+    def get_episode_files(self, series_id: int) -> JsonArray:
+        episode_files = self._sonarr.episode_file.get(series_id=series_id)
+        assert isinstance(episode_files, list)
+        return episode_files
 
     def get_series_by_id(self, series_id: int) -> JsonObject:
         series = self._sonarr.series.get(item_id=series_id)
