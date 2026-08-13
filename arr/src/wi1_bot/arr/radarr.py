@@ -236,10 +236,20 @@ class Radarr:
 
         raise ValueError(f"no quality profile with the id {profile_id}")
 
+    def get_root_folders(self) -> JsonArray:
+        root_folders = self._radarr.root_folder.get()
+        assert isinstance(root_folders, list)
+        return root_folders
+
     def get_movies(self) -> JsonArray:
         movies = self._radarr.movie.get()
         assert isinstance(movies, list)
         return movies
+
+    def get_movie_files(self, movie_id: int) -> JsonArray:
+        movie_files = self._radarr.movie_file.get(movie_id=movie_id)
+        assert isinstance(movie_files, list)
+        return movie_files
 
     def get_movie_by_id(self, movie_id: int) -> JsonObject:
         movie = self._radarr.movie.get(item_id=movie_id)
