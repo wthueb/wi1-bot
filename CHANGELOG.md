@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.8.1](https://github.com/wthueb/wi1-bot/compare/v4.8.0...v4.8.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* remove transcode-item script startup error ([0291e5f](https://github.com/wthueb/wi1-bot/commit/0291e5f8a202f52ea7d85ba5b39c6930c5332b1a))
+
 ## [4.8.0](https://github.com/wthueb/wi1-bot/compare/v4.7.0...v4.8.0) (2026-08-13)
 
 
