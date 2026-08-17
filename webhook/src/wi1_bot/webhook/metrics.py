@@ -96,25 +96,39 @@ def elapsed_seconds(start: datetime, end: datetime) -> float:
 
 
 class QueueMetricsCollector:
+    @staticmethod
+    def _metric_families() -> tuple[
+        GaugeMetricFamily,
+        GaugeMetricFamily,
+        GaugeMetricFamily,
+        GaugeMetricFamily,
+    ]:
+        return (
+            GaugeMetricFamily(
+                "wi1_bot_webhook_queue_jobs",
+                "Current transcode jobs by queue status.",
+                labels=["status"],
+            ),
+            GaugeMetricFamily(
+                "wi1_bot_webhook_queue_oldest_job_age_seconds",
+                "Age of the oldest transcode job in its current status.",
+                labels=["status"],
+            ),
+            GaugeMetricFamily(
+                "wi1_bot_webhook_queue_expired_leases",
+                "Transcode jobs with an expired lease.",
+            ),
+            GaugeMetricFamily(
+                "wi1_bot_webhook_database_up",
+                "Whether the SQLite transcode queue can be queried.",
+            ),
+        )
+
+    def describe(self) -> Iterable[Metric]:
+        yield from self._metric_families()
+
     def collect(self) -> Iterable[Metric]:
-        jobs = GaugeMetricFamily(
-            "wi1_bot_webhook_queue_jobs",
-            "Current transcode jobs by queue status.",
-            labels=["status"],
-        )
-        oldest_age = GaugeMetricFamily(
-            "wi1_bot_webhook_queue_oldest_job_age_seconds",
-            "Age of the oldest transcode job in its current status.",
-            labels=["status"],
-        )
-        expired_leases = GaugeMetricFamily(
-            "wi1_bot_webhook_queue_expired_leases",
-            "Transcode jobs with an expired lease.",
-        )
-        database_up = GaugeMetricFamily(
-            "wi1_bot_webhook_database_up",
-            "Whether the SQLite transcode queue can be queried.",
-        )
+        jobs, oldest_age, expired_leases, database_up = self._metric_families()
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         counts = {"queued": 0, "in_progress": 0}

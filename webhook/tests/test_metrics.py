@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from flask.testing import FlaskClient
-from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, CollectorRegistry
 from sqlalchemy.orm import Session
 
 import wi1_bot.webhook.app as app_mod
@@ -25,6 +25,15 @@ def client(db: None) -> Iterator[FlaskClient]:
 def _sample(name: str, labels: dict[str, str]) -> float:
     value = REGISTRY.get_sample_value(name, labels)
     return value if value is not None else 0
+
+
+def test_queue_metrics_registration_does_not_query_database() -> None:
+    registry = CollectorRegistry(auto_describe=True)
+
+    with patch.object(metrics_mod, "get_engine") as get_engine:
+        registry.register(metrics_mod.QueueMetricsCollector())
+
+    get_engine.assert_not_called()
 
 
 def test_metrics_endpoint_exposes_application_and_standard_metrics(client: FlaskClient) -> None:
