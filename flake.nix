@@ -21,7 +21,7 @@
       perSystem =
         { pkgs, ... }:
         {
-          devShells.default = pkgs.mkShell {
+          devShells.default = pkgs.mkShellNoCC {
             packages = with pkgs; [
               ffmpeg-full
               uv

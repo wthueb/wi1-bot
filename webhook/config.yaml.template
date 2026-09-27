@@ -49,6 +49,11 @@ webhook:
     enabled: false
     # seconds between Radarr/Sonarr queue scans (default 60)
     poll_interval: 60
+  imdb_popular_list:
+    # OriginalLanguage codes in Radarr's IMDb Popular feed; empty includes all
+    include_languages: []
+    # OriginalLanguage codes to omit; must not overlap include_languages
+    exclude_languages: []
 
 # pushover settings, optional (used for transcode failure notifications)
 pushover:

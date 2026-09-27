@@ -13,6 +13,7 @@ from wi1_bot.webhook.autobrr import ArrTarget
 from wi1_bot.webhook.autobrr import blueprint as autobrr_blueprint
 from wi1_bot.webhook.autobrr import configure_targets as configure_autobrr_targets
 from wi1_bot.webhook.config import config
+from wi1_bot.webhook.imdb_popular import blueprint as imdb_popular_blueprint
 from wi1_bot.webhook.metrics import (
     EVENTS,
     HTTP_REQUEST_DURATION,
@@ -51,6 +52,7 @@ if config.sonarr4k is not None:
     autobrr_targets.append(ArrTarget("sonarr4k", "sonarr", Sonarr.from_config(config.sonarr4k)))
 configure_autobrr_targets(autobrr_targets)
 app.register_blueprint(autobrr_blueprint)
+app.register_blueprint(imdb_popular_blueprint)
 
 _KNOWN_HTTP_METHODS = frozenset({"DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"})
 _EVENT_TYPES = {

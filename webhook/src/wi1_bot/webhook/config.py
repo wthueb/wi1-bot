@@ -1,6 +1,7 @@
-from typing import Literal
+import re
+from typing import Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from wi1_bot.arr import ArrConfig
 from wi1_bot.common import PushoverConfig
@@ -25,6 +26,25 @@ class QueueCleanupConfig(BaseModel):
     )
 
 
+class IMDbPopularListConfig(BaseModel):
+    include_languages: list[str] = Field(default_factory=list)
+    exclude_languages: list[str] = Field(default_factory=list)
+
+    @field_validator("include_languages", "exclude_languages")
+    @classmethod
+    def normalize_languages(cls, languages: list[str]) -> list[str]:
+        normalized = [language.strip().lower() for language in languages]
+        if any(re.fullmatch(r"[a-z]{2}", language) is None for language in normalized):
+            raise ValueError("languages must be two-letter codes")
+        return list(dict.fromkeys(normalized))
+
+    @model_validator(mode="after")
+    def reject_overlapping_languages(self) -> Self:
+        if set(self.include_languages) & set(self.exclude_languages):
+            raise ValueError("include_languages and exclude_languages must not overlap")
+        return self
+
+
 class WebhookConfig(BaseModel):
     port: int = Field(default=9000, gt=0, description="Port for the webhook/job API")
     heartbeat: float = Field(
@@ -44,6 +64,7 @@ class WebhookConfig(BaseModel):
         ),
     )
     queue_cleanup: QueueCleanupConfig = Field(default_factory=QueueCleanupConfig)
+    imdb_popular_list: IMDbPopularListConfig = Field(default_factory=IMDbPopularListConfig)
 
     @property
     def lease_secs(self) -> float:

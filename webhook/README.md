@@ -5,6 +5,38 @@ Part of the wi1-bot workspace. See the repo root README.
 The service exposes Prometheus metrics, including HTTP, Arr event, transcode queue,
 worker lifecycle, and rescan metrics, at `GET /metrics`.
 
+## Language-filtered IMDb Popular list for Radarr
+
+The webhook exposes `GET /lists/imdb/popular` for Radarr's **Custom Lists** import
+list. Set its **List URL** to `http://<webhook-host>:9000/lists/imdb/popular` under
+**Settings → Import Lists → Custom Lists** in Radarr. Radarr fetches this URL on its
+import-list schedule and applies its own Automatic Add, root folder, quality profile,
+monitoring, and search-on-add settings. The endpoint returns a JSON array of TMDb IDs
+in the form `[{"id": 238}]`.
+
+The list filters by the movie's **original language**, not audio tracks or translated
+titles. Configure two-letter `OriginalLanguage` codes under `webhook` in the webhook
+config file (or use `WB_WEBHOOK__IMDB_POPULAR_LIST__INCLUDE_LANGUAGES` and
+`WB_WEBHOOK__IMDB_POPULAR_LIST__EXCLUDE_LANGUAGES` with JSON arrays):
+
+```yaml
+webhook:
+  imdb_popular_list:
+    include_languages: [en, ja]
+    exclude_languages: []
+```
+
+An empty include list allows all languages; the exclude list removes matching movies.
+Both can be used together, but overlapping codes are rejected at startup. With both
+lists empty, the endpoint returns the complete upstream list. The webhook fetches
+`https://api.radarr.video/v1/list/imdb/popular` for each request and returns HTTP 502
+instead of a partial or empty list when the upstream feed is unavailable or malformed.
+A valid list with no matches returns `[]`.
+
+Leave Radarr's **Clean Library Level** disabled (the recommended default) unless you
+intentionally want list changes to affect existing movies. The endpoint does not
+authenticate callers; expose it only on a trusted network or behind a reverse proxy.
+
 ## Custom-format downgrade cleanup
 
 The webhook can poll every configured Radarr and Sonarr instance for completed downloads

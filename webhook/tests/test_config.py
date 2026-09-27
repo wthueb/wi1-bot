@@ -1,7 +1,9 @@
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
-from wi1_bot.webhook.config import Config, QueueCleanupConfig, WebhookConfig
+from wi1_bot.webhook.config import Config, IMDbPopularListConfig, QueueCleanupConfig, WebhookConfig
 
 
 def test_queue_cleanup_is_opt_in_with_sixty_second_default() -> None:
@@ -34,3 +36,56 @@ def test_queue_cleanup_supports_nested_environment_overrides(
 def test_queue_cleanup_rejects_non_positive_interval(poll_interval: float) -> None:
     with pytest.raises(ValidationError):
         QueueCleanupConfig(poll_interval=poll_interval)
+
+
+def test_imdb_popular_list_defaults_to_all_languages() -> None:
+    filters = WebhookConfig().imdb_popular_list
+
+    assert filters.include_languages == []
+    assert filters.exclude_languages == []
+
+
+def test_imdb_popular_list_normalizes_and_deduplicates_codes() -> None:
+    filters = IMDbPopularListConfig(include_languages=[" EN ", "en", "JA"])
+
+    assert filters.include_languages == ["en", "ja"]
+
+
+@pytest.mark.parametrize("language", ["", "english", "e", "en-US", "1e", "éè"])
+def test_imdb_popular_list_rejects_invalid_codes(language: str) -> None:
+    with pytest.raises(ValidationError):
+        IMDbPopularListConfig(include_languages=[language])
+
+
+def test_imdb_popular_list_rejects_overlapping_codes() -> None:
+    with pytest.raises(ValidationError, match="must not overlap"):
+        IMDbPopularListConfig(include_languages=["EN"], exclude_languages=[" en "])
+
+
+def test_imdb_popular_list_loads_yaml_and_nested_environment_overrides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "radarr:\n"
+        "  url: http://localhost:7878\n"
+        "  api_key: test\n"
+        "  root_folder: /movies\n"
+        "  instance_name: Radarr\n"
+        "sonarr:\n"
+        "  url: http://localhost:8989\n"
+        "  api_key: test\n"
+        "  root_folder: /shows\n"
+        "  instance_name: Sonarr\n"
+        "webhook:\n"
+        "  imdb_popular_list:\n"
+        "    include_languages: [en, ja]\n"
+        "    exclude_languages: [fr]\n"
+    )
+    monkeypatch.setenv("WB_CONFIG_PATH", str(config_path))
+    assert Config().webhook.imdb_popular_list.include_languages == ["en", "ja"]
+
+    monkeypatch.setenv("WB_WEBHOOK__IMDB_POPULAR_LIST__INCLUDE_LANGUAGES", '["DE"]')
+    filters = Config().webhook.imdb_popular_list
+    assert filters.include_languages == ["de"]
+    assert filters.exclude_languages == ["fr"]
