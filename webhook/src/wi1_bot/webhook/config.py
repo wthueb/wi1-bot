@@ -17,7 +17,7 @@ class GeneralConfig(BaseModel):
 class QueueCleanupConfig(BaseModel):
     enabled: bool = Field(
         default=False,
-        description="Whether to remove completed custom-format downgrade downloads",
+        description="Whether to remove completed custom-format, quality, or revision downgrades",
     )
     poll_interval: float = Field(
         default=60,

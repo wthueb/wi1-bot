@@ -42,7 +42,7 @@ QUEUE_CLEANUP_POLLS = Counter(
 )
 QUEUE_CLEANUP_ITEMS = Counter(
     "wi1_bot_webhook_queue_cleanup_items_total",
-    "Custom-format downgrade queue cleanup outcomes.",
+    "Custom-format, quality, or revision downgrade queue cleanup outcomes.",
     ["target", "protocol", "outcome"],
 )
 

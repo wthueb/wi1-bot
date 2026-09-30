@@ -45,7 +45,7 @@ webhook:
   missed_heartbeats: 3
   queue_cleanup:
     # opt in to resolving completed downloads that Arr rejects because they are custom
-    # format downgrades (default false)
+    # format, quality, or revision downgrades (default false)
     enabled: false
     # seconds between Radarr/Sonarr queue scans (default 60)
     poll_interval: 60

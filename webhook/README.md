@@ -37,11 +37,19 @@ Leave Radarr's **Clean Library Level** disabled (the recommended default) unless
 intentionally want list changes to affect existing movies. The endpoint does not
 authenticate callers; expose it only on a trusted network or behind a reverse proxy.
 
-## Custom-format downgrade cleanup
+## Custom-format, quality, and revision downgrade cleanup
 
 The webhook can poll every configured Radarr and Sonarr instance for completed downloads
-that require manual interaction because they are no longer custom-format upgrades. Enable
-the worker in `webhook/config.yaml`:
+that require manual interaction because they are no longer custom-format, quality, or
+revision upgrades. Only warnings in the `importBlocked` or `importPending` state with a
+rejection starting with one of these prefixes are cleaned up:
+
+- `Not a Custom Format upgrade for existing`
+- `Not an upgrade for existing`
+- `Not a quality revision upgrade for existing`
+
+The revision prefix covers Sonarr's `episode file(s)` and Radarr's `movie file(s)` messages.
+Enable the worker in `webhook/config.yaml`:
 
 ```yaml
 webhook:
@@ -53,8 +61,8 @@ webhook:
 For torrents, cleanup makes Arr ignore the queue item but leaves the torrent and its data
 in the download client so it can satisfy seed requirements. For usenet, cleanup removes
 the item from both Arr and the download client, including its downloaded content. Neither
-action blocklists the release or starts a replacement search. Other import warnings and
-ordinary quality or revision downgrades are left for manual review.
+action blocklists the release or starts a replacement search. Other import warnings are
+left for manual review.
 
 ## Autobrr Arr façade
 

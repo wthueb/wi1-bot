@@ -23,14 +23,9 @@ def _target(name: str = "radarr") -> tuple[ArrTarget, MagicMock]:
 def _item(
     protocol: ReleaseProtocol = "usenet",
     *,
-    downgrade: bool = True,
     tracked_download_state: str = "importBlocked",
+    message: str = "Not a Custom Format upgrade for existing movie file(s). New: [] (10)",
 ) -> ArrQueueItem:
-    message = (
-        "Not a Custom Format upgrade for existing movie file(s). New: [] (10)"
-        if downgrade
-        else "Not an upgrade for existing movie file"
-    )
     return ArrQueueItem.model_validate(
         {
             "id": 7,
@@ -49,6 +44,18 @@ def _sample(name: str, labels: dict[str, str]) -> float:
     return value if value is not None else 0
 
 
+@pytest.mark.parametrize("target_name", ["radarr", "radarr4k", "sonarr", "sonarr4k"])
+@pytest.mark.parametrize("tracked_download_state", ["importBlocked", "importPending"])
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Not a Custom Format upgrade for existing movie file(s). New: [] (10)",
+        "Not an upgrade for existing episode file(s). "
+        "Existing quality: WEBDL-2160p. New Quality WEBDL-1080p.",
+        "Not a quality revision upgrade for existing episode file(s)",
+        "Not a quality revision upgrade for existing movie file(s)",
+    ],
+)
 @pytest.mark.parametrize(
     ("protocol", "remove_from_client", "outcome"),
     [("torrent", False, "ignored"), ("usenet", True, "removed")],
@@ -57,10 +64,19 @@ def test_cleanup_uses_protocol_specific_removal_policy(
     protocol: ReleaseProtocol,
     remove_from_client: bool,
     outcome: str,
+    message: str,
+    tracked_download_state: str,
+    target_name: str,
 ) -> None:
-    target, client = _target()
-    client.get_queue_items.return_value = [_item(protocol)]
-    labels = {"target": "radarr", "protocol": protocol, "outcome": outcome}
+    target, client = _target(target_name)
+    client.get_queue_items.return_value = [
+        _item(
+            protocol,
+            message=message,
+            tracked_download_state=tracked_download_state,
+        )
+    ]
+    labels = {"target": target_name, "protocol": protocol, "outcome": outcome}
     before = _sample("wi1_bot_webhook_queue_cleanup_items_total", labels)
 
     ArrQueueCleanupWorker([target], poll_interval=60).run_once()
@@ -71,7 +87,7 @@ def test_cleanup_uses_protocol_specific_removal_policy(
 
 def test_cleanup_preserves_unrelated_manual_interaction_items() -> None:
     target, client = _target()
-    client.get_queue_items.return_value = [_item(downgrade=False)]
+    client.get_queue_items.return_value = [_item(message="Not enough free space")]
 
     ArrQueueCleanupWorker([target], poll_interval=60).run_once()
 

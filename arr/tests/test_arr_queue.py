@@ -64,7 +64,7 @@ def test_get_queue_items_validates_and_paginates(
     items = client.get_queue_items(page_size=2)
 
     assert [item.id for item in items] == [1, 2, 3]
-    assert all(item.is_custom_format_downgrade for item in items)
+    assert all(item.is_import_downgrade for item in items)
     assert queue_api.get.call_count == 2
     queue_api.get.assert_any_call(page=1, page_size=2)
     queue_api.get.assert_any_call(page=2, page_size=2)
@@ -83,30 +83,43 @@ def test_get_queue_items_rejects_malformed_records(
 
 
 @pytest.mark.parametrize(
+    "message",
+    [
+        "Not a Custom Format upgrade for existing movie file(s). New: [] (10)",
+        "Not an upgrade for existing episode file(s). "
+        "Existing quality: WEBDL-2160p. New Quality WEBDL-1080p.",
+        "Not a quality revision upgrade for existing episode file(s)",
+        "Not a quality revision upgrade for existing movie file(s)",
+    ],
+)
+@pytest.mark.parametrize(
     "overrides",
     [
         {"status": "downloading"},
         {"trackedDownloadStatus": "ok"},
         {"trackedDownloadState": "importing"},
-        {
-            "statusMessages": [
-                {"title": "Movie.mkv", "messages": ["Not an upgrade for existing movie file"]}
-            ]
-        },
+        {"trackedDownloadState": None},
+        {"trackedDownloadStatus": None},
+        {"statusMessages": []},
+        {"statusMessages": [{"title": "Movie.mkv", "messages": ["Not enough free space"]}]},
         {
             "statusMessages": [
                 {
                     "title": "Movie.mkv",
-                    "messages": ["Not a quality revision upgrade for existing movie file(s)"],
+                    "messages": ["Not a quality revision upgrade for incoming movie file(s)"],
                 }
             ]
         },
     ],
 )
-def test_custom_format_downgrade_matcher_rejects_near_misses(
+def test_import_downgrade_matcher_rejects_near_misses(
+    message: str,
     overrides: dict[str, object],
 ) -> None:
-    assert not ArrQueueItem.model_validate(_item(**overrides)).is_custom_format_downgrade
+    data = _item(statusMessages=[{"title": "Movie.mkv", "messages": [message]}])
+    data.update(overrides)
+
+    assert not ArrQueueItem.model_validate(data).is_import_downgrade
 
 
 @pytest.mark.parametrize("tracked_download_state", ["importBlocked", "importPending"])
@@ -115,7 +128,62 @@ def test_custom_format_downgrade_matches_blocked_and_pending_states(
 ) -> None:
     item = ArrQueueItem.model_validate(_item(trackedDownloadState=tracked_download_state))
 
-    assert item.is_custom_format_downgrade
+    assert item.is_import_downgrade
+
+
+@pytest.mark.parametrize("tracked_download_state", ["importBlocked", "importPending"])
+@pytest.mark.parametrize("media_type", ["movie", "episode"])
+def test_quality_downgrade_matches_blocked_and_pending_states(
+    tracked_download_state: str,
+    media_type: str,
+) -> None:
+    item = ArrQueueItem.model_validate(
+        _item(
+            trackedDownloadState=tracked_download_state,
+            statusMessages=[
+                {
+                    "title": "Media.mkv",
+                    "messages": [
+                        f"Not an upgrade for existing {media_type} file(s). "
+                        "Existing quality: WEBDL-2160p. New Quality WEBDL-1080p."
+                    ],
+                }
+            ],
+        )
+    )
+
+    assert item.is_import_downgrade
+
+
+@pytest.mark.parametrize("tracked_download_state", ["importBlocked", "importPending"])
+@pytest.mark.parametrize("client_fixture", ["radarr", "sonarr"])
+def test_get_queue_items_recognizes_revision_downgrades(
+    client_fixture: str,
+    tracked_download_state: str,
+    request: pytest.FixtureRequest,
+) -> None:
+    client: Radarr | Sonarr = request.getfixturevalue(client_fixture)
+    media_type = "movie" if client_fixture == "radarr" else "episode"
+    _queue_api(client).get.return_value = {
+        "records": [
+            _item(
+                trackedDownloadState=tracked_download_state,
+                statusMessages=[
+                    {
+                        "title": "Media.mkv",
+                        "messages": [
+                            f"Not a quality revision upgrade for existing {media_type} file(s)"
+                        ],
+                    }
+                ],
+            )
+        ]
+    }
+
+    items = client.get_queue_items()
+
+    assert len(items) == 1
+    assert items[0].is_import_downgrade
 
 
 def test_custom_format_after_rename_message_matches() -> None:
@@ -133,7 +201,7 @@ def test_custom_format_after_rename_message_matches() -> None:
         )
     )
 
-    assert item.is_custom_format_downgrade
+    assert item.is_import_downgrade
 
 
 @pytest.mark.parametrize("client_fixture", ["radarr", "sonarr"])

@@ -29,7 +29,7 @@ class ArrQueueItem(BaseModel):
     )
 
     @property
-    def is_custom_format_downgrade(self) -> bool:
+    def is_import_downgrade(self) -> bool:
         if self.status.casefold() != "completed":
             return False
         if (self.tracked_download_status or "").casefold() != "warning":
@@ -40,9 +40,13 @@ class ArrQueueItem(BaseModel):
         }:
             return False
 
-        prefix = "Not a Custom Format upgrade for existing"
+        prefixes = (
+            "Not a Custom Format upgrade for existing",
+            "Not an upgrade for existing",
+            "Not a quality revision upgrade for existing",
+        )
         return any(
-            message.startswith(prefix)
+            message.startswith(prefixes)
             for status_message in self.status_messages
             for message in status_message.messages
         )

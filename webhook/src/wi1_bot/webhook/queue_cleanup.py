@@ -63,7 +63,7 @@ class ArrQueueCleanupWorker:
             logger.debug("arr queue cleanup poll completed", item_count=len(items))
 
             for item in items:
-                if not item.is_custom_format_downgrade:
+                if not item.is_import_downgrade:
                     continue
 
                 remove_from_client = item.protocol == "usenet"
@@ -75,11 +75,11 @@ class ArrQueueCleanupWorker:
                         )
                     except ArrQueueItemNotFound:
                         outcome = "already_resolved"
-                        logger.info("custom format downgrade was already resolved")
+                        logger.info("import downgrade was already resolved")
                     except Exception as exc:
                         outcome = "error"
                         logger.warning(
-                            "custom format downgrade cleanup failed",
+                            "import downgrade cleanup failed",
                             title=item.title,
                             error_type=type(exc).__name__,
                             exc_info=True,
@@ -87,7 +87,7 @@ class ArrQueueCleanupWorker:
                     else:
                         outcome = "removed" if remove_from_client else "ignored"
                         logger.info(
-                            "custom format downgrade cleanup completed",
+                            "import downgrade cleanup completed",
                             title=item.title,
                             action=outcome,
                         )
