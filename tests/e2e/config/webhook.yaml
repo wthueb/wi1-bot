@@ -24,4 +24,5 @@ webhook:
   missed_heartbeats: 3
   queue_cleanup:
     enabled: true
+    manually_added: true
     poll_interval: 1
