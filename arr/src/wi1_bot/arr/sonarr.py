@@ -11,6 +11,7 @@ from wi1_bot.arr.config import ArrConfig
 
 from .common import Download, MediaState, user_id_from_tag
 from .episode import Episode
+from .history import DownloadOrigin, read_download_origin
 from .queue import ArrQueueItem, ArrQueueItemNotFound, ArrQueuePage
 from .release import (
     ReleasePushConfigurationError,
@@ -223,6 +224,20 @@ class Sonarr:
             page_number += 1
 
         return items
+
+    def get_download_origin(self, download_id: str) -> DownloadOrigin:
+        return read_download_origin(
+            download_id,
+            lambda page: self._sonarr.history.handler.request(
+                "history",
+                params={
+                    "downloadId": download_id,
+                    "eventType": 1,
+                    "page": page,
+                    "pageSize": 100,
+                },
+            ),
+        )
 
     def remove_queue_item(self, item_id: int, *, remove_from_client: bool) -> None:
         try:

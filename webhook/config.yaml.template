@@ -47,6 +47,8 @@ webhook:
     # opt in to resolving completed downloads that Arr rejects because they are custom
     # format, quality, or revision downgrades (default false)
     enabled: false
+    # also clean up manual downloads and unknown origins, for both protocols (default false)
+    manually_added: false
     # seconds between Radarr/Sonarr queue scans (default 60)
     poll_interval: 60
   imdb_popular_list:

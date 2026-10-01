@@ -21,6 +21,7 @@ class ArrQueueItem(BaseModel):
     title: str
     protocol: Literal["torrent", "usenet"]
     status: str
+    download_id: str | None = Field(default=None, alias="downloadId")
     tracked_download_status: str | None = Field(default=None, alias="trackedDownloadStatus")
     tracked_download_state: str | None = Field(default=None, alias="trackedDownloadState")
     status_messages: list[ArrQueueStatusMessage] = Field(

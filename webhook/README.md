@@ -55,8 +55,25 @@ Enable the worker in `webhook/config.yaml`:
 webhook:
   queue_cleanup:
     enabled: true
+    manually_added: false
     poll_interval: 60
 ```
+
+By default, cleanup protects downloads added directly to the download client and explicit
+manual release grabs in Radarr/Sonarr, for both torrents and usenet. It checks Arr's grab
+history by download ID: `InteractiveSearch` is protected, while `Rss`, `Search`,
+`UserInvokedSearch` (Arr chooses a release after you click Search), and `ReleasePush`
+(including Autobrr) remain eligible. Missing IDs, missing or ambiguous history, unknown
+sources, and history lookup failures are also protected and left for manual review.
+
+Set `manually_added: true` to bypass the origin check and clean up qualifying downgrades
+regardless of origin, restoring the previous behavior. The environment override is
+`WB_WEBHOOK__QUEUE_CLEANUP__MANUALLY_ADDED`.
+
+Origin detection relies on what Arr records, not filenames, indexer names, or download
+client names. It cannot distinguish a direct client re-add with an ID already associated
+with an automatic grab, or a manual external API action recorded as an eligible source.
+Older grab records without source metadata are preserved by default.
 
 For torrents, cleanup makes Arr ignore the queue item but leaves the torrent and its data
 in the download client so it can satisfy seed requirements. For usenet, cleanup removes

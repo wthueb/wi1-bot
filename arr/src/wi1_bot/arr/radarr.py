@@ -10,6 +10,7 @@ from pyarr.types import JsonArray, JsonObject
 from wi1_bot.arr.config import ArrConfig
 
 from .common import Download, MediaState, user_id_from_tag
+from .history import DownloadOrigin, read_download_origin
 from .movie import Movie
 from .queue import ArrQueueItem, ArrQueueItemNotFound, ArrQueuePage
 from .release import (
@@ -178,6 +179,20 @@ class Radarr:
             page_number += 1
 
         return items
+
+    def get_download_origin(self, download_id: str) -> DownloadOrigin:
+        return read_download_origin(
+            download_id,
+            lambda page: self._radarr.history.handler.request(
+                "history",
+                params={
+                    "downloadId": download_id,
+                    "eventType": 1,
+                    "page": page,
+                    "pageSize": 100,
+                },
+            ),
+        )
 
     def remove_queue_item(self, item_id: int, *, remove_from_client: bool) -> None:
         try:

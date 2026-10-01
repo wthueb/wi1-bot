@@ -19,6 +19,10 @@ class QueueCleanupConfig(BaseModel):
         default=False,
         description="Whether to remove completed custom-format, quality, or revision downgrades",
     )
+    manually_added: bool = Field(
+        default=False,
+        description="Whether to also clean up manually added downloads and unknown origins",
+    )
     poll_interval: float = Field(
         default=60,
         gt=0,

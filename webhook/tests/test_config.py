@@ -10,26 +10,54 @@ def test_queue_cleanup_is_opt_in_with_sixty_second_default() -> None:
     cleanup = WebhookConfig().queue_cleanup
 
     assert cleanup.enabled is False
+    assert cleanup.manually_added is False
     assert cleanup.poll_interval == 60
 
 
-def test_queue_cleanup_accepts_enabled_custom_interval() -> None:
-    cleanup = QueueCleanupConfig(enabled=True, poll_interval=5)
+@pytest.mark.parametrize("manually_added", [False, True])
+def test_queue_cleanup_accepts_enabled_custom_interval(manually_added: bool) -> None:
+    cleanup = QueueCleanupConfig(enabled=True, poll_interval=5, manually_added=manually_added)
 
     assert cleanup.enabled is True
+    assert cleanup.manually_added is manually_added
     assert cleanup.poll_interval == 5
 
 
+@pytest.mark.parametrize("manually_added", [False, True])
 def test_queue_cleanup_supports_nested_environment_overrides(
     monkeypatch: pytest.MonkeyPatch,
+    manually_added: bool,
 ) -> None:
     monkeypatch.setenv("WB_WEBHOOK__QUEUE_CLEANUP__ENABLED", "true")
     monkeypatch.setenv("WB_WEBHOOK__QUEUE_CLEANUP__POLL_INTERVAL", "12.5")
+    monkeypatch.setenv("WB_WEBHOOK__QUEUE_CLEANUP__MANUALLY_ADDED", str(manually_added).lower())
 
     cleanup = Config().webhook.queue_cleanup
 
     assert cleanup.enabled is True
+    assert cleanup.manually_added is manually_added
     assert cleanup.poll_interval == 12.5
+
+
+@pytest.mark.parametrize("manually_added", [False, True])
+def test_queue_cleanup_loads_yaml_with_environment_precedence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, manually_added: bool
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    base_config = (Path(__file__).parents[2] / "tests" / "config.yaml").read_text()
+    config_path.write_text(
+        base_config
+        + "\nwebhook:\n"
+        + "  queue_cleanup:\n"
+        + f"    manually_added: {str(manually_added).lower()}\n"
+    )
+    monkeypatch.setenv("WB_CONFIG_PATH", str(config_path))
+    monkeypatch.delenv("WB_WEBHOOK__QUEUE_CLEANUP__MANUALLY_ADDED", raising=False)
+
+    assert Config().webhook.queue_cleanup.manually_added is manually_added
+
+    monkeypatch.setenv("WB_WEBHOOK__QUEUE_CLEANUP__MANUALLY_ADDED", str(not manually_added).lower())
+    assert Config().webhook.queue_cleanup.manually_added is not manually_added
 
 
 @pytest.mark.parametrize("poll_interval", [0, -1])

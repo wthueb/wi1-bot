@@ -26,11 +26,13 @@ def main() -> None:
         cleanup_worker = ArrQueueCleanupWorker(
             autobrr_targets,
             config.webhook.queue_cleanup.poll_interval,
+            manually_added=config.webhook.queue_cleanup.manually_added,
         )
         cleanup_worker.start()
         logger.info(
             "arr queue cleanup worker started",
             poll_interval=config.webhook.queue_cleanup.poll_interval,
+            manually_added=config.webhook.queue_cleanup.manually_added,
         )
 
     try:

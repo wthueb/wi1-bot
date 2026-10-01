@@ -7,8 +7,11 @@ from wi1_bot.webhook.config import QueueCleanupConfig
 
 
 @pytest.mark.parametrize("enabled", [False, True])
-def test_cleanup_worker_lifecycle_follows_configuration(enabled: bool) -> None:
-    cleanup = QueueCleanupConfig(enabled=enabled, poll_interval=5)
+@pytest.mark.parametrize("manually_added", [False, True])
+def test_cleanup_worker_lifecycle_follows_configuration(
+    enabled: bool, manually_added: bool
+) -> None:
+    cleanup = QueueCleanupConfig(enabled=enabled, poll_interval=5, manually_added=manually_added)
     worker = MagicMock()
 
     with (
@@ -22,7 +25,9 @@ def test_cleanup_worker_lifecycle_follows_configuration(enabled: bool) -> None:
         serve_mod.main()
 
     if enabled:
-        worker_cls.assert_called_once_with(serve_mod.autobrr_targets, 5)
+        worker_cls.assert_called_once_with(
+            serve_mod.autobrr_targets, 5, manually_added=manually_added
+        )
         worker.start.assert_called_once_with()
         worker.stop.assert_called_once_with()
     else:

@@ -12,6 +12,7 @@ from wi1_bot.webhook.queue_cleanup import ArrQueueCleanupWorker
 
 def _target(name: str = "radarr") -> tuple[ArrTarget, MagicMock]:
     client = MagicMock()
+    client.get_download_origin.return_value = "automatic"
     target = ArrTarget(
         cast(TargetName, name),
         "radarr" if name.startswith("radarr") else "sonarr",
@@ -29,6 +30,7 @@ def _item(
     return ArrQueueItem.model_validate(
         {
             "id": 7,
+            "downloadId": "download-7",
             "title": "Movie.2026.E2ELOW",
             "protocol": protocol,
             "status": "completed",
@@ -92,6 +94,116 @@ def test_cleanup_preserves_unrelated_manual_interaction_items() -> None:
     ArrQueueCleanupWorker([target], poll_interval=60).run_once()
 
     client.remove_queue_item.assert_not_called()
+    client.get_download_origin.assert_not_called()
+
+
+@pytest.mark.parametrize("target_name", ["radarr", "radarr4k", "sonarr", "sonarr4k"])
+@pytest.mark.parametrize("protocol", ["torrent", "usenet"])
+@pytest.mark.parametrize("origin", ["manual", "unknown"])
+def test_cleanup_preserves_protected_origins(
+    target_name: str, protocol: ReleaseProtocol, origin: str
+) -> None:
+    target, client = _target(target_name)
+    client.get_queue_items.return_value = [_item(protocol)]
+    client.get_download_origin.return_value = origin
+    labels = {"target": target_name, "protocol": protocol, "outcome": f"skipped_{origin}"}
+    before = _sample("wi1_bot_webhook_queue_cleanup_items_total", labels)
+
+    ArrQueueCleanupWorker([target], poll_interval=60).run_once()
+
+    client.remove_queue_item.assert_not_called()
+    client.get_download_origin.assert_called_once_with("download-7")
+    assert _sample("wi1_bot_webhook_queue_cleanup_items_total", labels) == before + 1
+
+
+@pytest.mark.parametrize("target_name", ["radarr", "radarr4k", "sonarr", "sonarr4k"])
+@pytest.mark.parametrize("protocol", ["torrent", "usenet"])
+@pytest.mark.parametrize("download_id", [None, "", " ", "download-7"])
+def test_manual_override_bypasses_origin_check(
+    target_name: str, protocol: ReleaseProtocol, download_id: str | None
+) -> None:
+    target, client = _target(target_name)
+    client.get_queue_items.return_value = [
+        _item(protocol).model_copy(update={"download_id": download_id})
+    ]
+    client.get_download_origin.side_effect = RuntimeError("must not be called")
+
+    ArrQueueCleanupWorker([target], poll_interval=60, manually_added=True).run_once()
+
+    client.remove_queue_item.assert_called_once_with(7, remove_from_client=protocol == "usenet")
+    client.get_download_origin.assert_not_called()
+
+
+@pytest.mark.parametrize("protocol", ["torrent", "usenet"])
+@pytest.mark.parametrize("download_id", [None, "", " ", "\t"])
+def test_missing_download_id_is_protected(
+    protocol: ReleaseProtocol, download_id: str | None
+) -> None:
+    target, client = _target()
+    client.get_queue_items.return_value = [
+        _item(protocol).model_copy(update={"download_id": download_id})
+    ]
+    labels = {"target": "radarr", "protocol": protocol, "outcome": "skipped_unknown"}
+    before = _sample("wi1_bot_webhook_queue_cleanup_items_total", labels)
+
+    ArrQueueCleanupWorker([target], poll_interval=60).run_once()
+
+    client.remove_queue_item.assert_not_called()
+    client.get_download_origin.assert_not_called()
+    assert _sample("wi1_bot_webhook_queue_cleanup_items_total", labels) == before + 1
+
+
+@pytest.mark.parametrize("protocol", ["torrent", "usenet"])
+def test_origin_failure_is_cached_and_isolated(protocol: ReleaseProtocol) -> None:
+    target, client = _target()
+    client.get_queue_items.return_value = [
+        _item(protocol).model_copy(update={"id": 1}),
+        _item(protocol).model_copy(update={"id": 2}),
+        _item(protocol).model_copy(update={"id": 3, "download_id": "other-download"}),
+    ]
+    client.get_download_origin.side_effect = [RuntimeError("unavailable"), "automatic"]
+    labels = {"target": "radarr", "protocol": protocol, "outcome": "origin_error"}
+    before = _sample("wi1_bot_webhook_queue_cleanup_items_total", labels)
+
+    ArrQueueCleanupWorker([target], poll_interval=60).run_once()
+
+    assert client.get_download_origin.call_count == 2
+    client.remove_queue_item.assert_called_once_with(3, remove_from_client=protocol == "usenet")
+    assert _sample("wi1_bot_webhook_queue_cleanup_items_total", labels) == before + 2
+
+
+@pytest.mark.parametrize("origin", ["automatic", "manual", "unknown"])
+def test_origin_cache_is_refreshed_between_scans(origin: str) -> None:
+    target, client = _target("sonarr")
+    client.get_queue_items.return_value = [
+        _item().model_copy(update={"id": 1}),
+        _item().model_copy(update={"id": 2}),
+    ]
+    client.get_download_origin.side_effect = [origin, "automatic"]
+    worker = ArrQueueCleanupWorker([target], poll_interval=60)
+
+    worker.run_once()
+    assert client.get_download_origin.call_count == 1
+    assert client.remove_queue_item.call_count == (2 if origin == "automatic" else 0)
+    client.remove_queue_item.reset_mock()
+    worker.run_once()
+
+    assert client.get_download_origin.call_count == 2
+    assert client.remove_queue_item.call_count == 2
+
+
+def test_origin_cache_is_scoped_to_target() -> None:
+    protected_target, protected_client = _target("radarr")
+    automatic_target, automatic_client = _target("sonarr")
+    protected_client.get_queue_items.return_value = [_item()]
+    automatic_client.get_queue_items.return_value = [_item()]
+    protected_client.get_download_origin.return_value = "manual"
+
+    ArrQueueCleanupWorker([protected_target, automatic_target], poll_interval=60).run_once()
+
+    protected_client.remove_queue_item.assert_not_called()
+    automatic_client.get_download_origin.assert_called_once_with("download-7")
+    automatic_client.remove_queue_item.assert_called_once_with(7, remove_from_client=True)
 
 
 def test_cleanup_removes_pending_custom_format_downgrade() -> None:
@@ -105,9 +217,9 @@ def test_cleanup_removes_pending_custom_format_downgrade() -> None:
 
 def test_cleanup_isolates_item_failures_and_not_found_races() -> None:
     target, client = _target("sonarr4k")
-    first = _item().model_copy(update={"id": 1})
-    second = _item().model_copy(update={"id": 2})
-    third = _item().model_copy(update={"id": 3})
+    first = _item().model_copy(update={"id": 1, "download_id": "download-1"})
+    second = _item().model_copy(update={"id": 2, "download_id": "download-2"})
+    third = _item().model_copy(update={"id": 3, "download_id": "download-3"})
     client.get_queue_items.return_value = [first, second, third]
     client.remove_queue_item.side_effect = [
         ArrQueueItemNotFound(1),
