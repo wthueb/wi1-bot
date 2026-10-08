@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.9.0](https://github.com/wthueb/wi1-bot/compare/v4.8.0...v4.9.0) (2026-10-01)
+
+
+### Features
+
+* imdb popular list filtered by languages ([c175fb4](https://github.com/wthueb/wi1-bot/commit/c175fb4ce29643bf071f729458a22be52b694e57))
+* only queue cleanup automatic downloads ([336b539](https://github.com/wthueb/wi1-bot/commit/336b539d7f254ab6ec1121c52eaab55fd4e1e87d))
+
+
+### Bug Fixes
+
+* also cleanup quality/revision downgrade failed imports ([3a1771a](https://github.com/wthueb/wi1-bot/commit/3a1771a74978a8e721788f870362c07e51caf2aa))
+* remove transcode-item script startup error ([0291e5f](https://github.com/wthueb/wi1-bot/commit/0291e5f8a202f52ea7d85ba5b39c6930c5332b1a))
+
 ## [4.8.0](https://github.com/wthueb/wi1-bot/compare/v4.7.0...v4.8.0) (2026-08-13)
 
 
